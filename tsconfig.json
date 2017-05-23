@@ -12,16 +12,9 @@
         "experimentalDecorators": true,
         "outDir": "./dist",
         //"locale": "zh-cn",
-        //"outFile": "./dist/scripts/index.js"
         "rootDir": "./src"
     },
     //"compileOnSave": true,
-    // "files": [
-    //     "./src/scripts/Student.ts",
-    //     "./src/scripts/test.ts",
-    //     "./src/scripts/GG.ts",
-    //     "./src/scripts/index.ts"
-    // ],
     "exclude": [
         "node_modules", "dist", "./*.*", "test", "src/__test__/**"
     ]
