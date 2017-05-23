@@ -1,0 +1,28 @@
+{
+    "compilerOptions": {
+        "module": "umd",
+        "target": "es3",
+        "noImplicitAny": false,
+        "sourceMap": true,
+        "allowJs": false,
+        "watch": false,
+        "listEmittedFiles": true,
+        "listFiles": true,
+        "alwaysStrict": true,
+        "experimentalDecorators": true,
+        "outDir": "./dist",
+        //"locale": "zh-cn",
+        //"outFile": "./dist/scripts/index.js"
+        "rootDir": "./src"
+    },
+    //"compileOnSave": true,
+    // "files": [
+    //     "./src/scripts/Student.ts",
+    //     "./src/scripts/test.ts",
+    //     "./src/scripts/GG.ts",
+    //     "./src/scripts/index.ts"
+    // ],
+    "exclude": [
+        "node_modules", "dist", "./*.*", "test", "src/__test__/**"
+    ]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "first",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "./node_modules/.bin/mocha -u tdd --timeout 999999 --colors ./node_modules/ts-node/register src/__test__/**/*.ts",
+    "start": "tsc -w",
+    "build": "tsc -p ."
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/chai": "^3.5.2",
+    "@types/mocha": "^2.2.41",
+    "@types/node": "^7.0.21",
+    "chai": "^3.5.0",
+    "gulp": "^3.9.1",
+    "gulp-sourcemaps": "^2.6.0",
+    "gulp-typescript": "^3.1.6",
+    "mocha": "^3.4.1",
+    "ts-node": "^3.0.4",
+    "typescript": "^2.3.2"
+  }
+}
