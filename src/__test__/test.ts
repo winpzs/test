@@ -1,8 +1,7 @@
 
 import { expect } from 'chai';
 import 'mocha';
-
-import {lib} from '../lib';
+import { lib } from '../index';
 
 describe('Hello function', () => {
   it('should return hello world', () => {
