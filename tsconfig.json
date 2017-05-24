@@ -1,16 +1,19 @@
 {
     "compilerOptions": {
-        "module": "umd",
+        "declaration": true,
+        "module": "commonjs",
         "target": "es3",
+        "moduleResolution":"node",
         "noImplicitAny": false,
         "sourceMap": true,
         "allowJs": false,
         "watch": false,
         "listEmittedFiles": true,
-        "listFiles": true,
+        "listFiles": false,
         "alwaysStrict": true,
         "experimentalDecorators": true,
         "outDir": "./dist",
+        "baseUrl": "./src",
         //"locale": "zh-cn",
         "rootDir": "./src"
     },
