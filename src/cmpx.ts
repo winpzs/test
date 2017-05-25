@@ -5,7 +5,7 @@ let stringEmpty = "",
     noop = function () { },
     slice = Array.prototype.slice;
 
-export default class cmpx {
+export default class Cmpx {
     static stringEmpty = stringEmpty;
 
     static noop  = noop;
@@ -33,19 +33,19 @@ export default class cmpx {
     static isNull(obj:any) {
         ///<summary>是否Null</summary>
 
-        return (obj === null || cmpx.isUndefined(obj));
+        return (obj === null || Cmpx.isUndefined(obj));
     }
 
     static isBoolean(obj:any) {
-        return cmpx.isType("Boolean", obj);
+        return Cmpx.isType("Boolean", obj);
     }
 
     static isNullEmpty(s:any) {
-        return (cmpx.isNull(s) || s === stringEmpty);
+        return (Cmpx.isNull(s) || s === stringEmpty);
     }
 
     static isFunction(fun:any) {
-        return cmpx.isType("Function", fun);
+        return Cmpx.isType("Function", fun);
     }
 
     static isNumeric(n:any) {
@@ -54,16 +54,16 @@ export default class cmpx {
     }
 
     static isString(obj:any) {
-        return cmpx.isType("String", obj);
+        return Cmpx.isType("String", obj);
     }
 
     static isObject(obj:any) {
-        return obj && cmpx.isType("Object", obj)
-            && !cmpx.isElement(obj) && !cmpx.isWindow(obj);//IE8以下isElement, isWindow认为Object
+        return obj && Cmpx.isType("Object", obj)
+            && !Cmpx.isElement(obj) && !Cmpx.isWindow(obj);//IE8以下isElement, isWindow认为Object
     }
 
     static isPlainObject(obj) {
-        if (!cmpx.isObject(obj)) {
+        if (!Cmpx.isObject(obj)) {
             return false;
         }
         try {
@@ -87,7 +87,7 @@ export default class cmpx {
     }
 
     static isArray(value:any) {
-        return Array.isArray ? Array.isArray(value) : cmpx.isType("Array", value);
+        return Array.isArray ? Array.isArray(value) : Cmpx.isType("Array", value);
     }
 
     static isWindow(obj:any) { return !!(obj && obj == obj.window); }
@@ -99,16 +99,16 @@ export default class cmpx {
     }
 
     static replaceAll(s:string, str:string, repl:string, flags:string = "g") {
-        if (cmpx.isNullEmpty(s) || cmpx.isNullEmpty(str)) return s;
+        if (Cmpx.isNullEmpty(s) || Cmpx.isNullEmpty(str)) return s;
         str = str.replace(/([^A-Za-z0-9 ])/g, "\\$1");
         s = s.replace(new RegExp(str, flags), repl);
         return s;
     }
 
     static inArray(list:Array<any>, p: any, thisArg:any=null):number{
-        var isF = cmpx.isFunction(p),
+        var isF = Cmpx.isFunction(p),
             index = -1;
-        cmpx.each(list, (item, idx)=>{
+        Cmpx.each(list, (item, idx)=>{
             var ok = isF ? p.call(thisArg, item, idx) : (item == p);
             if (ok){
                 index = idx;
@@ -116,6 +116,10 @@ export default class cmpx {
             }
         }, thisArg);
         return index;
+    }
+
+    static toArray(p:any, start:number = 0, count:number = Number.MAX_VALUE) : Array<any>{
+        return p ? slice.apply(p, [start, count]) : p;
     }
 
     static each(list:Array<any>, fn:(item:any, idx:number)=>any, thisArg:any=null){

@@ -1,2 +1,2 @@
 
-export * from './cmpx';
+export * from './Cmpx';
