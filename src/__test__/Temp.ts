@@ -1,5 +1,65 @@
 import Cmpx from '../Cmpx';
 
+interface htmlTagItem {
+    target:boolean,
+    find:string,
+    tagName:string,
+    content:string,
+    end:boolean,
+    index:number
+}
+
+var tmpl = `before<div><span
+ id="spanId" name="spanName">spanText</span>  divText</div>`;
+
+var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>/gim,
+    _newTextContent = function(tmpl:string, start:number, end:number):htmlTagItem{
+        var text = tmpl.substring(start, end);
+        return {
+            target:false,
+            find:text,
+            tagName:'',
+            content:text,
+            end:true,
+            index:start
+        };
+    },
+    _makeTags = function(tmpl:string){
+        var lastIndex = 0, list = [];
+        tmpl.replace(_tagRegex, function(find:string, end1:string, tagName:string,
+          tagContent:string, end2:string, index:number){
+
+            if (index > lastIndex){
+                list.push(_newTextContent(tmpl, lastIndex, index));
+            }
+
+            var end = !!end1 || !!end2;
+
+            var item:htmlTagItem = {
+                target:true,
+                find:find,
+                tagName:tagName,
+                content:tagContent,
+                end:end,
+                index:index
+            };
+            list.push(item);
+            lastIndex = index+find.length;
+
+            return find;
+        });
+        var index = tmpl.length-1;
+        if (index > lastIndex){
+            list.push(_newTextContent(tmpl, lastIndex, index));
+        }
+        Cmpx.each(list, function(item:htmlTagItem, index:number){
+            console.log(JSON.stringify(item));
+            console.log('  -----------------');
+        });
+    };
+    _makeTags(tmpl);
+
+//========Old=======================
 
 interface tranParam {
     tmpl:string;
@@ -10,8 +70,6 @@ interface tranParam {
     next:()=>void;
     isEnd:()=>boolean;
 }
-
-var tmpl = 'before<div><span id="spanId">spanText</span>  divText</div>';
 
 var _trans = function(tmpl:string){
     if (!tmpl) return '';
@@ -85,4 +143,4 @@ _transAttrContent = function(p:tranParam){
      _takeContent(p, /[\S]/, /["' >]/, /[= "']/);
 };
 
-_trans(tmpl);
+//_trans(tmpl);
