@@ -1,0 +1,254 @@
+[
+    {
+        "tagName": "",
+        "target": false,
+        "cmd": false,
+        "find": "before",
+        "content": "before",
+        "attrs": null,
+        "end": true,
+        "index": 0,
+        "bind": false
+    },
+    {
+        "tagName": "div",
+        "target": true,
+        "cmd": false,
+        "find": "<div>",
+        "attrs": [],
+        "end": false,
+        "index": 6
+    },
+    {
+        "tagName": "span",
+        "target": true,
+        "cmd": false,
+        "find": "<span \n id=\"spanId\" name=\"spanName\" content=\"$($aaa%2Baa%0A%20%20%20%20a%E3%80%8B%26%3C%3E$)$\">",
+        "content": "id=\"spanId\" name=\"spanName\" content=\"$($aaa%2Baa%0A%20%20%20%20a%E3%80%8B%26%3C%3E$)$\"",
+        "attrs": [
+            {
+                "name": "id",
+                "value": "spanId",
+                "bind": false
+            },
+            {
+                "name": "name",
+                "value": "spanName",
+                "bind": false
+            },
+            {
+                "name": "content",
+                "value": "\"+aaa+aa\n    a》&<>+\"",
+                "bind": true
+            }
+        ],
+        "end": false,
+        "index": 11
+    },
+    {
+        "tagName": "",
+        "target": false,
+        "cmd": false,
+        "find": "spanText",
+        "content": "spanText",
+        "attrs": null,
+        "end": true,
+        "index": 106,
+        "bind": false
+    },
+    {
+        "tagName": "span",
+        "target": true,
+        "cmd": false,
+        "find": "</span>",
+        "attrs": [],
+        "end": true,
+        "index": 114
+    },
+    {
+        "tagName": "",
+        "target": false,
+        "cmd": false,
+        "find": "$($bbbbbb$)$  divT",
+        "content": "\"+bbbbbb+\"  divT",
+        "attrs": null,
+        "end": true,
+        "index": 121,
+        "bind": true
+    },
+    {
+        "tagName": "if",
+        "target": false,
+        "cmd": true,
+        "find": "{{ if a}}",
+        "content": "a",
+        "attrs": null,
+        "end": false,
+        "index": 139
+    },
+    {
+        "tagName": "",
+        "target": false,
+        "cmd": false,
+        "find": "ext",
+        "content": "ext",
+        "attrs": null,
+        "end": true,
+        "index": 148,
+        "bind": false
+    },
+    {
+        "tagName": "else",
+        "target": false,
+        "cmd": true,
+        "find": "{{else user.isOk > newaaa }}",
+        "content": "user.isOk > newaaa ",
+        "attrs": null,
+        "end": false,
+        "index": 151
+    },
+    {
+        "tagName": "",
+        "target": false,
+        "cmd": false,
+        "find": " ",
+        "content": " ",
+        "attrs": null,
+        "end": true,
+        "index": 179,
+        "bind": false
+    },
+    {
+        "tagName": "for",
+        "target": false,
+        "cmd": true,
+        "find": "{{ for item in list}}",
+        "content": "item in list",
+        "attrs": null,
+        "end": false,
+        "index": 180
+    },
+    {
+        "tagName": "",
+        "target": false,
+        "cmd": false,
+        "find": " ",
+        "content": " ",
+        "attrs": null,
+        "end": true,
+        "index": 201,
+        "bind": false
+    },
+    {
+        "tagName": "for",
+        "target": false,
+        "cmd": true,
+        "find": "{{/for}}",
+        "content": "",
+        "attrs": null,
+        "end": true,
+        "index": 202
+    },
+    {
+        "tagName": "if",
+        "target": false,
+        "cmd": true,
+        "find": "{{/if}}",
+        "content": "",
+        "attrs": null,
+        "end": true,
+        "index": 210
+    },
+    {
+        "tagName": "div",
+        "target": true,
+        "cmd": false,
+        "find": "</div>",
+        "attrs": [],
+        "end": true,
+        "index": 217
+    },
+    {
+        "tagName": "",
+        "target": false,
+        "cmd": false,
+        "find": "\n ",
+        "content": "\n ",
+        "attrs": null,
+        "end": true,
+        "index": 223,
+        "bind": false
+    },
+    {
+        "tagName": "for",
+        "target": false,
+        "cmd": true,
+        "find": "{{for item in list tmpl=\"user.html\" /}}",
+        "content": "item in list tmpl=\"user.html\" ",
+        "attrs": null,
+        "end": true,
+        "index": 225
+    },
+    {
+        "tagName": "tmpl",
+        "target": false,
+        "cmd": true,
+        "find": "{{tmpl}}",
+        "content": "",
+        "attrs": null,
+        "end": false,
+        "index": 264
+    },
+    {
+        "tagName": "",
+        "target": false,
+        "cmd": false,
+        "find": " ",
+        "content": " ",
+        "attrs": null,
+        "end": true,
+        "index": 272,
+        "bind": false
+    },
+    {
+        "tagName": "include",
+        "target": false,
+        "cmd": true,
+        "find": "{{include src=\"list.html\" /}}",
+        "content": "src=\"list.html\" ",
+        "attrs": null,
+        "end": true,
+        "index": 273
+    },
+    {
+        "tagName": "",
+        "target": false,
+        "cmd": false,
+        "find": " tmplText ",
+        "content": " tmplText ",
+        "attrs": null,
+        "end": true,
+        "index": 302,
+        "bind": false
+    },
+    {
+        "tagName": "tmpl",
+        "target": false,
+        "cmd": true,
+        "find": "{{/tmpl}}",
+        "content": "",
+        "attrs": null,
+        "end": true,
+        "index": 312
+    },
+    {
+        "tagName": "include",
+        "target": false,
+        "cmd": true,
+        "find": "{{include}}",
+        "content": "",
+        "attrs": null,
+        "end": false,
+        "index": 321
+    }
+]
