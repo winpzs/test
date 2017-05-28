@@ -9,8 +9,9 @@ interface htmlTagItem {
     index:number
 }
 
-var tmpl = `before<div><span
- id="spanId" name="spanName">spanText</span>  divText</div>`;
+var tmpl = `before<div><span {{aaa+aa
+    a》&<>}}
+ id="spanId" name="spanName">spanText</span>{{bbbbbb}}  divT{{if a}}ext{{else }} {{ for item in list}} {{/for}}</div>`;
 
 var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>/gim,
     _newTextContent = function(tmpl:string, start:number, end:number):htmlTagItem{
@@ -24,8 +25,24 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>/gim,
             index:start
         };
     },
+    _textRegex = /\{\{((?!\/|\s*if |\s*else |\s*for )(?:.|\r|\n)+?)\}\}/gm,
+    _makeTextTag = function(tmpl:string):string{
+        //
+        return tmpl.replace(_textRegex, function(find, content){
+            return ['$($', encodeURIComponent(content), '$)$'].join('');
+        });
+    },
+    _textBackRegex = /\$\(\$(.+?)\$\)\$/gm,
+    _backTextTag = function(tmpl:string):string{
+        //
+        return tmpl.replace(_textBackRegex, function(find, content){
+            return ['{{', decodeURIComponent(content), '}}'].join('');
+        });
+    },
     _makeTags = function(tmpl:string){
         var lastIndex = 0, list = [];
+        tmpl = _makeTextTag(tmpl);
+        console.log(_backTextTag(tmpl));
         tmpl.replace(_tagRegex, function(find:string, end1:string, tagName:string,
           tagContent:string, end2:string, index:number){
 
@@ -56,6 +73,7 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>/gim,
             console.log(JSON.stringify(item));
             console.log('  -----------------');
         });
+        console.log(list.length);
     };
     _makeTags(tmpl);
 
