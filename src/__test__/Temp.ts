@@ -1,9 +1,9 @@
 import Cmpx from '../Cmpx';
 
 interface htmlTagItem {
+    tagName:string,
     target:boolean,
     find:string,
-    tagName:string,
     content:string,
     end:boolean,
     index:number
@@ -11,15 +11,15 @@ interface htmlTagItem {
 
 var tmpl = `before<div><span {{aaa+aa
     a》&<>}}
- id="spanId" name="spanName">spanText</span>{{bbbbbb}}  divT{{if a}}ext{{else }} {{ for item in list}} {{/for}}</div>`;
+ id="spanId" name="spanName">spanText</span>{{bbbbbb}}  divT{{ if a}}ext{{else user.isOk > newaaa }} {{ for item in list}} {{/for}} {{/if}}</div>`;
 
-var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>/gim,
+var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^\s\{\}]+)\s*(.*?)\}\}/gim,
     _newTextContent = function(tmpl:string, start:number, end:number):htmlTagItem{
         var text = tmpl.substring(start, end);
         return {
+            tagName:'',
             target:false,
             find:text,
-            tagName:'',
             content:text,
             end:true,
             index:start
@@ -42,21 +42,21 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>/gim,
     _makeTags = function(tmpl:string){
         var lastIndex = 0, list = [];
         tmpl = _makeTextTag(tmpl);
-        console.log(_backTextTag(tmpl));
+        //console.log(_backTextTag(tmpl));
         tmpl.replace(_tagRegex, function(find:string, end1:string, tagName:string,
-          tagContent:string, end2:string, index:number){
+          tagContent:string, end2:string, txtEnd:string, txtName:string, txtContent:string, index:number){
 
             if (index > lastIndex){
                 list.push(_newTextContent(tmpl, lastIndex, index));
             }
 
-            var end = !!end1 || !!end2;
+            var end = !!end1 || !!end2 || !!txtEnd;
 
             var item:htmlTagItem = {
+                tagName:tagName || txtName,
                 target:true,
                 find:find,
-                tagName:tagName,
-                content:tagContent,
+                content:tagContent || txtContent,
                 end:end,
                 index:index
             };
