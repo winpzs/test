@@ -1,18 +1,27 @@
 import Cmpx from '../Cmpx';
 
 interface htmlTagItem {
-    tagName:string,
-    target:boolean,
-    cmd:boolean,
-    find:string,
-    content:string,
-    end:boolean,
-    index:number
+    tagName:string;
+    //是否标签，如：<div>
+    target:boolean;
+    //是否指令，如：{{for}}
+    cmd:boolean;
+    find:string;
+    content:string;
+    attrs:Array<htmlAttrItem>;
+    end:boolean;
+    index:number;
 }
 
-var tmpl = `before<div><span {{aaa+aa
-    a》&<>}}
- id="spanId" name="spanName">spanText</span>{{bbbbbb}}  divT{{ if a}}ext{{else user.isOk > newaaa }} {{ for item in list}} {{/for}}{{/if}}</div>
+interface htmlAttrItem {
+    name:string;
+    value:string;
+    bind:boolean;
+}
+
+var tmpl = `before<div><span 
+ id="spanId" name="spanName" content="{{aaa+aa
+    a》&<>}}">spanText</span>{{bbbbbb}}  divT{{ if a}}ext{{else user.isOk > newaaa }} {{ for item in list}} {{/for}}{{/if}}</div>
  {{for item in list tmpl="user.html" /}}{{tmpl}} {{include src="list.html" /}} tmplText {{/tmpl}}{{include}}`;
 
 var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^\s\{\}]+)\s*(.*?)(\/*)\}\}/gim,
@@ -23,7 +32,8 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
             target:false,
             cmd:false,
             find:text,
-            content:text,
+            content:_textBackRegex.test(text) ? _getBind(text, '"') : text,
+            attrs:null,
             end:true,
             index:start
         };
@@ -62,6 +72,7 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
                 cmd:cmd,
                 find:find,
                 content:tagContent || txtContent,
+                attrs:!cmd ? _getAttrs(tagContent) : null,
                 end:end,
                 index:index
             };
@@ -79,8 +90,32 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
             console.log('  -----------------');
         });
         console.log(list.length);
+    },
+    _attrRegex = /\s*([^= ]+)\s*=\s*(["'])((?:.|\b|\r)*?)\2/gm,
+    _getAttrs = function(content:string):Array<htmlAttrItem>{
+        var attrs:Array<htmlAttrItem> = [];
+        content.replace(_attrRegex, function(find:string, name:string, split:string,
+            value:string, index:number){
+            var bind = _textBackRegex.test(value);
+            if(bind)
+                value = _getBind(value, split);
+            attrs.push({
+                name:name,
+                value:value,
+                bind:bind
+            });
+            return find;
+        });
+        //console.log(attrs);
+        return attrs;
+    },
+    _getBind = function(value:string, split:string){
+        return value.replace(_textBackRegex, function(find:string, content:string, index:number){
+            return [split, decodeURIComponent(content), split].join('+');
+        });
     };
     _makeTags(tmpl);
+    //_getAttrs(' aaa="asdfasdf\'" bbb=\'sdfddd$($aaa$)$ddf\' ccc="acccca"');
 
 //========Old=======================
 
