@@ -1,5 +1,8 @@
 import Cmpx from '../Cmpx';
 
+import { expect } from 'chai';
+import 'mocha';
+
 interface htmlTagItem {
     tagName:string;
     //是否标签，如：<div>
@@ -11,6 +14,8 @@ interface htmlTagItem {
     attrs:Array<htmlAttrItem>;
     end:boolean;
     index:number;
+    //是否为绑定
+    bind?:boolean;
 }
 
 interface htmlAttrItem {
@@ -26,16 +31,18 @@ var tmpl = `before<div><span
 
 var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^\s\{\}]+)\s*(.*?)(\/*)\}\}/gim,
     _newTextContent = function(tmpl:string, start:number, end:number):htmlTagItem{
-        var text = tmpl.substring(start, end);
+        var text = tmpl.substring(start, end),
+            bind = _textBackRegex.test(text);
         return {
             tagName:'',
             target:false,
             cmd:false,
             find:text,
-            content:_textBackRegex.test(text) ? _getBind(text, '"') : text,
+            content:bind ? _getBind(text, '"') : text,
             attrs:null,
             end:true,
-            index:start
+            index:start,
+            bind:bind
         };
     },
     _textRegex = /\{\{((?!\/|\s*(?:if|else|for|tmpl|include)[ \}])(?:.|\r|\n)+?)\}\}/gm,
@@ -52,8 +59,8 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
             return ['{{', decodeURIComponent(content), '}}'].join('');
         });
     },
-    _makeTags = function(tmpl:string){
-        var lastIndex = 0, list = [];
+    _makeTags = function(tmpl:string):Array<htmlTagItem>{
+        var lastIndex = 0, list:Array<htmlTagItem> = [];
         tmpl = _makeTextTag(tmpl);
         //console.log(_backTextTag(tmpl));
         tmpl.replace(_tagRegex, function(find:string, end1:string, tagName:string,
@@ -85,11 +92,12 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
         if (index > lastIndex){
             list.push(_newTextContent(tmpl, lastIndex, index));
         }
-        Cmpx.each(list, function(item:htmlTagItem, index:number){
-            console.log(JSON.stringify(item));
-            console.log('  -----------------');
-        });
-        console.log(list.length);
+        // Cmpx.each(list, function(item:htmlTagItem, index:number){
+        //     console.log(JSON.stringify(item));
+        //     console.log('  -----------------');
+        // });
+        //console.log(list.length);
+        return list;
     },
     _attrRegex = /\s*([^= ]+)\s*=\s*(["'])((?:.|\b|\r)*?)\2/gm,
     _getAttrs = function(content:string):Array<htmlAttrItem>{
@@ -114,91 +122,13 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
             return [split, decodeURIComponent(content), split].join('+');
         });
     };
-    _makeTags(tmpl);
+    //_makeTags(tmpl);
     //_getAttrs(' aaa="asdfasdf\'" bbb=\'sdfddd$($aaa$)$ddf\' ccc="acccca"');
 
-//========Old=======================
+describe('Compile', () => {
+  it('_makeTags', () => {
+    var tags = _makeTags(tmpl);
 
-interface tranParam {
-    tmpl:string;
-    length:number;
-    index:number;
-    strs:Array<string>;
-    result:Array<string>;
-    next:()=>void;
-    isEnd:()=>boolean;
-}
-
-var _trans = function(tmpl:string){
-    if (!tmpl) return '';
-    var p = {tmpl:tmpl, length:tmpl.length, index:0, strs:[], result:[], next:function(){
-            this.result.push(this.strs.join(''));
-            this.index += (this.strs.length+1);
-            this.strs = [];
-        },
-        isEnd:function(){
-            return this.index >= this.length;
-        }
-    };
-    _transText(p);
-    console.log(p);
-},
-_takeContent = function(p:tranParam, start:RegExp, end:RegExp, startPass:RegExp = null, fn:any=null){
-    var isStart =  !!startPass && !!start;
-    _transEach(p, function(item:string, index:number, strs:Array<string>, result:Array<any>, p:tranParam){
-        if (isStart){
-            if (end.test(item)){
-                p.next();
-                fn && fn(p);
-                return false;
-            } else
-                strs.push(item);
-        } else{
-            if (!startPass || !startPass.test(item)){
-                if (!start)
-                    isStart = true;
-                else
-                    isStart = start.test(item);
-                if (isStart)
-                    strs.push(item);
-            }
-        }
-    });
-    
-},
-_transEach = function(p:tranParam, fn:any){
-    var tmpl = p.tmpl, len = p.length,
-        index = p.index,result = p.result;
-    var strs = p.strs, s;
-    while(index < len){
-        s = tmpl[index];
-        index++;
-        if (fn(s, index, strs, result, p) === false){
-            break;
-        }
-    }
-    return index;
-},
-_transText = function(p:tranParam){
-    _takeContent(p, null, /[<>]/, null, function(p:tranParam){
-        _transTargetName(p);
-    });
-    if (!p.isEnd())
-        _transText(p);
-},
-_transTargetName = function(p:tranParam){
-    _takeContent(p, /[\S]/, /[ <>]/, / /, function(p:tranParam){
-        _transAttrName(p);
-    });
-},
-_transAttrName = function(p:tranParam){
-    var start = false;
-    _takeContent(p, /[\S]/, /[ =><]/, /[> ]/, function(p:tranParam){
-        _transAttrContent(p);
-    });
-},
-_transAttrContent = function(p:tranParam){
-     _takeContent(p, /[\S]/, /["' >]/, /[= "']/);
-};
-
-//_trans(tmpl);
+    expect(tags.length == 23).to.equal(true);
+  });
+});
