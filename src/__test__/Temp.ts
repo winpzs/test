@@ -3,6 +3,7 @@ import Cmpx from '../Cmpx';
 interface htmlTagItem {
     tagName:string,
     target:boolean,
+    cmd:boolean,
     find:string,
     content:string,
     end:boolean,
@@ -11,21 +12,23 @@ interface htmlTagItem {
 
 var tmpl = `before<div><span {{aaa+aa
     a》&<>}}
- id="spanId" name="spanName">spanText</span>{{bbbbbb}}  divT{{ if a}}ext{{else user.isOk > newaaa }} {{ for item in list}} {{/for}} {{/if}}</div>`;
+ id="spanId" name="spanName">spanText</span>{{bbbbbb}}  divT{{ if a}}ext{{else user.isOk > newaaa }} {{ for item in list}} {{/for}}{{/if}}</div>
+ {{for item in list tmpl="user.html" /}}{{tmpl}} {{include src="list.html" /}} tmplText {{/tmpl}}{{include}}`;
 
-var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^\s\{\}]+)\s*(.*?)\}\}/gim,
+var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^\s\{\}]+)\s*(.*?)(\/*)\}\}/gim,
     _newTextContent = function(tmpl:string, start:number, end:number):htmlTagItem{
         var text = tmpl.substring(start, end);
         return {
             tagName:'',
             target:false,
+            cmd:false,
             find:text,
             content:text,
             end:true,
             index:start
         };
     },
-    _textRegex = /\{\{((?!\/|\s*if |\s*else |\s*for )(?:.|\r|\n)+?)\}\}/gm,
+    _textRegex = /\{\{((?!\/|\s*(?:if|else|for|tmpl|include)[ \}])(?:.|\r|\n)+?)\}\}/gm,
     _makeTextTag = function(tmpl:string):string{
         //
         return tmpl.replace(_textRegex, function(find, content){
@@ -44,17 +47,19 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
         tmpl = _makeTextTag(tmpl);
         //console.log(_backTextTag(tmpl));
         tmpl.replace(_tagRegex, function(find:string, end1:string, tagName:string,
-          tagContent:string, end2:string, txtEnd:string, txtName:string, txtContent:string, index:number){
+          tagContent:string, end2:string, txtEnd1:string, txtName:string, txtContent:string, txtEnd2:string, index:number){
 
             if (index > lastIndex){
                 list.push(_newTextContent(tmpl, lastIndex, index));
             }
 
-            var end = !!end1 || !!end2 || !!txtEnd;
+            var end = !!end1 || !!end2 || !!txtEnd1 || !!txtEnd2,
+                cmd = !!txtName;
 
             var item:htmlTagItem = {
                 tagName:tagName || txtName,
-                target:true,
+                target:!cmd,
+                cmd:cmd,
                 find:find,
                 content:tagContent || txtContent,
                 end:end,
