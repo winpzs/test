@@ -115,7 +115,48 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
         });
     };
 
+export interface IConfig{
+    selector:string;
+    tmpl?:string;
+    tmplUrl?:string;
+}
+
+export interface IRegisterComponet{
+    [selector:string]:Function
+}
+
+var _registerComponet:IRegisterComponet = {};
+
+export function Config(config: IConfig) {
+    return function (constructor: Function) {
+        _registerComponet[config.selector] = constructor;
+        constructor.prototype['__config__'] = config;
+    };
+}
+
+export class CompileElement{
+    name:string;
+    parent:CompileElement;
+    attrs:Array<htmlAttrItem>;
+    children:Array<CompileElement>;
+    element:HTMLElement;
+    textNode:Text;
+    constructor(name:string, attrs:Array<htmlAttrItem>=null, parent:CompileElement=null){
+        this.name = name;
+        this.attrs = attrs;
+        this.parent = parent;
+        this.element = document.createElement('aaaaa');
+        this.textNode = document.createTextNode('aaaaa');
+    }
+}
+
 export class Compile {
+    public static createElement(name:string, attrs:Array<htmlAttrItem>=null, parent:CompileElement=null):CompileElement{
+        let  element = new CompileElement(name, attrs, parent);
+        return element;
+    }
+
+
     private tmpl:string;
     private _htmlTags:Array<htmlTagItem>;
     public getHtmlTagObjects():Array<htmlTagItem>{

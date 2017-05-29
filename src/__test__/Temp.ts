@@ -1,4 +1,5 @@
-import { Compile } from './../compile';
+import { Componet } from './../componet';
+import { Compile, Config } from './../compile';
 import Cmpx from '../Cmpx';
 
 import { expect } from 'chai';
@@ -18,3 +19,28 @@ describe('Compile', () => {
     console.log((tags));
   });
 });
+
+
+@Config({
+  selector:'app',
+  tmpl:`<div></div>`
+})
+class TestComponet extends Componet {
+
+  constructor(){
+    super();
+    console.log(this['__config__']);
+  }
+
+}
+
+
+@Config({
+  selector:'appEx',
+  tmpl:`<div></div>`
+})
+class TestComponetEx extends Componet {
+
+}
+
+new TestComponet();
