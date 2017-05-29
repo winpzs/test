@@ -1,4 +1,4 @@
-import Cmpx from "cmpx";
+import Cmpx from "./cmpx";
 
 export interface htmlTagItem {
     tagName:string;
@@ -10,15 +10,19 @@ export interface htmlTagItem {
     content:string;
     attrs:Array<htmlAttrItem>;
     end:boolean;
+    single:boolean;
     index:number;
     //是否为绑定
     bind?:boolean;
+    children?:Array<htmlTagItem>;
+    parent?:htmlTagItem;
 }
 
 export interface htmlAttrItem {
     name:string;
     value:string;
     bind:boolean;
+    extend?:any;
 }
 
 var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^\s\{\}]+)\s*(.*?)(\/*)\}\}/gim,
@@ -33,6 +37,7 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
             content:bind ? _getBind(text, '"') : text,
             attrs:null,
             end:true,
+            single:true,
             index:start,
             bind:bind
         };
@@ -62,8 +67,14 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
                 list.push(_newTextContent(tmpl, lastIndex, index));
             }
 
-            var end = !!end1 || !!end2 || !!txtEnd1 || !!txtEnd2,
+            var single = !!end2 || !!txtEnd2,
+                end = !!end1 || !!txtEnd1 || single,
                 cmd = !!txtName;
+
+            var attrs = !cmd && !!tagContent ? _getAttrs(tagContent) : null;
+            if (cmd && (single || !end) && txtName == 'for'){
+                attrs = _getForAttrs(txtContent);
+            }
 
             var item:htmlTagItem = {
                 tagName:tagName || txtName,
@@ -71,8 +82,9 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
                 cmd:cmd,
                 find:find,
                 content:tagContent || txtContent,
-                attrs:!cmd ? _getAttrs(tagContent) : null,
+                attrs:attrs,
                 end:end,
+                single:single,
                 index:index
             };
             list.push(item);
@@ -89,7 +101,9 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
         //     console.log('  -----------------');
         // });
         //console.log(list.length);
-        return list;
+        var outList:Array<htmlTagItem> = [];
+        _makeHtmlTagChildren(list, outList, list.length);
+        return outList;
     },
     _attrRegex = /\s*([^= ]+)\s*=\s*(["'])((?:.|\b|\r)*?)\2/gm,
     _getAttrs = function(content:string):Array<htmlAttrItem>{
@@ -109,10 +123,48 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
         //console.log(attrs);
         return attrs;
     },
+    _forAttrRegex = /\s*([^\s]+)\s*\in\s*([^\s]+)\s*(?:\s*tmpl\s*=\s*([\'\"])(.*?)\3)*/i,
+    _getForAttrs = function(content:string):Array<htmlAttrItem>{
+        var extend = _forAttrRegex.exec(content);
+        var attrs:Array<htmlAttrItem> = [{
+            name:'',
+            value:'',
+            bind:true,
+            extend:{
+                item:extend[1],
+                datas:extend[2],
+                tmpl:extend[4]
+            }
+        }];
+        return attrs;
+    },
     _getBind = function(value:string, split:string){
         return value.replace(_textBackRegex, function(find:string, content:string, index:number){
             return [split, decodeURIComponent(content), split].join('+');
         });
+    },
+    _makeHtmlTagChildren = function(attrs:Array<htmlTagItem>, outList:Array<htmlTagItem>,
+        len:number, index:number=0, parent:htmlTagItem=null): number{
+        var item:htmlTagItem;
+        while(index < len){
+            item = attrs[index++];
+            if (item.cmd || item.target){
+                if　(item.single)
+                    outList.push(item);
+                else if (item.end){
+                    break;
+                } else {
+                    outList.push(item);
+                    item.children = [];
+                    index = _makeHtmlTagChildren(attrs, item.children, len, index, item);
+                    if (item && item.cmd && item.tagName == 'else')
+                        break;
+                }
+            } else {
+                outList.push(item);
+            }
+        }
+        return index;
     };
 
 export interface IConfig{
