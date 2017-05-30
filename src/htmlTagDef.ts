@@ -58,11 +58,12 @@ export class HtmlTagDef {
   /**
    * 单选标签
    */
-  static singelTags:{[name:string]:boolean};
+  static singelTags:Array<string>;
+  static singelTagMap:{[name:string]:boolean};
   /**
    * 内容标签，不解释内容
    */
-  static rawlTags:Array<string>;
+  static rawTags:Array<string>;
   /**
    * 内容html编码标签，不解释内容
    */
@@ -142,8 +143,11 @@ function _makeSpecTags(){
     item.contentType == HtmlTagContentType.RAW_TEXT && rawTags.push(name);
     item.contentType == HtmlTagContentType.ESCAPABLE_RAW_TEXT && escapeRawTags.push(name);
   });
-  var o = HtmlTagDef.singelTags = {};
+  var o = HtmlTagDef.singelTagMap = {};
   Cmpx.each(singleTags, (name:string)=>o[name]=true);
+  HtmlTagDef.singelTags = singleTags;
+  HtmlTagDef.rawTags = rawTags;
+  HtmlTagDef.escapeRawTags = escapeRawTags;
 }
 
 _makeSpecTags();

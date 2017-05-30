@@ -86,6 +86,16 @@ export default class Cmpx {
         return key === undefined || core_hasOwn.call(obj, key);
     }
 
+    static encodeHtml(html:string):string{
+        return !html ? '' : html.replace(/\</g, '&lt;').replace(/\>/g, '&gt;').
+            replace(/\&/g, '&amp;').replace(/\"/g, '&quot;').replace(/ /g, "&nbsp;").replace(/\'/g, "&#39;");
+    }
+
+    static decodeHtml(html:string):string{
+        return !html ? '' : html.replace('&lt;', '<').replace('&gt;', '>').replace('&amp;', '&')
+            .replace('&quot;', '"').replace("&nbsp;", ' ').replace("&#39;", "'");
+    }
+
     static isArray(value:any) {
         return Array.isArray ? Array.isArray(value) : Cmpx.isType("Array", value);
     }
