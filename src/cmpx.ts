@@ -128,4 +128,22 @@ export default class Cmpx {
             if (fn.call(thisArg, list[i], i) === false) break;
         }
     }
+
+    static eachProp(obj: any, callback:(item:any, name:string)=>void, thisArg: any=null) {
+        if (!obj) return;
+        var item;
+        for (var n in obj) {
+            if (Cmpx.hasOwnProp(obj, n)) {
+                item = obj[n];
+                if (callback.call(thisArg, item, n) === false) break;
+            }
+        }
+    }
+
+    static extend(obj:Object, p:Object):Object{
+        if (obj && p){
+            Cmpx.eachProp(p, (item:string, name:string) => obj[name] = item);
+        }
+        return obj;
+    }
 }

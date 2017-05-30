@@ -167,19 +167,13 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
         return index;
     };
 
-export interface IConfig{
+var _registerComponet:{[selector:string]:Function} = {};
+
+export function Config(config: {
     selector:string;
     tmpl?:string;
     tmplUrl?:string;
-}
-
-export interface IRegisterComponet{
-    [selector:string]:Function
-}
-
-var _registerComponet:IRegisterComponet = {};
-
-export function Config(config: IConfig) {
+}) {
     return function (constructor: Function) {
         _registerComponet[config.selector] = constructor;
         constructor.prototype['__config__'] = config;
