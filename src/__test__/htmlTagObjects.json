@@ -1,14 +1,24 @@
 [
     {
+        "tagName": "",
+        "target": false,
+        "cmd": false,
+        "find": "!",
+        "content": "!",
+        "attrs": null,
+        "end": true,
+        "single": true,
+        "index": 0,
+        "bind": false
+    },
+    {
         "tagName": "if",
         "target": false,
         "cmd": true,
         "find": "{{if user.ok}}",
         "content": "user.ok",
         "attrs": null,
-        "end": false,
-        "single": false,
-        "index": 0,
+        "index": 1,
         "children": [
             {
                 "tagName": "",
@@ -19,7 +29,7 @@
                 "attrs": null,
                 "end": true,
                 "single": true,
-                "index": 14,
+                "index": 15,
                 "bind": false
             },
             {
@@ -29,9 +39,7 @@
                 "find": "{{else server.ok}}",
                 "content": "server.ok",
                 "attrs": null,
-                "end": false,
-                "single": false,
-                "index": 24,
+                "index": 25,
                 "children": [
                     {
                         "tagName": "",
@@ -42,7 +50,7 @@
                         "attrs": null,
                         "end": true,
                         "single": true,
-                        "index": 42,
+                        "index": 43,
                         "bind": false
                     },
                     {
@@ -52,9 +60,7 @@
                         "find": "{{else role.ok}}",
                         "content": "role.ok",
                         "attrs": null,
-                        "end": false,
-                        "single": false,
-                        "index": 52,
+                        "index": 53,
                         "children": [
                             {
                                 "tagName": "",
@@ -65,7 +71,7 @@
                                 "attrs": null,
                                 "end": true,
                                 "single": true,
-                                "index": 68,
+                                "index": 69,
                                 "bind": false
                             }
                         ]
@@ -83,7 +89,7 @@
         "attrs": null,
         "end": true,
         "single": true,
-        "index": 83,
+        "index": 84,
         "bind": false
     },
     {
@@ -103,9 +109,7 @@
                 }
             }
         ],
-        "end": false,
-        "single": false,
-        "index": 84,
+        "index": 85,
         "children": [
             {
                 "tagName": "",
@@ -116,7 +120,7 @@
                 "attrs": null,
                 "end": true,
                 "single": true,
-                "index": 104,
+                "index": 105,
                 "bind": false
             }
         ]
@@ -130,7 +134,7 @@
         "attrs": null,
         "end": true,
         "single": true,
-        "index": 122,
+        "index": 123,
         "bind": false
     },
     {
@@ -153,7 +157,7 @@
         ],
         "end": true,
         "single": true,
-        "index": 123
+        "index": 124
     },
     {
         "tagName": "",
@@ -164,7 +168,7 @@
         "attrs": null,
         "end": true,
         "single": true,
-        "index": 163,
+        "index": 164,
         "bind": false
     },
     {
@@ -180,9 +184,7 @@
                 "bind": true
             }
         ],
-        "end": false,
-        "single": false,
-        "index": 164,
+        "index": 165,
         "children": [
             {
                 "tagName": "",
@@ -193,7 +195,7 @@
                 "attrs": null,
                 "end": true,
                 "single": true,
-                "index": 189,
+                "index": 190,
                 "bind": false
             },
             {
@@ -209,9 +211,7 @@
                         "bind": false
                     }
                 ],
-                "end": false,
-                "single": false,
-                "index": 198,
+                "index": 199,
                 "children": [
                     {
                         "tagName": "",
@@ -222,11 +222,122 @@
                         "attrs": null,
                         "end": true,
                         "single": true,
-                        "index": 216,
+                        "index": 217,
                         "bind": true
                     }
                 ]
             }
         ]
+    },
+    {
+        "tagName": "",
+        "target": false,
+        "cmd": false,
+        "find": "\n",
+        "content": "\n",
+        "attrs": null,
+        "end": true,
+        "single": true,
+        "index": 251,
+        "bind": false
+    },
+    {
+        "tagName": "input",
+        "target": true,
+        "cmd": false,
+        "find": "<input type=\"text\">",
+        "content": "type=\"text\"",
+        "attrs": [
+            {
+                "name": "type",
+                "value": "text",
+                "bind": false
+            }
+        ],
+        "end": true,
+        "single": true,
+        "index": 252
+    },
+    {
+        "tagName": "",
+        "target": false,
+        "cmd": false,
+        "find": "\n",
+        "content": "\n",
+        "attrs": null,
+        "end": true,
+        "single": true,
+        "index": 271,
+        "bind": false
+    },
+    {
+        "tagName": "input",
+        "target": true,
+        "cmd": false,
+        "find": "<input type=\"text\">",
+        "content": "type=\"text\"",
+        "attrs": [
+            {
+                "name": "type",
+                "value": "text",
+                "bind": false
+            }
+        ],
+        "end": true,
+        "single": true,
+        "index": 272
+    },
+    {
+        "tagName": "",
+        "target": false,
+        "cmd": false,
+        "find": "aaaa",
+        "content": "aaaa",
+        "attrs": null,
+        "end": true,
+        "single": true,
+        "index": 291,
+        "bind": false
+    },
+    {
+        "tagName": "",
+        "target": false,
+        "cmd": false,
+        "find": "\n",
+        "content": "\n",
+        "attrs": null,
+        "end": true,
+        "single": true,
+        "index": 303,
+        "bind": false
+    },
+    {
+        "tagName": "input",
+        "target": true,
+        "cmd": false,
+        "find": "<input type=\"text\" />",
+        "content": "type=\"text\" /",
+        "attrs": [
+            {
+                "name": "type",
+                "value": "text",
+                "bind": false
+            }
+        ],
+        "end": true,
+        "single": true,
+        "index": 304
+    },
+    {
+        "tagName": "",
+        "target": false,
+        "cmd": false,
+        "find": "\n!\na",
+        "content": "\n!\na",
+        "attrs": null,
+        "end": true,
+        "single": true,
+        "index": 325,
+        "bind": false
     }
 ]

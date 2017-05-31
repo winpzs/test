@@ -9,7 +9,7 @@ var tmpl = `before<div><span
     a》&<>}}">spanText</span>{{bbbbbb}}  divT{{ if a}}ext{{else user.isOk > newaaa }} {{ for item in list}} {{/for}}{{/if}}</div>
  {{for item in list tmpl="user.html" /}}{{tmpl}} {{include src="list.html" /}} tmplText {{/tmpl}}{{include}}`;
 
-var tmplCmd = `{{if user.ok}}
+var tmplCmd = `!{{if user.ok}}
   userOk
 {{else server.ok}}
 serverOk
@@ -21,7 +21,11 @@ for Text
 {{/for}}
 {{for item in list tmpl="index.html" /}}
 <div text="{{text}}ok"> divText <span id="spanId"> spanText:{{name}} </span></div>
-`;
+<input type="text">
+<input type="text">aaaa</input>
+<input type="text" />
+!
+a`;
 
 describe('Compile', () => {
   it('_makeTags', () => {

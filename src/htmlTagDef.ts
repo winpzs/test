@@ -24,7 +24,7 @@
 //     $("svg")[0].appendChild(obj);
 // });
 
-import Cmpx from "cmpx";
+import Cmpx from "./cmpx";
 
 export enum HtmlTagContentType {
   RAW_TEXT,
@@ -56,9 +56,12 @@ export class HtmlTagDef {
   }
 
   /**
-   * 单选标签
+   * 单行标签
    */
   static singelTags:Array<string>;
+  /**
+   * 单行标签Map
+   */
   static singelTagMap:{[name:string]:boolean};
   /**
    * 内容标签，不解释内容
@@ -72,10 +75,10 @@ export class HtmlTagDef {
   preFix: string;
   contentType: HtmlTagContentType;
   ignoreFirstLf: boolean;
-  single: boolean = false;
+  single: boolean;
 
   constructor(
-      {single, contentType = HtmlTagContentType.PARSABLE_DATA, preFix=null, ignoreFirstLf=false}: {
+      {single = false, contentType = HtmlTagContentType.PARSABLE_DATA, preFix=null, ignoreFirstLf=false}: {
         single?:boolean;
         contentType?:HtmlTagContentType;
         preFix?:string;
@@ -106,25 +109,25 @@ var _htmlTagDefConfig: IHtmlTagDefConfig = {
   'source': _SINGLE_TAG,
   'track': _SINGLE_TAG,
   'wbr': _SINGLE_TAG,
-  'p': _SINGLE_TAG,
-  'thead': _SINGLE_TAG,
-  'tbody': _SINGLE_TAG,
-  'tfoot': _SINGLE_TAG,
-  'tr': _SINGLE_TAG,
-  'td': _SINGLE_TAG,
-  'th': _SINGLE_TAG,
+  'p': _DEFULE_TAG,
+  'thead': _DEFULE_TAG,
+  'tbody': _DEFULE_TAG,
+  'tfoot': _DEFULE_TAG,
+  'tr': _DEFULE_TAG,
+  'td': _DEFULE_TAG,
+  'th': _DEFULE_TAG,
   'col': _SINGLE_TAG,
   'svg': new HtmlTagDef({preFix: 'svg'}),
   'math': new HtmlTagDef({preFix: 'math'}),
-  'li': _SINGLE_TAG,
-  'dt': _SINGLE_TAG,
-  'dd': _SINGLE_TAG,
-  'rb': _SINGLE_TAG,
-  'rt': _SINGLE_TAG,
-  'rtc': _SINGLE_TAG,
-  'rp': _SINGLE_TAG,
-  'optgroup': _SINGLE_TAG,
-  'option': _SINGLE_TAG,
+  'li': _DEFULE_TAG,
+  'dt': _DEFULE_TAG,
+  'dd': _DEFULE_TAG,
+  'rb': _DEFULE_TAG,
+  'rt': _DEFULE_TAG,
+  'rtc': _DEFULE_TAG,
+  'rp': _DEFULE_TAG,
+  'optgroup': _DEFULE_TAG,
+  'option': _DEFULE_TAG,
   'pre': new HtmlTagDef({ignoreFirstLf: true}),
   'listing': new HtmlTagDef({ignoreFirstLf: true}),
   'style': new HtmlTagDef({contentType: HtmlTagContentType.RAW_TEXT}),

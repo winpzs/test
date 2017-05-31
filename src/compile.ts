@@ -1,4 +1,5 @@
 import Cmpx from "./cmpx";
+import { HtmlTagDef } from './htmlTagDef';
 
 export interface htmlTagItem {
     tagName:string;
@@ -57,7 +58,8 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
         });
     },
     _makeTags = function(tmpl:string):Array<htmlTagItem>{
-        var lastIndex = 0, list:Array<htmlTagItem> = [];
+        var lastIndex = 0, list:Array<htmlTagItem> = [],
+            singelTagMap = HtmlTagDef.singelTagMap;
         tmpl = _makeTextTag(tmpl);
         //console.log(_backTextTag(tmpl));
         tmpl.replace(_tagRegex, function(find:string, end1:string, tagName:string,
@@ -67,32 +69,36 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
                 list.push(_newTextContent(tmpl, lastIndex, index));
             }
 
-            var single = !!end2 || !!txtEnd2,
+            var single = !!end2 || !!txtEnd2 || (tagName && singelTagMap[tagName]),
                 end = !!end1 || !!txtEnd1 || single,
                 cmd = !!txtName;
 
-            var attrs = !cmd && !!tagContent ? _getAttrs(tagContent) : null;
-            if (cmd && (single || !end) && txtName == 'for'){
-                attrs = _getForAttrs(txtContent);
+            if (cmd || !(single && !!end1)){
+
+                var attrs = !cmd && !!tagContent ? _getAttrs(tagContent) : null;
+                if (cmd && (single || !end) && txtName == 'for'){
+                    attrs = _getForAttrs(txtContent);
+                }
+
+                var item:htmlTagItem = {
+                    tagName:tagName || txtName,
+                    target:!cmd,
+                    cmd:cmd,
+                    find:find,
+                    content:tagContent || txtContent,
+                    attrs:attrs,
+                    end:end,
+                    single:single,
+                    index:index
+                };
+                list.push(item);
             }
 
-            var item:htmlTagItem = {
-                tagName:tagName || txtName,
-                target:!cmd,
-                cmd:cmd,
-                find:find,
-                content:tagContent || txtContent,
-                attrs:attrs,
-                end:end,
-                single:single,
-                index:index
-            };
-            list.push(item);
             lastIndex = index+find.length;
 
             return find;
         });
-        var index = tmpl.length-1;
+        var index = tmpl.length;
         if (index > lastIndex){
             list.push(_newTextContent(tmpl, lastIndex, index));
         }
