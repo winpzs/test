@@ -36,6 +36,10 @@ export interface IHtmlTagDefConfig{
   [key: string]: HtmlTagDef
 }
 
+export function DEFAULT_CREATEELEMENT(name:string, parent:HTMLElement=null):HTMLElement{
+  return document.createElement(name);
+}
+
 export class HtmlTagDef {
 
   /**
@@ -53,6 +57,14 @@ export class HtmlTagDef {
   static extendHtmlTagDef(p:IHtmlTagDefConfig):void{
     Cmpx.extend(_htmlTagDefConfig, p);
     _makeSpecTags();
+  }
+
+  static getHtmlAttrDef(name:string):IHtmlAttrDef{
+    return _htmlAttrDefConfig[name] || DEFAULT_ATTR;
+  }
+
+  static extendHtmlAttrDef(p:IHtmlAttrDef):void{
+    Cmpx.extend(_htmlAttrDefConfig, p);
   }
 
   /**
@@ -77,17 +89,21 @@ export class HtmlTagDef {
   ignoreFirstLf: boolean;
   single: boolean;
 
+  createElement:(name:string, parent?:HTMLElement)=>HTMLElement;
+
   constructor(
-      {single = false, contentType = HtmlTagContentType.PARSABLE_DATA, preFix=null, ignoreFirstLf=false}: {
+      {single = false, contentType = HtmlTagContentType.PARSABLE_DATA, preFix=null, ignoreFirstLf=false, createElement=null}: {
         single?:boolean;
         contentType?:HtmlTagContentType;
         preFix?:string;
         ignoreFirstLf?:boolean;
+        createElement?:(name:string, parent:HTMLElement)=>HTMLElement;
       } = {}) {
     this.single = single;
     this.preFix = preFix;
     this.contentType = contentType;
     this.ignoreFirstLf = ignoreFirstLf;
+    this.createElement = createElement || DEFAULT_CREATEELEMENT
   }
 
 }
@@ -154,3 +170,38 @@ function _makeSpecTags(){
 }
 
 _makeSpecTags();
+
+
+export interface IHtmlAttrDef {
+  setAttribute:(element:HTMLElement, name:string, value:string)=>void;
+  getAttribute:(element:HTMLElement, name:string)=>string;
+}
+
+export const DEFAULT_ATTR:IHtmlAttrDef = {
+  setAttribute(element:HTMLElement, name:string, value:string){
+    element.setAttribute(name, value);
+  },
+  getAttribute(element:HTMLElement, name:string){
+    return element.getAttribute(name);
+  }
+};
+
+export const DEFAULT_ATTR_PROP:IHtmlAttrDef = {
+  setAttribute(element:HTMLElement, name:string, value:string){
+    element[name] = value;
+  },
+  getAttribute(element:HTMLElement, name:string){
+    return element[name];
+  }
+};
+
+export interface IHtmlAttrDefConfig {
+  [name:string]:IHtmlAttrDef;
+}
+
+var _htmlAttrDefConfig: IHtmlAttrDefConfig = {
+  'value':DEFAULT_ATTR_PROP,
+  'selected':DEFAULT_ATTR_PROP,
+  'disabled':DEFAULT_ATTR_PROP,
+  'checked':DEFAULT_ATTR_PROP
+};

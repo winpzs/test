@@ -5,6 +5,14 @@ let stringEmpty = "",
     noop = function () { },
     slice = Array.prototype.slice;
 
+function testObject(obj:any){
+    if (obj.constructor &&
+        !core_hasOwn.call(obj, "constructor") &&
+        !core_hasOwn.call(obj.constructor.prototype, "isPrototypeOf")) {
+        return false;
+    }
+}
+
 export default class Cmpx {
     static stringEmpty = stringEmpty;
 
@@ -14,7 +22,7 @@ export default class Cmpx {
         return core_hasOwn.call(obj, prop);
     }
 
-    static trace(e:Error) {
+    static trace(e:any) {
         console.error && console.error(e.stack || e.message || e+'');
     }
 
@@ -62,24 +70,23 @@ export default class Cmpx {
             && !Cmpx.isElement(obj) && !Cmpx.isWindow(obj);//IE8以下isElement, isWindow认为Object
     }
 
-    static isPlainObject(obj) {
-        if (!Cmpx.isObject(obj)) {
-            return false;
+    static tryCatch(tryFn:Function, catchFn:(e:any)=>any, args:Array<any>=[], thisArg:any=null):any{
+        try{
+            return tryFn.apply(thisArg, args);
+        } catch(e){
+            return catchFn.call(thisArg, e);
         }
+    }
+
+    static isPlainObject(obj:any) {
+        if (!Cmpx.isObject(obj)) return false;
+
         try {
-            // Not own constructor property must be Object
-            if (obj.constructor &&
-                !core_hasOwn.call(obj, "constructor") &&
-                !core_hasOwn.call(obj.constructor.prototype, "isPrototypeOf")) {
-                return false;
-            }
+            if (testObject(obj) === false) return false;
         } catch (e) {
-            // IE8,9 Will throw exceptions on certain host objects #9897
             return false;
         }
 
-        // Own properties are enumerated firstly, so to speed up,
-        // if last one is own, then all properties are own.
         var key;
         for (key in obj) { }
 
