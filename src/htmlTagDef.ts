@@ -32,14 +32,25 @@ export enum HtmlTagContentType {
   PARSABLE_DATA
 }
 
+/**
+ * HtmlTag配置
+ */
 export interface IHtmlTagDefConfig{
   [key: string]: HtmlTagDef
 }
 
+/**
+ * 默认element创建器
+ * @param name 
+ * @param parent 
+ */
 export function DEFAULT_CREATEELEMENT(name:string, parent:HTMLElement=null):HTMLElement{
   return document.createElement(name);
 }
 
+/**
+ * HtmlTag定义类
+ */
 export class HtmlTagDef {
 
   /**
@@ -59,10 +70,18 @@ export class HtmlTagDef {
     _makeSpecTags();
   }
 
+  /**
+   * 获取属性定义
+   * @param name 
+   */
   static getHtmlAttrDef(name:string):IHtmlAttrDef{
     return _htmlAttrDefConfig[name] || DEFAULT_ATTR;
   }
 
+  /**
+   * 扩展属性定义
+   * @param p 
+   */
   static extendHtmlAttrDef(p:IHtmlAttrDef):void{
     Cmpx.extend(_htmlAttrDefConfig, p);
   }
@@ -70,25 +89,45 @@ export class HtmlTagDef {
   /**
    * 单行标签
    */
-  static singelTags:Array<string>;
-  /**
-   * 单行标签Map
-   */
-  static singelTagMap:{[name:string]:boolean};
+  static singelTags:{[name:string]:boolean};
   /**
    * 内容标签，不解释内容
    */
-  static rawTags:Array<string>;
+  static rawTags:{[name:string]:boolean};
   /**
    * 内容html编码标签，不解释内容
    */
-  static escapeRawTags:Array<string>;
+  static escapeRawTags:{[name:string]:boolean};
 
+  /**
+   * 编码Raw内容
+   * @param html 
+   */
+  static excapeRawContent(html:string):string{
+    return html.replace(_rawContentRegex, function(find:string, name:string, content:string){
+      return ['<', name, '>',Cmpx.encodeHtml(content),'</', name, '>'].join('');
+    });
+  }
+
+  /**
+   * 前缀
+   */
   preFix: string;
+  /**
+   * 内容类型
+   */
   contentType: HtmlTagContentType;
+  /**
+   * 内容忽略第一个Lf
+   */
   ignoreFirstLf: boolean;
+  /**
+   * 单行标签
+   */
   single: boolean;
-
+  /**
+   * element创建器
+   */
   createElement:(name:string, parent?:HTMLElement)=>HTMLElement;
 
   constructor(
@@ -153,8 +192,10 @@ var _htmlTagDefConfig: IHtmlTagDefConfig = {
       new HtmlTagDef({contentType: HtmlTagContentType.ESCAPABLE_RAW_TEXT, ignoreFirstLf: true}),
 };
 
+let _rawContentRegex:RegExp;
+
 function _makeSpecTags(){
-  var singleTags = [],
+  let singleTags = [],
       rawTags = [],
       escapeRawTags = [];
   Cmpx.eachProp(_htmlTagDefConfig, (item:HtmlTagDef,  name:string)=>{
@@ -162,21 +203,30 @@ function _makeSpecTags(){
     item.contentType == HtmlTagContentType.RAW_TEXT && rawTags.push(name);
     item.contentType == HtmlTagContentType.ESCAPABLE_RAW_TEXT && escapeRawTags.push(name);
   });
-  var o = HtmlTagDef.singelTagMap = {};
+  let o = HtmlTagDef.singelTags = {};
   Cmpx.each(singleTags, (name:string)=>o[name]=true);
-  HtmlTagDef.singelTags = singleTags;
-  HtmlTagDef.rawTags = rawTags;
-  HtmlTagDef.escapeRawTags = escapeRawTags;
+  o = HtmlTagDef.rawTags = {};
+  Cmpx.each(rawTags, (name:string)=>o[name]=true);
+  o = HtmlTagDef.escapeRawTags = {};
+  Cmpx.each(escapeRawTags, (name:string)=>o[name]=true);
+
+  let rawNames = rawTags.concat(escapeRawTags).join('|');
+  _rawContentRegex = new RegExp('<\\s*('+rawNames+')\\s*>((?:.|\\n|\\r)*?)</\\1>', 'gmi');
 }
 
 _makeSpecTags();
 
-
+/**
+ * HtmlAttr定义
+ */
 export interface IHtmlAttrDef {
   setAttribute:(element:HTMLElement, name:string, value:string)=>void;
   getAttribute:(element:HTMLElement, name:string)=>string;
 }
 
+/**
+ * 默认HtmlAttr定义
+ */
 export const DEFAULT_ATTR:IHtmlAttrDef = {
   setAttribute(element:HTMLElement, name:string, value:string){
     element.setAttribute(name, value);
@@ -186,6 +236,9 @@ export const DEFAULT_ATTR:IHtmlAttrDef = {
   }
 };
 
+/**
+ * 默认HtmlAttr prop定义
+ */
 export const DEFAULT_ATTR_PROP:IHtmlAttrDef = {
   setAttribute(element:HTMLElement, name:string, value:string){
     element[name] = value;
@@ -195,6 +248,9 @@ export const DEFAULT_ATTR_PROP:IHtmlAttrDef = {
   }
 };
 
+/**
+ * HtmlAttr配置
+ */
 export interface IHtmlAttrDefConfig {
   [name:string]:IHtmlAttrDef;
 }

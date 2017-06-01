@@ -332,12 +332,80 @@
         "tagName": "",
         "target": false,
         "cmd": false,
-        "find": "\n!\na",
-        "content": "\n!\na",
+        "find": "\n!\na\n",
+        "content": "\n!\na\n",
         "attrs": null,
         "end": true,
         "single": true,
         "index": 325,
+        "bind": false
+    },
+    {
+        "tagName": "textarea",
+        "target": true,
+        "cmd": false,
+        "find": "<textarea>",
+        "attrs": null,
+        "index": 330,
+        "children": [
+            {
+                "tagName": "",
+                "target": false,
+                "cmd": false,
+                "find": "\n&amp;lt;br&nbsp;/&amp;gt;&amp;lt;div&amp;gt;aaa&amp;lt;/div&amp;gt;\n",
+                "content": "\n&amp;lt;br&nbsp;/&amp;gt;&amp;lt;div&amp;gt;aaa&amp;lt;/div&amp;gt;\n",
+                "attrs": null,
+                "end": true,
+                "single": true,
+                "index": 340,
+                "bind": false
+            }
+        ]
+    },
+    {
+        "tagName": "",
+        "target": false,
+        "cmd": false,
+        "find": "\n",
+        "content": "\n",
+        "attrs": null,
+        "end": true,
+        "single": true,
+        "index": 420,
+        "bind": false
+    },
+    {
+        "tagName": "script",
+        "target": true,
+        "cmd": false,
+        "find": "<script>",
+        "attrs": null,
+        "index": 421,
+        "children": [
+            {
+                "tagName": "",
+                "target": false,
+                "cmd": false,
+                "find": "\nasdf&amp;lt;br&nbsp;/&amp;gt;\n",
+                "content": "\nasdf&amp;lt;br&nbsp;/&amp;gt;\n",
+                "attrs": null,
+                "end": true,
+                "single": true,
+                "index": 429,
+                "bind": false
+            }
+        ]
+    },
+    {
+        "tagName": "",
+        "target": false,
+        "cmd": false,
+        "find": "\n",
+        "content": "\n",
+        "attrs": null,
+        "end": true,
+        "single": true,
+        "index": 469,
         "bind": false
     }
 ]

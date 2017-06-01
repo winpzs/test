@@ -29,7 +29,7 @@ export interface htmlAttrItem {
 var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^\s\{\}]+)\s*(.*?)(\/*)\}\}/gim,
     _newTextContent = function (tmpl: string, start: number, end: number): htmlTagItem {
         var text = tmpl.substring(start, end),
-            bind = _textBackRegex.test(text);
+            bind = _cmdEncodeAttrBackRegex.test(text);
         return {
             tagName: '',
             target: false,
@@ -43,24 +43,26 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
             bind: bind
         };
     },
-    _textRegex = /\{\{((?!\/|\s*(?:if|else|for|tmpl|include)[ \}])(?:.|\r|\n)+?)\}\}/gm,
+    _cmdEncodeAttrRegex = /\{\{((?!\/|\s*(?:if|else|for|tmpl|include)[ \}])(?:.|\r|\n)+?)\}\}/gm,
     _makeTextTag = function (tmpl: string): string {
         //
-        return tmpl.replace(_textRegex, function (find, content) {
+        return tmpl.replace(_cmdEncodeAttrRegex, function (find, content) {
             return ['$($', encodeURIComponent(content), '$)$'].join('');
         });
     },
-    _textBackRegex = /\$\(\$(.+?)\$\)\$/gm,
+    _cmdEncodeAttrBackRegex = /\$\(\$(.+?)\$\)\$/gm,
     _backTextTag = function (tmpl: string): string {
         //
-        return tmpl.replace(_textBackRegex, function (find, content) {
+        return tmpl.replace(_cmdEncodeAttrBackRegex, function (find, content) {
             return ['{{', decodeURIComponent(content), '}}'].join('');
         });
     },
     _makeTags = function (tmpl: string): Array<htmlTagItem> {
         var lastIndex = 0, list: Array<htmlTagItem> = [],
-            singelTagMap = HtmlTagDef.singelTagMap;
+            singelTags = HtmlTagDef.singelTags;
         tmpl = _makeTextTag(tmpl);
+        tmpl = HtmlTagDef.excapeRawContent(tmpl);
+        console.log(tmpl);
         //console.log(_backTextTag(tmpl));
         tmpl.replace(_tagRegex, function (find: string, end1: string, tagName: string,
             tagContent: string, end2: string, txtEnd1: string, txtName: string, txtContent: string, txtEnd2: string, index: number) {
@@ -69,7 +71,7 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
                 list.push(_newTextContent(tmpl, lastIndex, index));
             }
 
-            var single = !!end2 || !!txtEnd2 || (tagName && singelTagMap[tagName]),
+            var single = !!end2 || !!txtEnd2 || (tagName && singelTags[tagName]),
                 end = !!end1 || !!txtEnd1 || single,
                 cmd = !!txtName;
 
@@ -116,7 +118,7 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
         var attrs: Array<htmlAttrItem> = [];
         content.replace(_attrRegex, function (find: string, name: string, split: string,
             value: string, index: number) {
-            var bind = _textBackRegex.test(value);
+            var bind = _cmdEncodeAttrBackRegex.test(value);
             if (bind)
                 value = _getBind(value, split);
             attrs.push({
@@ -145,7 +147,7 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
         return attrs;
     },
     _getBind = function (value: string, split: string) {
-        return value.replace(_textBackRegex, function (find: string, content: string, index: number) {
+        return value.replace(_cmdEncodeAttrBackRegex, function (find: string, content: string, index: number) {
             return [split, decodeURIComponent(content), split].join('+');
         });
     },

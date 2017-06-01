@@ -25,7 +25,14 @@ for Text
 <input type="text">aaaa</input>
 <input type="text" />
 !
-a`;
+a
+<textarea>
+<br /><div>aaa</div>
+</textarea>
+<script>
+asdf<br />
+</script>
+`;
 
 describe('Compile', () => {
   it('_makeTags', () => {
