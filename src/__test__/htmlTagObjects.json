@@ -24,8 +24,8 @@
                 "tagName": "",
                 "target": false,
                 "cmd": false,
-                "find": "\n  userOk\n",
-                "content": "\n  userOk\n",
+                "find": " userOk ",
+                "content": " userOk ",
                 "attrs": null,
                 "end": true,
                 "single": true,
@@ -39,18 +39,18 @@
                 "find": "{{else server.ok}}",
                 "content": "server.ok",
                 "attrs": null,
-                "index": 25,
+                "index": 23,
                 "children": [
                     {
                         "tagName": "",
                         "target": false,
                         "cmd": false,
-                        "find": "\nserverOk\n",
-                        "content": "\nserverOk\n",
+                        "find": " serverOk ",
+                        "content": " serverOk ",
                         "attrs": null,
                         "end": true,
                         "single": true,
-                        "index": 43,
+                        "index": 41,
                         "bind": false
                     },
                     {
@@ -60,18 +60,18 @@
                         "find": "{{else role.ok}}",
                         "content": "role.ok",
                         "attrs": null,
-                        "index": 53,
+                        "index": 51,
                         "children": [
                             {
                                 "tagName": "",
                                 "target": false,
                                 "cmd": false,
-                                "find": "\nroleOk\n",
-                                "content": "\nroleOk\n",
+                                "find": " roleOk ",
+                                "content": " roleOk ",
                                 "attrs": null,
                                 "end": true,
                                 "single": true,
-                                "index": 69,
+                                "index": 67,
                                 "bind": false
                             }
                         ]
@@ -84,12 +84,12 @@
         "tagName": "",
         "target": false,
         "cmd": false,
-        "find": "\n",
-        "content": "\n",
+        "find": " ",
+        "content": " ",
         "attrs": null,
         "end": true,
         "single": true,
-        "index": 84,
+        "index": 82,
         "bind": false
     },
     {
@@ -109,18 +109,18 @@
                 }
             }
         ],
-        "index": 85,
+        "index": 83,
         "children": [
             {
                 "tagName": "",
                 "target": false,
                 "cmd": false,
-                "find": "\nfor Text\n",
-                "content": "\nfor Text\n",
+                "find": " for Text ",
+                "content": " for Text ",
                 "attrs": null,
                 "end": true,
                 "single": true,
-                "index": 105,
+                "index": 103,
                 "bind": false
             }
         ]
@@ -129,12 +129,12 @@
         "tagName": "",
         "target": false,
         "cmd": false,
-        "find": "\n",
-        "content": "\n",
+        "find": " ",
+        "content": " ",
         "attrs": null,
         "end": true,
         "single": true,
-        "index": 123,
+        "index": 121,
         "bind": false
     },
     {
@@ -157,18 +157,18 @@
         ],
         "end": true,
         "single": true,
-        "index": 124
+        "index": 122
     },
     {
         "tagName": "",
         "target": false,
         "cmd": false,
-        "find": "\n",
-        "content": "\n",
+        "find": " ",
+        "content": " ",
         "attrs": null,
         "end": true,
         "single": true,
-        "index": 164,
+        "index": 162,
         "bind": false
     },
     {
@@ -184,7 +184,7 @@
                 "bind": true
             }
         ],
-        "index": 165,
+        "index": 163,
         "children": [
             {
                 "tagName": "",
@@ -195,7 +195,7 @@
                 "attrs": null,
                 "end": true,
                 "single": true,
-                "index": 190,
+                "index": 188,
                 "bind": false
             },
             {
@@ -211,7 +211,7 @@
                         "bind": false
                     }
                 ],
-                "index": 199,
+                "index": 197,
                 "children": [
                     {
                         "tagName": "",
@@ -222,7 +222,7 @@
                         "attrs": null,
                         "end": true,
                         "single": true,
-                        "index": 217,
+                        "index": 215,
                         "bind": true
                     }
                 ]
@@ -233,12 +233,12 @@
         "tagName": "",
         "target": false,
         "cmd": false,
-        "find": "\n",
-        "content": "\n",
+        "find": " ",
+        "content": " ",
         "attrs": null,
         "end": true,
         "single": true,
-        "index": 251,
+        "index": 249,
         "bind": false
     },
     {
@@ -256,18 +256,18 @@
         ],
         "end": true,
         "single": true,
-        "index": 252
+        "index": 250
     },
     {
         "tagName": "",
         "target": false,
         "cmd": false,
-        "find": "\n",
-        "content": "\n",
+        "find": " ",
+        "content": " ",
         "attrs": null,
         "end": true,
         "single": true,
-        "index": 271,
+        "index": 269,
         "bind": false
     },
     {
@@ -285,7 +285,7 @@
         ],
         "end": true,
         "single": true,
-        "index": 272
+        "index": 270
     },
     {
         "tagName": "",
@@ -296,19 +296,19 @@
         "attrs": null,
         "end": true,
         "single": true,
-        "index": 291,
+        "index": 289,
         "bind": false
     },
     {
         "tagName": "",
         "target": false,
         "cmd": false,
-        "find": "\n",
-        "content": "\n",
+        "find": " ",
+        "content": " ",
         "attrs": null,
         "end": true,
         "single": true,
-        "index": 303,
+        "index": 301,
         "bind": false
     },
     {
@@ -326,18 +326,18 @@
         ],
         "end": true,
         "single": true,
-        "index": 304
+        "index": 302
     },
     {
         "tagName": "",
         "target": false,
         "cmd": false,
-        "find": "\n!\na\n",
-        "content": "\n!\na\n",
+        "find": " ! a ",
+        "content": " ! a ",
         "attrs": null,
         "end": true,
         "single": true,
-        "index": 325,
+        "index": 323,
         "bind": false
     },
     {
@@ -346,18 +346,18 @@
         "cmd": false,
         "find": "<textarea>",
         "attrs": null,
-        "index": 330,
+        "index": 328,
         "children": [
             {
                 "tagName": "",
                 "target": false,
                 "cmd": false,
-                "find": "\n&amp;lt;br&nbsp;/&amp;gt;&amp;lt;div&amp;gt;aaa&amp;lt;/div&amp;gt;\n",
-                "content": "\n&amp;lt;br&nbsp;/&amp;gt;&amp;lt;div&amp;gt;aaa&amp;lt;/div&amp;gt;\n",
+                "find": "\n&amp;lt;br&nbsp;/&amp;gt;&amp;lt;div&amp;gt;aa\na&amp;lt;/div&amp;gt;\n",
+                "content": "\n&amp;lt;br&nbsp;/&amp;gt;&amp;lt;div&amp;gt;aa\na&amp;lt;/div&amp;gt;\n",
                 "attrs": null,
                 "end": true,
                 "single": true,
-                "index": 340,
+                "index": 338,
                 "bind": false
             }
         ]
@@ -366,12 +366,12 @@
         "tagName": "",
         "target": false,
         "cmd": false,
-        "find": "\n",
-        "content": "\n",
+        "find": " ",
+        "content": " ",
         "attrs": null,
         "end": true,
         "single": true,
-        "index": 420,
+        "index": 419,
         "bind": false
     },
     {
@@ -380,7 +380,7 @@
         "cmd": false,
         "find": "<script>",
         "attrs": null,
-        "index": 421,
+        "index": 420,
         "children": [
             {
                 "tagName": "",
@@ -391,7 +391,7 @@
                 "attrs": null,
                 "end": true,
                 "single": true,
-                "index": 429,
+                "index": 428,
                 "bind": false
             }
         ]
@@ -400,12 +400,12 @@
         "tagName": "",
         "target": false,
         "cmd": false,
-        "find": "\n",
-        "content": "\n",
+        "find": " ",
+        "content": " ",
         "attrs": null,
         "end": true,
         "single": true,
-        "index": 469,
+        "index": 468,
         "bind": false
     }
 ]

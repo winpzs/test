@@ -27,7 +27,8 @@ for Text
 !
 a
 <textarea>
-<br /><div>aaa</div>
+<br /><div>aa
+a</div>
 </textarea>
 <script>
 asdf<br />
@@ -36,7 +37,9 @@ asdf<br />
 
 describe('Compile', () => {
   it('_makeTags', () => {
+    console.time('Compile');
     var cp = new Compile(tmplCmd);
+    console.timeEnd('Compile');
     var tags = cp.getHtmlTagObjects();
     console.log(JSON.stringify(tags));
     //console.log((tags));

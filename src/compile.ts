@@ -71,8 +71,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): tagIn
         var lastIndex = 0, list: Array<tagInfo> = [],
             singelTags = HtmlTagDef.singelTags;
         tmpl = _makeTextTag(tmpl);
-        tmpl = HtmlTagDef.excapeRawContent(tmpl);
-        console.log(tmpl);
+        tmpl = HtmlTagDef.handleTagContent(tmpl);
         //console.log(_backTextTag(tmpl));
         tmpl.replace(_tagInfoRegex, function (find: string, end1: string, tagName: string,
             tagContent: string, end2: string, txtEnd1: string, txtName: string, txtContent: string, txtEnd2: string, index: number) {

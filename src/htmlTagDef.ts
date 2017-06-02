@@ -38,7 +38,7 @@ export enum HtmlTagContentType {
 /**
  * HtmlTag配置
  */
-export interface IHtmlTagDefConfig{
+export interface IHtmlTagDefConfig {
   [key: string]: HtmlTagDef
 }
 
@@ -47,7 +47,7 @@ export interface IHtmlTagDefConfig{
  * @param name 
  * @param parent 
  */
-export function DEFAULT_CREATEELEMENT(name:string, parent:HTMLElement=null):HTMLElement{
+export function DEFAULT_CREATEELEMENT(name: string, parent: HTMLElement = null): HTMLElement {
   return document.createElement(name);
 }
 
@@ -68,7 +68,7 @@ export class HtmlTagDef {
    * 扩展标签定义
    * @param p 标签配置
    */
-  static extendHtmlTagDef(p:IHtmlTagDefConfig):void{
+  static extendHtmlTagDef(p: IHtmlTagDefConfig): void {
     Cmpx.extend(_htmlTagDefConfig, p);
     _makeSpecTags();
   }
@@ -77,7 +77,7 @@ export class HtmlTagDef {
    * 获取属性定义
    * @param name 
    */
-  static getHtmlAttrDef(name:string):IHtmlAttrDef{
+  static getHtmlAttrDef(name: string): IHtmlAttrDef {
     return _htmlAttrDefConfig[name] || DEFAULT_ATTR;
   }
 
@@ -85,30 +85,30 @@ export class HtmlTagDef {
    * 扩展属性定义
    * @param p 
    */
-  static extendHtmlAttrDef(p:IHtmlAttrDef):void{
+  static extendHtmlAttrDef(p: IHtmlAttrDef): void {
     Cmpx.extend(_htmlAttrDefConfig, p);
   }
 
   /**
    * 单行标签
    */
-  static singelTags:{[name:string]:boolean};
+  static singelTags: { [name: string]: boolean };
   /**
    * 内容标签，不解释内容
    */
-  static rawTags:{[name:string]:boolean};
+  static rawTags: { [name: string]: boolean };
   /**
    * 内容html编码标签，不解释内容
    */
-  static escapeRawTags:{[name:string]:boolean};
+  static escapeRawTags: { [name: string]: boolean };
 
   /**
-   * 编码Raw内容
+   * 处理tag内容，删除多余空格，编码某些类型内容
    * @param html 
    */
-  static excapeRawContent(html:string):string{
-    return html.replace(_rawContentRegex, function(find:string, name:string, content:string){
-      return ['<', name, '>',Cmpx.encodeHtml(content),'</', name, '>'].join('');
+  static handleTagContent(html: string): string {
+     return _removeSpace(html).replace(_rawContentRegex, function (find: string, name: string, content: string) {
+      return ['<', name, '>', Cmpx.encodeHtml(content), '</', name, '>'].join('');
     });
   }
 
@@ -131,16 +131,16 @@ export class HtmlTagDef {
   /**
    * element创建器
    */
-  createElement:(name:string, parent?:HTMLElement)=>HTMLElement;
+  createElement: (name: string, parent?: HTMLElement) => HTMLElement;
 
   constructor(
-      {single = false, contentType = HtmlTagContentType.PARSABLE_DATA, preFix=null, ignoreFirstLf=false, createElement=null}: {
-        single?:boolean;
-        contentType?:HtmlTagContentType;
-        preFix?:string;
-        ignoreFirstLf?:boolean;
-        createElement?:(name:string, parent:HTMLElement)=>HTMLElement;
-      } = {}) {
+    { single = false, contentType = HtmlTagContentType.PARSABLE_DATA, preFix = null, ignoreFirstLf = false, createElement = null }: {
+      single?: boolean;
+      contentType?: HtmlTagContentType;
+      preFix?: string;
+      ignoreFirstLf?: boolean;
+      createElement?: (name: string, parent: HTMLElement) => HTMLElement;
+    } = {}) {
     this.single = single;
     this.preFix = preFix;
     this.contentType = contentType;
@@ -150,8 +150,8 @@ export class HtmlTagDef {
 
 }
 
-const _SINGLE_TAG = new HtmlTagDef({single: true}),
-      _DEFULE_TAG = new HtmlTagDef();
+const _SINGLE_TAG = new HtmlTagDef({ single: true }),
+  _DEFULE_TAG = new HtmlTagDef();
 
 var _htmlTagDefConfig: IHtmlTagDefConfig = {
   'base': _SINGLE_TAG,
@@ -175,8 +175,8 @@ var _htmlTagDefConfig: IHtmlTagDefConfig = {
   'td': _DEFULE_TAG,
   'th': _DEFULE_TAG,
   'col': _SINGLE_TAG,
-  'svg': new HtmlTagDef({preFix: 'svg'}),
-  'math': new HtmlTagDef({preFix: 'math'}),
+  'svg': new HtmlTagDef({ preFix: 'svg' }),
+  'math': new HtmlTagDef({ preFix: 'math' }),
   'li': _DEFULE_TAG,
   'dt': _DEFULE_TAG,
   'dd': _DEFULE_TAG,
@@ -186,35 +186,56 @@ var _htmlTagDefConfig: IHtmlTagDefConfig = {
   'rp': _DEFULE_TAG,
   'optgroup': _DEFULE_TAG,
   'option': _DEFULE_TAG,
-  'pre': new HtmlTagDef({ignoreFirstLf: true}),
-  'listing': new HtmlTagDef({ignoreFirstLf: true}),
-  'style': new HtmlTagDef({contentType: HtmlTagContentType.RAW_TEXT}),
-  'script': new HtmlTagDef({contentType: HtmlTagContentType.RAW_TEXT}),
-  'title': new HtmlTagDef({contentType: HtmlTagContentType.ESCAPABLE_RAW_TEXT}),
+  'pre': new HtmlTagDef({ ignoreFirstLf: true }),
+  'listing': new HtmlTagDef({ ignoreFirstLf: true }),
+  'style': new HtmlTagDef({ contentType: HtmlTagContentType.RAW_TEXT }),
+  'script': new HtmlTagDef({ contentType: HtmlTagContentType.RAW_TEXT }),
+  'title': new HtmlTagDef({ contentType: HtmlTagContentType.ESCAPABLE_RAW_TEXT }),
   'textarea':
-      new HtmlTagDef({contentType: HtmlTagContentType.ESCAPABLE_RAW_TEXT, ignoreFirstLf: true}),
+  new HtmlTagDef({ contentType: HtmlTagContentType.ESCAPABLE_RAW_TEXT, ignoreFirstLf: true }),
 };
 
-let _rawContentRegex:RegExp;
+let _rawContentRegex: RegExp,
+  _escContentRegex: RegExp,
+  _removeCmdRegex:RegExp = /\{\{((?:.|\n|\r)*?)\}\}/gmi;
 
-function _makeSpecTags(){
+//删除多余空格
+function _removeSpace(html: string): string {
+  html = html.replace(_removeCmdRegex, function (find:string, content: string) {
+    return  ['{{', encodeURIComponent(content),'}}'].join('');
+  }).replace(_escContentRegex, function (find: string, name: string, content: string, cmdContent:string) {
+    return  ['<', name, '>', encodeURIComponent(content), '</', name, '>'].join('');
+  })
+  .replace(/(?:\n|\r)+/gmi, ' ').replace(/\s{2,}/gmi, ' ')
+  .replace(_escContentRegex, function (find: string, name: string, content: string, cmdContent:string) {
+    return  ['<', name, '>', decodeURIComponent(content), '</', name, '>'].join('');
+  }).replace(_removeCmdRegex, function (find:string, content: string) {
+    return  ['{{', decodeURIComponent(content),'}}'].join('');
+  });
+
+  return html;
+}
+
+function _makeSpecTags() {
   let singleTags = [],
-      rawTags = [],
-      escapeRawTags = [];
-  Cmpx.eachProp(_htmlTagDefConfig, (item:HtmlTagDef,  name:string)=>{
+    rawTags = [],
+    escapeRawTags = [];
+  Cmpx.eachProp(_htmlTagDefConfig, (item: HtmlTagDef, name: string) => {
     item.single && singleTags.push(name);
     item.contentType == HtmlTagContentType.RAW_TEXT && rawTags.push(name);
     item.contentType == HtmlTagContentType.ESCAPABLE_RAW_TEXT && escapeRawTags.push(name);
   });
   let o = HtmlTagDef.singelTags = {};
-  Cmpx.each(singleTags, (name:string)=>o[name]=true);
+  Cmpx.each(singleTags, (name: string) => o[name] = true);
   o = HtmlTagDef.rawTags = {};
-  Cmpx.each(rawTags, (name:string)=>o[name]=true);
+  Cmpx.each(rawTags, (name: string) => o[name] = true);
   o = HtmlTagDef.escapeRawTags = {};
-  Cmpx.each(escapeRawTags, (name:string)=>o[name]=true);
+  Cmpx.each(escapeRawTags, (name: string) => o[name] = true);
 
   let rawNames = rawTags.concat(escapeRawTags).join('|');
-  _rawContentRegex = new RegExp('<\\s*('+rawNames+')\\s*>((?:.|\\n|\\r)*?)</\\1>', 'gmi');
+  _rawContentRegex = new RegExp('<\\s*(' + rawNames + ')\\s*>((?:.|\\n|\\r)*?)</\\1>', 'gmi');
+  rawNames = [rawNames, 'pre'].join('|');
+  _escContentRegex = new RegExp('<\\s*(' + rawNames + ')\\s*>((?:.|\\n|\\r)*?)</\\1>', 'gmi');
 }
 
 _makeSpecTags();
@@ -223,18 +244,18 @@ _makeSpecTags();
  * HtmlAttr定义
  */
 export interface IHtmlAttrDef {
-  setAttribute:(element:HTMLElement, name:string, value:string)=>void;
-  getAttribute:(element:HTMLElement, name:string)=>string;
+  setAttribute: (element: HTMLElement, name: string, value: string) => void;
+  getAttribute: (element: HTMLElement, name: string) => string;
 }
 
 /**
  * 默认HtmlAttr定义
  */
-export const DEFAULT_ATTR:IHtmlAttrDef = {
-  setAttribute(element:HTMLElement, name:string, value:string){
+export const DEFAULT_ATTR: IHtmlAttrDef = {
+  setAttribute(element: HTMLElement, name: string, value: string) {
     element.setAttribute(name, value);
   },
-  getAttribute(element:HTMLElement, name:string){
+  getAttribute(element: HTMLElement, name: string) {
     return element.getAttribute(name);
   }
 };
@@ -242,11 +263,11 @@ export const DEFAULT_ATTR:IHtmlAttrDef = {
 /**
  * 默认HtmlAttr prop定义
  */
-export const DEFAULT_ATTR_PROP:IHtmlAttrDef = {
-  setAttribute(element:HTMLElement, name:string, value:string){
+export const DEFAULT_ATTR_PROP: IHtmlAttrDef = {
+  setAttribute(element: HTMLElement, name: string, value: string) {
     element[name] = value;
   },
-  getAttribute(element:HTMLElement, name:string){
+  getAttribute(element: HTMLElement, name: string) {
     return element[name];
   }
 };
@@ -255,12 +276,14 @@ export const DEFAULT_ATTR_PROP:IHtmlAttrDef = {
  * HtmlAttr配置
  */
 export interface IHtmlAttrDefConfig {
-  [name:string]:IHtmlAttrDef;
+  [name: string]: IHtmlAttrDef;
 }
 
 var _htmlAttrDefConfig: IHtmlAttrDefConfig = {
-  'value':DEFAULT_ATTR_PROP,
-  'selected':DEFAULT_ATTR_PROP,
-  'disabled':DEFAULT_ATTR_PROP,
-  'checked':DEFAULT_ATTR_PROP
+  'value': DEFAULT_ATTR_PROP,
+  'src': DEFAULT_ATTR_PROP,
+  'type': DEFAULT_ATTR_PROP,
+  'selected': DEFAULT_ATTR_PROP,
+  'disabled': DEFAULT_ATTR_PROP,
+  'checked': DEFAULT_ATTR_PROP
 };
