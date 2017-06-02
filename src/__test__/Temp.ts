@@ -1,9 +1,10 @@
-import { Componet } from './../componet';
 
 import { expect } from 'chai';
 import 'mocha';
-import { Compile, Config } from '../compile';
+import { Compile, Config, CompileElement } from '../compile';
 import { HtmlTagDef } from '../htmlTagDef';
+import Cmpx from '../cmpx';
+import { Componet } from '../componet';
 
 var tmpl = `before<div><span 
  id="spanId" name="spanName" content="{{aaa+aa
@@ -78,9 +79,37 @@ describe('Compile', () => {
 // new TestComponet();
 
 
-// var cmpFun = function(Cmpx, Compile, htmlTagDef:HtmlTagDef){
-//   htmlTagDef.createElement
-//   Compile.Cre
-// };
-// var cElement = Compile.createElement('div', []);
-// cElement = Compile.createElement('div', [], cElement);
+function cmpFun(Cmpx:any, Compile, componet:Componet, parent:HTMLElement){
+  var element;
+
+  Compile.createElement('div', [], [
+    Compile.createComponet('user', [], [
+      Compile.createTextNode('aaaaaa'),
+      Compile.createElement('aaaaaa', [])
+    ]),
+    Compile.createTextNode('aaaaaa'),
+    Compile.createElement('div', [
+      Compile.createComponet('role', [], []),
+      Compile.createTextNode('bbbb'),
+      Compile.createElement('div', [])
+    ]),
+    Compile.createElement('div', []),
+    Compile.forRender(function(){ return this.list; }, function(item, $index){
+      return [
+        Compile.createElement('div', [])
+      ]; 
+    }, componet),
+    Compile.ifRender(function(){ return this.isOk; }, function(){
+      return [
+        Compile.createElement('div', [])
+      ]; 
+    }, function(){
+      return [
+        Compile.createElement('div', [])
+      ]; 
+    }, componet),
+    Compile.tmplRender('tmpl1', [], componet),
+    Compile.includeRender('tmpl1', componet)
+  ], parent);
+
+}

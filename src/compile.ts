@@ -1,5 +1,6 @@
 import Cmpx from './cmpx';
 import { HtmlTagDef } from './htmlTagDef';
+import { Componet } from './componet';
 
 /**
  * 标签信息
@@ -20,6 +21,7 @@ export interface tagInfo {
     bind?: boolean;
     children?: Array<tagInfo>;
     parent?: tagInfo;
+    componet?:boolean;
 }
 
 /**
@@ -91,6 +93,8 @@ var _newTextContent = function (tmpl: string, start: number, end: number): tagIn
                     attrs = _getForAttrInfos(txtContent);
                 }
 
+                if (!cmd)
+
                 var item: tagInfo = {
                     tagName: (tagName || txtName).toLowerCase(),
                     target: !cmd,
@@ -100,7 +104,8 @@ var _newTextContent = function (tmpl: string, start: number, end: number): tagIn
                     attrs: attrs,
                     end: end,
                     single: single,
-                    index: index
+                    index: index,
+                    componet:cmd?false:!!_registerComponet[tagName]
                 };
                 list.push(item);
             }
@@ -206,7 +211,8 @@ export class CompileElement {
     children: Array<CompileElement>;
     element: HTMLElement;
     //textNode: Text;
-    constructor(name: string, attrs: Array<attrInfo> = null, parent: CompileElement | HTMLElement = null) {
+    constructor(name: string, attrs: Array<attrInfo> = null,
+        children:Array<CompileElement> = null, parent: CompileElement | HTMLElement = null) {
         this.name = name;
         this.attrs = attrs;
         this.parent = parent && (parent  instanceof CompileElement) ? parent : null;
@@ -228,12 +234,57 @@ export class CompileElement {
     }
 }
 
+let _tmplName = '__tmpl__',
+    _getComponetTmpl = function(componet:Componet, id:string):Array<any>{
+        let tmpls = componet[_tmplName];
+        if (!tmpls || !tmpls[id])
+            return componet.parent ?_getComponetTmpl(componet.parent, id) : null;
+        else
+            return tmpls[id];
+    }
+
 export class Compile {
-    public static createElement(name: string, attrs: Array<attrInfo> = null, parent: CompileElement = null): CompileElement {
-        let element = new CompileElement(name, attrs, parent);
+    public static createElement(name: string, attrs: Array<attrInfo> = null,
+        children:Array<CompileElement> = null, parent: CompileElement | HTMLElement = null): CompileElement {
+
+        let element = new CompileElement(name, attrs, children, parent);
         return element;
     }
 
+    public static createComponet(name:string, attrs: Array<attrInfo> = null):Componet {
+        let cmp:any = _registerComponet[name];
+        return new cmp(attrs);
+    }
+
+    public static createTextNode(content:string):Text{
+        return document.createTextNode(content);
+    }
+
+    public static forRender(dataFn, eachFn, componet:Componet):Array<any> {
+        var datas = dataFn.call(componet);
+        var list = [];
+        Cmpx.each(datas, function(item, index){
+            list = list.concat(eachFn.apply(this, arguments));
+        }, componet);
+        return list;
+    }
+
+    public static ifRender(ifFun, trueFn, falseFn, componet:Componet):Array<any> {
+        if (ifFun.call(componet))
+            return trueFn.call(componet);
+        else
+            return falseFn.call(componet);
+    }
+
+    public static tmplRender(id, elements:Array<any>, componet:Componet):void {
+        var tmpls = componet[_tmplName]
+        tmpls || (tmpls = componet[_tmplName] = {});
+        tmpls[id] = elements
+    }
+
+    public static includeRender(id:string, componet:Componet):Object{
+        return _getComponetTmpl(componet, id);
+    }
 
     private tmpl: string;
     private _htmlTags: Array<tagInfo>;
