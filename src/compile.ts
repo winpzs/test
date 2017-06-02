@@ -1,4 +1,4 @@
-import Cmpx from "./cmpx";
+import Cmpx from './cmpx';
 import { HtmlTagDef } from './htmlTagDef';
 
 /**
@@ -201,17 +201,30 @@ export function Config(config: {
 
 export class CompileElement {
     name: string;
-    parent: CompileElement;
+    parent: CompileElement | HTMLElement;
     attrs: Array<attrInfo>;
     children: Array<CompileElement>;
     element: HTMLElement;
-    textNode: Text;
-    constructor(name: string, attrs: Array<attrInfo> = null, parent: CompileElement = null) {
+    //textNode: Text;
+    constructor(name: string, attrs: Array<attrInfo> = null, parent: CompileElement | HTMLElement = null) {
         this.name = name;
         this.attrs = attrs;
-        this.parent = parent;
-        this.element = document.createElement('aaaaa');
-        this.textNode = document.createTextNode('aaaaa');
+        this.parent = parent && (parent  instanceof CompileElement) ? parent : null;
+        this.element = document.createElement(name);
+        Cmpx.each(attrs, (attr:attrInfo)=>{
+            this.setAttribute(attr.name, attr.value);
+        });
+        var elParent:HTMLElement = this.parent ? this.parent.element : parent as HTMLElement;
+        elParent && this.element.appendChild(elParent);
+        //this.textNode = document.createTextNode('aaaaa');
+    }
+
+    setAttribute(name: string, value: string):void {
+        HtmlTagDef.getHtmlAttrDef(name).setAttribute(this.element, name, value);
+    }
+
+    getAttribute(name: string):string {
+        return HtmlTagDef.getHtmlAttrDef(name).getAttribute(this.element, name);
     }
 }
 

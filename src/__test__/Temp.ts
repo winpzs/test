@@ -1,8 +1,9 @@
 import { Componet } from './../componet';
-import { Compile, Config } from './../compile';
 
 import { expect } from 'chai';
 import 'mocha';
+import { Compile, Config } from '../compile';
+import { HtmlTagDef } from '../htmlTagDef';
 
 var tmpl = `before<div><span 
  id="spanId" name="spanName" content="{{aaa+aa
@@ -49,29 +50,37 @@ describe('Compile', () => {
 });
 
 
-@Config({
-  name:'app',
-  tmpl:`before<div><span 
- id="spanId" name="spanName" content="{{aaa+aa
-    a》&<>}}">spanText</span>{{bbbbbb}}  divT{{ if a}}ext{{else user.isOk > newaaa }} {{ for item in list}} {{/for}}{{/if}}</div>
- {{for item in list tmpl="user.html" /}}{{tmpl}} {{include src="list.html" /}} tmplText {{/tmpl}}{{include}}`
-})
-class TestComponet extends Componet {
+// @Config({
+//   name:'app',
+//   tmpl:`before<div><span 
+//  id="spanId" name="spanName" content="{{aaa+aa
+//     a》&<>}}">spanText</span>{{bbbbbb}}  divT{{ if a}}ext{{else user.isOk > newaaa }} {{ for item in list}} {{/for}}{{/if}}</div>
+//  {{for item in list tmpl="user.html" /}}{{tmpl}} {{include src="list.html" /}} tmplText {{/tmpl}}{{include}}`
+// })
+// class TestComponet extends Componet {
 
-  constructor(){
-    super();
-    console.log(this['__config__']);
-  }
+//   constructor(){
+//     super();
+//     console.log(this['__config__']);
+//   }
 
-}
+// }
 
 
-@Config({
-  name:'appEx',
-  tmpl:`<div></div>`
-})
-class TestComponetEx extends Componet {
+// @Config({
+//   name:'appEx',
+//   tmpl:`<div></div>`
+// })
+// class TestComponetEx extends Componet {
 
-}
+// }
 
-new TestComponet();
+// new TestComponet();
+
+
+// var cmpFun = function(Cmpx, Compile, htmlTagDef:HtmlTagDef){
+//   htmlTagDef.createElement
+//   Compile.Cre
+// };
+// var cElement = Compile.createElement('div', []);
+// cElement = Compile.createElement('div', [], cElement);
