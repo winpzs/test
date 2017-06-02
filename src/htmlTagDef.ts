@@ -26,6 +26,9 @@
 
 import Cmpx from "./cmpx";
 
+/**
+ * HtmlTag内容类型
+ */
 export enum HtmlTagContentType {
   RAW_TEXT,
   ESCAPABLE_RAW_TEXT,

@@ -1,7 +1,10 @@
 import Cmpx from "./cmpx";
 import { HtmlTagDef } from './htmlTagDef';
 
-export interface htmlTagItem {
+/**
+ * 标签信息
+ */
+export interface tagInfo {
     tagName: string;
     //是否标签，如：<div>
     target: boolean;
@@ -9,27 +12,30 @@ export interface htmlTagItem {
     cmd: boolean;
     find: string;
     content: string;
-    attrs: Array<htmlAttrItem>;
+    attrs: Array<attrInfo>;
     end: boolean;
     single: boolean;
     index: number;
     //是否为绑定
     bind?: boolean;
-    children?: Array<htmlTagItem>;
-    parent?: htmlTagItem;
+    children?: Array<tagInfo>;
+    parent?: tagInfo;
 }
 
-export interface htmlAttrItem {
+/**
+ * 属性信息
+ */
+export interface attrInfo {
     name: string;
     value: string;
     bind: boolean;
     extend?: any;
 }
 
-var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^\s\{\}]+)\s*(.*?)(\/*)\}\}/gim,
-    _newTextContent = function (tmpl: string, start: number, end: number): htmlTagItem {
+    //新建一个text节点
+var _newTextContent = function (tmpl: string, start: number, end: number): tagInfo {
         var text = tmpl.substring(start, end),
-            bind = _cmdEncodeAttrBackRegex.test(text);
+            bind = _cmdDecodeAttrRegex.test(text);
         return {
             tagName: '',
             target: false,
@@ -43,6 +49,7 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
             bind: bind
         };
     },
+    //将{{this.name}}绑定标签转成$($this.name$)$
     _cmdEncodeAttrRegex = /\{\{((?!\/|\s*(?:if|else|for|tmpl|include)[ \}])(?:.|\r|\n)+?)\}\}/gm,
     _makeTextTag = function (tmpl: string): string {
         //
@@ -50,21 +57,24 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
             return ['$($', encodeURIComponent(content), '$)$'].join('');
         });
     },
-    _cmdEncodeAttrBackRegex = /\$\(\$(.+?)\$\)\$/gm,
+    //把$($this.name$)$还原
+    _cmdDecodeAttrRegex = /\$\(\$(.+?)\$\)\$/gm,
     _backTextTag = function (tmpl: string): string {
         //
-        return tmpl.replace(_cmdEncodeAttrBackRegex, function (find, content) {
+        return tmpl.replace(_cmdDecodeAttrRegex, function (find, content) {
             return ['{{', decodeURIComponent(content), '}}'].join('');
         });
     },
-    _makeTags = function (tmpl: string): Array<htmlTagItem> {
-        var lastIndex = 0, list: Array<htmlTagItem> = [],
+    //查找分析tag和cmd
+    _tagInfoRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^\s\{\}]+)\s*(.*?)(\/*)\}\}/gim,
+    _makeTagInfos = function (tmpl: string): Array<tagInfo> {
+        var lastIndex = 0, list: Array<tagInfo> = [],
             singelTags = HtmlTagDef.singelTags;
         tmpl = _makeTextTag(tmpl);
         tmpl = HtmlTagDef.excapeRawContent(tmpl);
         console.log(tmpl);
         //console.log(_backTextTag(tmpl));
-        tmpl.replace(_tagRegex, function (find: string, end1: string, tagName: string,
+        tmpl.replace(_tagInfoRegex, function (find: string, end1: string, tagName: string,
             tagContent: string, end2: string, txtEnd1: string, txtName: string, txtContent: string, txtEnd2: string, index: number) {
 
             if (index > lastIndex) {
@@ -77,13 +87,13 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
 
             if (cmd || !(single && !!end1)) {
 
-                var attrs = !cmd && !!tagContent ? _getAttrs(tagContent) : null;
+                var attrs = !cmd && !!tagContent ? _getAttrInfos(tagContent) : null;
                 if (cmd && (single || !end) && txtName == 'for') {
-                    attrs = _getForAttrs(txtContent);
+                    attrs = _getForAttrInfos(txtContent);
                 }
 
-                var item: htmlTagItem = {
-                    tagName: tagName || txtName,
+                var item: tagInfo = {
+                    tagName: (tagName || txtName).toLowerCase(),
                     target: !cmd,
                     cmd: cmd,
                     find: find,
@@ -104,21 +114,17 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
         if (index > lastIndex) {
             list.push(_newTextContent(tmpl, lastIndex, index));
         }
-        // Cmpx.each(list, function(item:htmlTagItem, index:number){
-        //     console.log(JSON.stringify(item));
-        //     console.log('  -----------------');
-        // });
-        //console.log(list.length);
-        var outList: Array<htmlTagItem> = [];
-        _makeHtmlTagChildren(list, outList, list.length);
+        var outList: Array<tagInfo> = [];
+        _makeTagInfoChildren(list, outList, list.length);
         return outList;
     },
-    _attrRegex = /\s*([^= ]+)\s*=\s*(["'])((?:.|\b|\r)*?)\2/gm,
-    _getAttrs = function (content: string): Array<htmlAttrItem> {
-        var attrs: Array<htmlAttrItem> = [];
-        content.replace(_attrRegex, function (find: string, name: string, split: string,
+    //获取attrInfo
+    _attrInfoRegex = /\s*([^= ]+)\s*=\s*(["'])((?:.|\b|\r)*?)\2/gm,
+    _getAttrInfos = function (content: string): Array<attrInfo> {
+        var attrs: Array<attrInfo> = [];
+        content.replace(_attrInfoRegex, function (find: string, name: string, split: string,
             value: string, index: number) {
-            var bind = _cmdEncodeAttrBackRegex.test(value);
+            var bind = _cmdDecodeAttrRegex.test(value);
             if (bind)
                 value = _getBind(value, split);
             attrs.push({
@@ -131,10 +137,11 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
         //console.log(attrs);
         return attrs;
     },
+    //获取cmd form attrInfo
     _forAttrRegex = /\s*([^\s]+)\s*\in\s*([^\s]+)\s*(?:\s*tmpl\s*=\s*([\'\"])(.*?)\3)*/i,
-    _getForAttrs = function (content: string): Array<htmlAttrItem> {
+    _getForAttrInfos = function (content: string): Array<attrInfo> {
         var extend = _forAttrRegex.exec(content);
-        var attrs: Array<htmlAttrItem> = [{
+        var attrs: Array<attrInfo> = [{
             name: '',
             value: '',
             bind: true,
@@ -146,14 +153,15 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
         }];
         return attrs;
     },
+    //获取内容绑定信息，如 name="aaa{{this.name}}"
     _getBind = function (value: string, split: string) {
-        return value.replace(_cmdEncodeAttrBackRegex, function (find: string, content: string, index: number) {
+        return value.replace(_cmdDecodeAttrRegex, function (find: string, content: string, index: number) {
             return [split, decodeURIComponent(content), split].join('+');
         });
     },
-    _makeHtmlTagChildren = function (attrs: Array<htmlTagItem>, outList: Array<htmlTagItem>,
-        len: number, index: number = 0, parent: htmlTagItem = null): number {
-        var item: htmlTagItem;
+    _makeTagInfoChildren = function (attrs: Array<tagInfo>, outList: Array<tagInfo>,
+        len: number, index: number = 0, parent: tagInfo = null): number {
+        var item: tagInfo;
         while (index < len) {
             item = attrs[index++];
             if (item.cmd || item.target) {
@@ -164,7 +172,7 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
                 } else {
                     outList.push(item);
                     item.children = [];
-                    index = _makeHtmlTagChildren(attrs, item.children, len, index, item);
+                    index = _makeTagInfoChildren(attrs, item.children, len, index, item);
                     if (item && item.cmd && item.tagName == 'else')
                         break;
                 }
@@ -177,13 +185,17 @@ var _tagRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^
 
 var _registerComponet: { [selector: string]: Function } = {};
 
+/**
+ * 注入组件配置信息
+ * @param config 
+ */
 export function Config(config: {
-    selector: string;
+    name: string;
     tmpl?: string;
     tmplUrl?: string;
 }) {
     return function (constructor: Function) {
-        _registerComponet[config.selector] = constructor;
+        _registerComponet[config.name] = constructor;
         constructor.prototype['__config__'] = config;
     };
 }
@@ -191,11 +203,11 @@ export function Config(config: {
 export class CompileElement {
     name: string;
     parent: CompileElement;
-    attrs: Array<htmlAttrItem>;
+    attrs: Array<attrInfo>;
     children: Array<CompileElement>;
     element: HTMLElement;
     textNode: Text;
-    constructor(name: string, attrs: Array<htmlAttrItem> = null, parent: CompileElement = null) {
+    constructor(name: string, attrs: Array<attrInfo> = null, parent: CompileElement = null) {
         this.name = name;
         this.attrs = attrs;
         this.parent = parent;
@@ -205,20 +217,20 @@ export class CompileElement {
 }
 
 export class Compile {
-    public static createElement(name: string, attrs: Array<htmlAttrItem> = null, parent: CompileElement = null): CompileElement {
+    public static createElement(name: string, attrs: Array<attrInfo> = null, parent: CompileElement = null): CompileElement {
         let element = new CompileElement(name, attrs, parent);
         return element;
     }
 
 
     private tmpl: string;
-    private _htmlTags: Array<htmlTagItem>;
-    public getHtmlTagObjects(): Array<htmlTagItem> {
+    private _htmlTags: Array<tagInfo>;
+    public getHtmlTagObjects(): Array<tagInfo> {
         return this._htmlTags;
     };
 
     constructor(tmpl: string) {
         this.tmpl = tmpl;
-        this._htmlTags = _makeTags(tmpl);
+        this._htmlTags = _makeTagInfos(tmpl);
     }
 }

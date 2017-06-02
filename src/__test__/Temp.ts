@@ -47,7 +47,7 @@ describe('Compile', () => {
 
 
 @Config({
-  selector:'app',
+  name:'app',
   tmpl:`before<div><span 
  id="spanId" name="spanName" content="{{aaa+aa
     a》&<>}}">spanText</span>{{bbbbbb}}  divT{{ if a}}ext{{else user.isOk > newaaa }} {{ for item in list}} {{/for}}{{/if}}</div>
@@ -64,7 +64,7 @@ class TestComponet extends Componet {
 
 
 @Config({
-  selector:'appEx',
+  name:'appEx',
   tmpl:`<div></div>`
 })
 class TestComponetEx extends Componet {
