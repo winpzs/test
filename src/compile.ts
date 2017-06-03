@@ -1,5 +1,5 @@
 import Cmpx from './cmpx';
-import { HtmlTagDef } from './htmlTagDef';
+import { HtmlTagDef, IHtmlAttrDef } from './htmlTagDef';
 import { Componet } from './componet';
 
 /**
@@ -68,7 +68,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): tagIn
         });
     },
     //查找分析tag和cmd
-    _tagInfoRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*)(\/*)\s*\>|\{\{\s*(\/*)\s*([^\s\{\}]+)\s*(.*?)(\/*)\}\}/gim,
+    _tagInfoRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*?)(\/*)\s*\>|\{\{\s*(\/*)\s*([^\s\{\}]+)\s*(.*?)(\/*)\}\}/gim,
     _makeTagInfos = function (tmpl: string): Array<tagInfo> {
         var lastIndex = 0, list: Array<tagInfo> = [],
             singelTags = HtmlTagDef.singelTags;
@@ -93,8 +93,6 @@ var _newTextContent = function (tmpl: string, start: number, end: number): tagIn
                     attrs = _getForAttrInfos(txtContent);
                 }
 
-                if (!cmd)
-
                 var item: tagInfo = {
                     tagName: (tagName || txtName).toLowerCase(),
                     target: !cmd,
@@ -105,7 +103,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): tagIn
                     end: end,
                     single: single,
                     index: index,
-                    componet:cmd?false:!!_registerComponet[tagName]
+                    componet:cmd?false:!!_registerVM[tagName]
                 };
                 list.push(item);
             }
@@ -123,16 +121,16 @@ var _newTextContent = function (tmpl: string, start: number, end: number): tagIn
         return outList;
     },
     //获取attrInfo
-    _attrInfoRegex = /\s*([^= ]+)\s*=\s*(["'])((?:.|\b|\r)*?)\2/gm,
+    _attrInfoRegex = /\s*([^= ]+)\s*=\s*(["'])((?:.|\b|\r)*?)\2|\s*([^= /]+)\s*/gm,
     _getAttrInfos = function (content: string): Array<attrInfo> {
         var attrs: Array<attrInfo> = [];
         content.replace(_attrInfoRegex, function (find: string, name: string, split: string,
-            value: string, index: number) {
+            value: string, name1:string, index: number) {
             var bind = _cmdDecodeAttrRegex.test(value);
             if (bind)
                 value = _getBind(value, split);
             attrs.push({
-                name: name,
+                name: name || name1,
                 value: value,
                 bind: bind
             });
@@ -187,21 +185,108 @@ var _newTextContent = function (tmpl: string, start: number, end: number): tagIn
         return index;
     };
 
-var _registerComponet: { [selector: string]: Function } = {};
+var _registerVM: { [selector: string]: Function } = {},
+    _vmName = '__vm__';
 
 /**
  * 注入组件配置信息
  * @param config 
  */
-export function Config(config: {
+export function VM(vm: {
     name: string;
     tmpl?: string;
     tmplUrl?: string;
 }) {
     return function (constructor: Function) {
-        _registerComponet[config.name] = constructor;
-        constructor.prototype['__config__'] = config;
+        _registerVM[vm.name] = constructor;
+        constructor.prototype[_vmName] = vm;
     };
+}
+
+export interface ICompileBind {
+    componet:Componet;
+    isRead?:boolean;
+    isWrite?:boolean;
+    getContext:()=>any;
+    setContext?:(value:any)=>void;
+    update:()=>void;
+}
+
+export class AttrBind implements ICompileBind {
+    private attrDef:IHtmlAttrDef;
+    constructor(
+        readonly componet:Componet,
+        readonly element:HTMLElement,
+        readonly name:string,
+        readonly isRead:boolean,
+        readonly isWrite:boolean,
+        readonly getContext:()=>any,
+        readonly setContext:(value:any)=>void){
+            this.attrDef = HtmlTagDef.getHtmlAttrDef(name);
+         }
+
+    private value:string;
+    update(){
+        let isRead = false;
+        if (this.isRead){
+            let value = this.getContext();
+            if (value != this.value){
+                this.value = value;
+                this.setAttribute(value);
+                isRead = true;
+            }
+        }
+        if (!isRead && this.isWrite){
+            let attrValue = this.getAttribute();
+            if (attrValue != this.value){
+                this.value = attrValue;
+                this.setContext(attrValue);
+            }
+        }
+    }
+
+    setAttribute(value: string):void {
+        this.attrDef.setAttribute(this.element, this.name, value);
+    }
+
+    getAttribute():string {
+        return this.attrDef.getAttribute(this.element, this.name);
+    }
+}
+
+export class TextBind implements ICompileBind {
+    constructor(
+        readonly componet:Componet,
+        readonly text:Text,
+        readonly getContext:()=>any){}
+
+    private value:string;
+    update(){
+        let value = this.getContext();
+        if (this.value != value){
+            this.value = value;
+            this.text.textContent = value;
+        }
+    }
+
+}
+
+export class CmdBind implements ICompileBind {
+    constructor(
+        readonly componet:Componet,
+        readonly text:Text,
+        readonly getContext:()=>any,
+        readonly done:()=>void){}
+
+    private value:string;
+    update(){
+        let value = this.getContext();
+        if (this.value != value){
+            this.value = value;
+            this.done();
+        }
+    }
+
 }
 
 export class CompileElement {
@@ -252,7 +337,7 @@ export class Compile {
     }
 
     public static createComponet(name:string, attrs: Array<attrInfo> = null):Componet {
-        let cmp:any = _registerComponet[name];
+        let cmp:any = _registerVM[name];
         return new cmp(attrs);
     }
 

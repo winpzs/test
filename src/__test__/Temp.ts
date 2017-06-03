@@ -1,7 +1,7 @@
 
 import { expect } from 'chai';
 import 'mocha';
-import { Compile, Config, CompileElement } from '../compile';
+import { Compile, VM, CompileElement } from '../compile';
 import { HtmlTagDef } from '../htmlTagDef';
 import Cmpx from '../cmpx';
 import { Componet } from '../componet';
@@ -22,7 +22,7 @@ roleOk
 for Text
 {{/for}}
 {{for item in list tmpl="index.html" /}}
-<div text="{{text}}ok"> divText <span id="spanId"> spanText:{{name}} </span></div>
+<div text="{{text}}ok"> divText <span id="spanId"> spanText:{{name}}{{this.anem}} </span></div>
 <input type="text">
 <input type="text">aaaa</input>
 <input type="text" />
@@ -35,6 +35,8 @@ a</div>
 <script>
 asdf<br />
 </script>
+<input type="text" readonly />
+
 `;
 
 describe('Compile', () => {
@@ -51,7 +53,7 @@ describe('Compile', () => {
 });
 
 
-// @Config({
+// @VM({
 //   name:'app',
 //   tmpl:`before<div><span 
 //  id="spanId" name="spanName" content="{{aaa+aa
@@ -62,13 +64,13 @@ describe('Compile', () => {
 
 //   constructor(){
 //     super();
-//     console.log(this['__config__']);
+//     console.log(this['__vm__']);
 //   }
 
 // }
 
 
-// @Config({
+// @VM({
 //   name:'appEx',
 //   tmpl:`<div></div>`
 // })
@@ -94,19 +96,19 @@ function cmpFun(Cmpx:any, Compile, componet:Componet, parent:HTMLElement){
       Compile.createElement('div', [])
     ]),
     Compile.createElement('div', []),
-    Compile.forRender(function(){ return this.list; }, function(item, $index){
+    Compile.forRender(function () { return this.list; }, function (item, $index) {
       return [
         Compile.createElement('div', [])
-      ]; 
+      ];
     }, componet),
-    Compile.ifRender(function(){ return this.isOk; }, function(){
+    Compile.ifRender(function () { return this.isOk; }, function () {
       return [
         Compile.createElement('div', [])
-      ]; 
-    }, function(){
+      ];
+    }, function () {
       return [
         Compile.createElement('div', [])
-      ]; 
+      ];
     }, componet),
     Compile.tmplRender('tmpl1', [], componet),
     Compile.includeRender('tmpl1', componet)

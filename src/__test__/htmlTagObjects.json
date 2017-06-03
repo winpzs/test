@@ -19,6 +19,7 @@
         "content": "user.ok",
         "attrs": null,
         "index": 1,
+        "componet": false,
         "children": [
             {
                 "tagName": "",
@@ -40,6 +41,7 @@
                 "content": "server.ok",
                 "attrs": null,
                 "index": 23,
+                "componet": false,
                 "children": [
                     {
                         "tagName": "",
@@ -61,6 +63,7 @@
                         "content": "role.ok",
                         "attrs": null,
                         "index": 51,
+                        "componet": false,
                         "children": [
                             {
                                 "tagName": "",
@@ -110,6 +113,7 @@
             }
         ],
         "index": 83,
+        "componet": false,
         "children": [
             {
                 "tagName": "",
@@ -157,7 +161,8 @@
         ],
         "end": true,
         "single": true,
-        "index": 122
+        "index": 122,
+        "componet": false
     },
     {
         "tagName": "",
@@ -185,6 +190,7 @@
             }
         ],
         "index": 163,
+        "componet": false,
         "children": [
             {
                 "tagName": "",
@@ -212,13 +218,14 @@
                     }
                 ],
                 "index": 197,
+                "componet": false,
                 "children": [
                     {
                         "tagName": "",
                         "target": false,
                         "cmd": false,
-                        "find": " spanText:$($name$)$ ",
-                        "content": " spanText:\"+name+\" ",
+                        "find": " spanText:$($name$)$$($this.anem$)$ ",
+                        "content": " spanText:\"+name+\"\"+this.anem+\" ",
                         "attrs": null,
                         "end": true,
                         "single": true,
@@ -238,7 +245,7 @@
         "attrs": null,
         "end": true,
         "single": true,
-        "index": 249,
+        "index": 264,
         "bind": false
     },
     {
@@ -256,7 +263,8 @@
         ],
         "end": true,
         "single": true,
-        "index": 250
+        "index": 265,
+        "componet": false
     },
     {
         "tagName": "",
@@ -267,7 +275,7 @@
         "attrs": null,
         "end": true,
         "single": true,
-        "index": 269,
+        "index": 284,
         "bind": false
     },
     {
@@ -285,7 +293,8 @@
         ],
         "end": true,
         "single": true,
-        "index": 270
+        "index": 285,
+        "componet": false
     },
     {
         "tagName": "",
@@ -296,7 +305,7 @@
         "attrs": null,
         "end": true,
         "single": true,
-        "index": 289,
+        "index": 304,
         "bind": false
     },
     {
@@ -308,7 +317,7 @@
         "attrs": null,
         "end": true,
         "single": true,
-        "index": 301,
+        "index": 316,
         "bind": false
     },
     {
@@ -316,7 +325,7 @@
         "target": true,
         "cmd": false,
         "find": "<input type=\"text\" />",
-        "content": "type=\"text\" /",
+        "content": "type=\"text\" ",
         "attrs": [
             {
                 "name": "type",
@@ -326,7 +335,8 @@
         ],
         "end": true,
         "single": true,
-        "index": 302
+        "index": 317,
+        "componet": false
     },
     {
         "tagName": "",
@@ -337,7 +347,7 @@
         "attrs": null,
         "end": true,
         "single": true,
-        "index": 323,
+        "index": 338,
         "bind": false
     },
     {
@@ -346,7 +356,8 @@
         "cmd": false,
         "find": "<textarea>",
         "attrs": null,
-        "index": 328,
+        "index": 343,
+        "componet": false,
         "children": [
             {
                 "tagName": "",
@@ -357,7 +368,7 @@
                 "attrs": null,
                 "end": true,
                 "single": true,
-                "index": 338,
+                "index": 353,
                 "bind": false
             }
         ]
@@ -371,7 +382,7 @@
         "attrs": null,
         "end": true,
         "single": true,
-        "index": 419,
+        "index": 434,
         "bind": false
     },
     {
@@ -380,7 +391,8 @@
         "cmd": false,
         "find": "<script>",
         "attrs": null,
-        "index": 420,
+        "index": 435,
+        "componet": false,
         "children": [
             {
                 "tagName": "",
@@ -391,7 +403,7 @@
                 "attrs": null,
                 "end": true,
                 "single": true,
-                "index": 428,
+                "index": 443,
                 "bind": false
             }
         ]
@@ -405,7 +417,41 @@
         "attrs": null,
         "end": true,
         "single": true,
-        "index": 468,
+        "index": 483,
+        "bind": false
+    },
+    {
+        "tagName": "input",
+        "target": true,
+        "cmd": false,
+        "find": "<input type=\"text\" readonly />",
+        "content": "type=\"text\" readonly ",
+        "attrs": [
+            {
+                "name": "type",
+                "value": "text",
+                "bind": false
+            },
+            {
+                "name": "readonly",
+                "bind": false
+            }
+        ],
+        "end": true,
+        "single": true,
+        "index": 484,
+        "componet": false
+    },
+    {
+        "tagName": "",
+        "target": false,
+        "cmd": false,
+        "find": " ",
+        "content": " ",
+        "attrs": null,
+        "end": true,
+        "single": true,
+        "index": 514,
         "bind": false
     }
 ]

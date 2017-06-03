@@ -1,6 +1,7 @@
 
 export class Componet{
-    public parent:Componet;
+    readonly parent:Componet;
+    readonly elements:Array<HTMLElement|Text> = [];
 
     $update(p:Object=null){
 
