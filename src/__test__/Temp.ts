@@ -81,37 +81,51 @@ describe('Compile', () => {
 // new TestComponet();
 
 
-function cmpFun(Cmpx:any, Compile, componet:Componet, parent:HTMLElement){
-  var element;
+function cmpFun(Cmpx: any, Compile, componet: Componet, element: HTMLElement) {
+  Compile.createElement('div', componet, element, function (componet, element) {
 
-  Compile.createElement('div', [], [
-    Compile.createComponet('user', [], [
-      Compile.createTextNode('aaaaaa'),
-      Compile.createElement('aaaaaa', [])
-    ]),
-    Compile.createTextNode('aaaaaa'),
-    Compile.createElement('div', [
-      Compile.createComponet('role', [], []),
-      Compile.createTextNode('bbbb'),
-      Compile.createElement('div', [])
-    ]),
-    Compile.createElement('div', []),
-    Compile.forRender(function () { return this.list; }, function (item, $index) {
-      return [
-        Compile.createElement('div', [])
-      ];
-    }, componet),
-    Compile.ifRender(function () { return this.isOk; }, function () {
-      return [
-        Compile.createElement('div', [])
-      ];
-    }, function () {
-      return [
-        Compile.createElement('div', [])
-      ];
-    }, componet),
-    Compile.tmplRender('tmpl1', [], componet),
-    Compile.includeRender('tmpl1', componet)
-  ], parent);
+    Compile.setAttribute(element, 'name', 'value');
+
+    Compile.createComponet('user', componet, element, function (componet, element) {
+
+      Compile.createTextNode('aaaaaa', componet, element);
+
+      Compile.createElement('aaaaaa', componet, element, function (componet, element) {
+        Compile.createTextNode('aaaaaa', componet, element);
+        Compile.createElement('aaaaaa', componet, element);
+      });
+
+      Compile.forRender(function (componet, element) {
+        return this.list;
+      }, function (item, $index, componet, element) {
+        return [
+          Compile.createElement('div', componet, element, function (componet, element) { })
+        ];
+      }, componet, element);
+      //end for
+
+      Compile.ifRender(function (componet, element) {
+        return this.isOk;
+      }, function (componet, element) {
+        return [
+          Compile.createElement('div', componet, element)
+        ];
+      }, function (componet, element) {
+        return [
+          Compile.createElement('div', componet, element)
+        ];
+      }, componet, element);
+      //end if
+
+      Compile.tmplRender('tmpl1', componet, element, function (componet, element) {
+          Compile.createElement('div', componet, element)
+      });
+      //end tmpl
+
+      Compile.includeRender('tmpl1', componet, element);
+
+    });
+
+  });
 
 }

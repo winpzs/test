@@ -329,41 +329,56 @@ let _tmplName = '__tmpl__',
     }
 
 export class Compile {
-    public static createElement(name: string, attrs: Array<attrInfo> = null,
-        children:Array<CompileElement> = null, parent: CompileElement | HTMLElement = null): CompileElement {
+    public static createElement(name:string, componet:Componet, element:HTMLElement,
+        contextFn:(componet:Componet, element:HTMLElement)=>void):void {
 
-        let element = new CompileElement(name, attrs, children, parent);
-        return element;
+        let ele:HTMLElement = HtmlTagDef.getHtmlTagDef(name).createElement(name, element);
+        element && element.appendChild(ele);
+        contextFn && contextFn(componet, ele);
+        //return ele;
     }
 
-    public static createComponet(name:string, attrs: Array<attrInfo> = null):Componet {
+    public static createComponet(name:string, componet:Componet, element:HTMLElement,
+        contextFn:(component:Componet, element:HTMLElement)=>void):void {
+
         let cmp:any = _registerVM[name];
-        return new cmp(attrs);
+        let cmpObj = new cmp();
+        contextFn && contextFn(cmpObj, element);
+        //return cmpObj;
     }
 
-    public static createTextNode(content:string):Text{
-        return document.createTextNode(content);
+    public static createTextNode(content:string, componet:Componet, element:HTMLElement):Text{
+        let textNode = document.createTextNode(content);
+        element && element.appendChild(textNode);
+        return textNode;
+    }
+    
+    public static setAttribute(element:HTMLElement, name:string, value:string):void {
+        HtmlTagDef.getHtmlAttrDef(name).setAttribute(element, name, value);
     }
 
-    public static forRender(dataFn, eachFn, componet:Componet):Array<any> {
-        var datas = dataFn.call(componet);
+
+    public static forRender(dataFn, eachFn, componet:Componet, element:HTMLElement):void {
+        var datas = dataFn.call(componet, componet, element);
         var list = [];
         Cmpx.each(datas, function(item, index){
-            list = list.concat(eachFn.apply(this, arguments));
-        }, componet);
-        return list;
+            list = list.concat(eachFn.call(componet, item, index, componet, element));
+        });
     }
 
-    public static ifRender(ifFun, trueFn, falseFn, componet:Componet):Array<any> {
-        if (ifFun.call(componet))
-            return trueFn.call(componet);
+    public static ifRender(ifFun, trueFn, falseFn, componet:Componet, element:HTMLElement):void {
+        if (ifFun.call(componet, componet, element))
+            trueFn.call(componet, componet, element);
         else
-            return falseFn.call(componet);
+            falseFn.call(componet, componet, element);
     }
 
-    public static tmplRender(id, elements:Array<any>, componet:Componet):void {
+    public static tmplRender(id, componet:Componet, element:HTMLElement,
+        contextFn:(componet:Componet, element:HTMLElement)=>void):void {
+
         var tmpls = componet[_tmplName]
         tmpls || (tmpls = componet[_tmplName] = {});
+        var elements = contextFn ? contextFn.call(componet, componet,  element) : [];
         tmpls[id] = elements
     }
 
