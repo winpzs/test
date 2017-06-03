@@ -319,8 +319,67 @@ export class CompileElement {
     }
 }
 
+
+interface ISubscribeParam{
+    init?:(p:any)=>void;
+    update?:(p:any)=>void;
+    remove?:(p:any)=>void;
+}
+
+export class Subject {
+    private datas:Array<ISubscribeParam> = [];
+
+    constructor(subject?:Subject){
+        if (subject){
+            this.linkParam = subject.subscribe({
+                init:(p:any)=> this.init(p),
+                update:(p:any)=> this.init(p),
+                remove:(p:any)=> this.init(p)
+            });
+            this.subject = subject;
+        }
+    }
+
+    subscribe(p:ISubscribeParam):ISubscribeParam {
+        this.datas.push(p);
+        return p;
+    }
+
+    unSubscribe(p:ISubscribeParam):void {
+        let index = this.datas.indexOf(p);
+        if (index >= 0)
+            this.datas.splice(index, 1);
+    }
+
+    private linkParam:ISubscribeParam;
+    private subject:Subject;
+    unLinkSubject():Subject{
+        this.subject && this.subject.unSubscribe(this.linkParam);
+        return this;
+    }
+
+    init(p:any){
+        Cmpx.each(this.datas, function(item:any){
+            item.init && item.init(p);
+        });
+    }
+
+    update(p:any){
+        Cmpx.each(this.datas, function(item:any){
+            item.update && item.update(p);
+        });
+    }
+
+    remove(p:any){
+        Cmpx.each(this.datas, function(item:any){
+            item.remove && item.remove(p);
+        });
+    }
+}
+
+
 let _tmplName = '__tmpl__',
-    _getComponetTmpl = function(componet:Componet, id:string):Array<any>{
+    _getComponetTmpl = function(componet:Componet, id:string):any{
         let tmpls = componet[_tmplName];
         if (!tmpls || !tmpls[id])
             return componet.parent ?_getComponetTmpl(componet.parent, id) : null;
@@ -338,12 +397,13 @@ export class Compile {
         //return ele;
     }
 
-    public static createComponet(name:string, componet:Componet, element:HTMLElement,
-        contextFn:(component:Componet, element:HTMLElement)=>void):void {
+    public static createComponet(name:string, componet:Componet, element:HTMLElement, subject:Subject,
+        contextFn:(component:Componet, element:HTMLElement,subject:Subject)=>void):void {
 
         let cmp:any = _registerVM[name];
         let cmpObj = new cmp();
-        contextFn && contextFn(cmpObj, element);
+        let newSubject:Subject = new Subject(subject);
+        contextFn && contextFn(cmpObj, element, newSubject);
         //return cmpObj;
     }
 
@@ -376,14 +436,17 @@ export class Compile {
     public static tmplRender(id, componet:Componet, element:HTMLElement,
         contextFn:(componet:Componet, element:HTMLElement)=>void):void {
 
-        var tmpls = componet[_tmplName]
+        var tmpls = componet[_tmplName];
         tmpls || (tmpls = componet[_tmplName] = {});
-        var elements = contextFn ? contextFn.call(componet, componet,  element) : [];
-        tmpls[id] = elements
+
+        tmpls[id] = function(componet:Componet, element:HTMLElement){
+            contextFn && contextFn.call(componet, componet,  element)
+        };
     }
 
-    public static includeRender(id:string, componet:Componet):Object{
-        return _getComponetTmpl(componet, id);
+    public static includeRender(id:string, componet:Componet, element:HTMLElement):void{
+        var tmpl = _getComponetTmpl(componet, id);
+        tmpl && tmpl.call(componet, componet,  element);
     }
 
     private tmpl: string;
