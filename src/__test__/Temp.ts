@@ -1,7 +1,7 @@
 
 import { expect } from 'chai';
 import 'mocha';
-import { Compile, VM, CompileElement } from '../compile';
+import { Compile, VM, CompileElement, CompileSubject } from '../compile';
 import { HtmlTagDef } from '../htmlTagDef';
 import Cmpx from '../cmpx';
 import { Componet } from '../componet';
@@ -81,48 +81,42 @@ describe('Compile', () => {
 // new TestComponet();
 
 
-function cmpFun(Cmpx: any, Compile, componet: Componet, element: HTMLElement) {
-  Compile.createElement('div', componet, element, function (componet, element) {
+function cmpFun(Cmpx: any, Compile, componet: Componet, element: HTMLElement, subject:CompileSubject) {
+  Compile.createElement('div', componet, element, subject, function (componet, element, subject) {
 
     Compile.setAttribute(element, 'name', 'value');
 
-    Compile.createComponet('user', componet, element, function (componet, element) {
+    Compile.createComponet('user', componet, element, subject, function (componet, element, subject) {
 
-      Compile.createTextNode('aaaaaa', componet, element);
+      Compile.createTextNode('aaaaaa', componet, element, subject);
 
-      Compile.createElement('aaaaaa', componet, element, function (componet, element) {
-        Compile.createTextNode('aaaaaa', componet, element);
-        Compile.createElement('aaaaaa', componet, element);
+      Compile.createElement('aaaaaa', componet, element, subject, function (componet, element, subject) {
+        Compile.createTextNode('aaaaaa', componet, element, subject);
+        Compile.createElement('aaaaaa', componet, element, subject);
       });
 
-      Compile.forRender(function (componet, element) {
+      Compile.forRender(function (componet, element, subject) {
         return this.list;
-      }, function (item, $index, componet, element) {
-        return [
-          Compile.createElement('div', componet, element, function (componet, element) { })
-        ];
-      }, componet, element);
+      }, function (item, $index, componet, element, subject) {
+          Compile.createElement('div', componet, element, subject, function (componet, element, subject) { })
+      }, componet, element, subject);
       //end for
 
-      Compile.ifRender(function (componet, element) {
+      Compile.ifRender(function (componet, element, subject) {
         return this.isOk;
-      }, function (componet, element) {
-        return [
-          Compile.createElement('div', componet, element)
-        ];
-      }, function (componet, element) {
-        return [
-          Compile.createElement('div', componet, element)
-        ];
-      }, componet, element);
+      }, function (componet, element, subject) {
+          Compile.createElement('div', componet, element, subject);
+      }, function (componet, element, subject) {
+          Compile.createElement('div', componet, element, subject);
+      }, componet, element, subject);
       //end if
 
-      Compile.tmplRender('tmpl1', componet, element, function (componet, element) {
-          Compile.createElement('div', componet, element)
+      Compile.tmplRender('tmpl1', componet, element, subject, function (componet, element) {
+          Compile.createElement('div', componet, element, subject)
       });
       //end tmpl
 
-      Compile.includeRender('tmpl1', componet, element);
+      Compile.includeRender('tmpl1', componet, element, subject);
 
     });
 

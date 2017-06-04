@@ -1,4 +1,4 @@
-import Cmpx from './cmpx';
+import CmpxLib from './cmpxLib';
 import { HtmlTagDef, IHtmlAttrDef } from './htmlTagDef';
 import { Componet } from './componet';
 
@@ -302,7 +302,7 @@ export class CompileElement {
         this.attrs = attrs;
         this.parent = parent && (parent  instanceof CompileElement) ? parent : null;
         this.element = document.createElement(name);
-        Cmpx.each(attrs, (attr:attrInfo)=>{
+        CmpxLib.each(attrs, (attr:attrInfo)=>{
             this.setAttribute(attr.name, attr.value);
         });
         var elParent:HTMLElement = this.parent ? this.parent.element : parent as HTMLElement;
@@ -326,22 +326,30 @@ interface ISubscribeParam{
     remove?:(p:any)=>void;
 }
 
-export class Subject {
+export class CompileSubject {
     private datas:Array<ISubscribeParam> = [];
 
-    constructor(subject?:Subject){
+    constructor(subject?:CompileSubject){
         if (subject){
-            this.linkParam = subject.subscribe({
-                init:(p:any)=> this.init(p),
-                update:(p:any)=> this.init(p),
-                remove:(p:any)=> this.init(p)
-            });
-            this.subject = subject;
+            if (!(this.isRemove = subject.isRemove)){
+                this.linkParam = subject.subscribe({
+                    init:(p:any)=> this.init(p),
+                    update:(p:any)=> this.init(p),
+                    remove:(p:any)=> this.init(p)
+                });
+                this.subject = subject;
+            }
+            this.isInit = subject.isInit;
+            this.lastInitP = subject.lastInitP;
         }
     }
 
     subscribe(p:ISubscribeParam):ISubscribeParam {
-        this.datas.push(p);
+        if (!this.isRemove){
+            this.datas.push(p);
+            if (this.isInit)
+                p.init && (p.init(this.lastInitP), p.init = null);
+        }
         return p;
     }
 
@@ -352,27 +360,34 @@ export class Subject {
     }
 
     private linkParam:ISubscribeParam;
-    private subject:Subject;
-    unLinkSubject():Subject{
+    private subject:CompileSubject;
+    unLinkSubject():CompileSubject{
         this.subject && this.subject.unSubscribe(this.linkParam);
         return this;
     }
 
+    isInit:boolean = false;
+    lastInitP:any;
     init(p:any){
-        Cmpx.each(this.datas, function(item:any){
-            item.init && item.init(p);
+        this.isInit = true;
+        this.lastInitP = p;
+        CmpxLib.each(this.datas, function(item:any){
+            item.init && (item.init(p), item.init = null);
         });
     }
 
     update(p:any){
-        Cmpx.each(this.datas, function(item:any){
+        CmpxLib.each(this.datas, function(item:any){
             item.update && item.update(p);
         });
     }
 
+    isRemove:boolean = false;
     remove(p:any){
-        Cmpx.each(this.datas, function(item:any){
-            item.remove && item.remove(p);
+        this.isRemove = true;
+        this.datas = [];
+        CmpxLib.each(this.datas, function(item:any){
+            item.remove && (item.remove(p), item.remove= null);
         });
     }
 }
@@ -388,28 +403,45 @@ let _tmplName = '__tmpl__',
     }
 
 export class Compile {
-    public static createElement(name:string, componet:Componet, element:HTMLElement,
-        contextFn:(componet:Componet, element:HTMLElement)=>void):void {
+    public static createElement(name:string, componet:Componet, element:HTMLElement, subject:CompileSubject,
+        contextFn:(componet:Componet, element:HTMLElement, subject:CompileSubject)=>void):void {
 
         let ele:HTMLElement = HtmlTagDef.getHtmlTagDef(name).createElement(name, element);
         element && element.appendChild(ele);
-        contextFn && contextFn(componet, ele);
+        subject.subscribe({
+            remove:(p:any)=> element.removeChild(ele)
+        });
+        contextFn && contextFn(componet, ele, subject);
         //return ele;
     }
 
-    public static createComponet(name:string, componet:Componet, element:HTMLElement, subject:Subject,
-        contextFn:(component:Componet, element:HTMLElement,subject:Subject)=>void):void {
+    public static createComponet(name:string, componet:Componet, element:HTMLElement, subject:CompileSubject,
+        contextFn:(component:Componet, element:HTMLElement,subject:CompileSubject)=>void):void {
 
         let cmp:any = _registerVM[name];
-        let cmpObj = new cmp();
-        let newSubject:Subject = new Subject(subject);
+        let cmpObj:Componet = new cmp();
+        let newSubject:CompileSubject = new CompileSubject(subject);
+        newSubject.subscribe({
+            remove:(p:any)=> {
+                try{
+                    cmpObj.dispose();
+                } catch(e){
+                    CmpxLib.trace(e);
+                } finally {
+                    newSubject.unLinkSubject();
+                }
+            }
+        });
         contextFn && contextFn(cmpObj, element, newSubject);
         //return cmpObj;
     }
 
-    public static createTextNode(content:string, componet:Componet, element:HTMLElement):Text{
+    public static createTextNode(content:string, componet:Componet, element:HTMLElement, subject:CompileSubject):Text{
         let textNode = document.createTextNode(content);
         element && element.appendChild(textNode);
+        // subject.subscribe({
+        //     remove:(p:any)=> element.removeChild(textNode)
+        // });
         return textNode;
     }
     
@@ -418,35 +450,56 @@ export class Compile {
     }
 
 
-    public static forRender(dataFn, eachFn, componet:Componet, element:HTMLElement):void {
-        var datas = dataFn.call(componet, componet, element);
-        var list = [];
-        Cmpx.each(datas, function(item, index){
-            list = list.concat(eachFn.call(componet, item, index, componet, element));
+    public static forRender(dataFn, eachFn, componet:Componet, element:HTMLElement, subject:CompileSubject):void {
+        var datas = dataFn.call(componet, componet, element, subject);
+        CmpxLib.each(datas, function(item, index){
+            let newSubject:CompileSubject = new CompileSubject(subject);
+            newSubject.subscribe({
+                remove:(p:any)=> {
+                    newSubject.unLinkSubject();
+                }
+            });
+            eachFn.call(componet, item, index, componet, element, newSubject);
         });
     }
 
-    public static ifRender(ifFun, trueFn, falseFn, componet:Componet, element:HTMLElement):void {
-        if (ifFun.call(componet, componet, element))
-            trueFn.call(componet, componet, element);
+    public static ifRender(ifFun, trueFn, falseFn, componet:Componet, element:HTMLElement, subject:CompileSubject):void {
+
+        let newSubject:CompileSubject = new CompileSubject(subject);
+        newSubject.subscribe({
+            remove:(p:any)=> {
+                newSubject.unLinkSubject();
+            }
+        });
+
+        if (ifFun.call(componet, componet, element, subject))
+            trueFn.call(componet, componet, element, newSubject);
         else
-            falseFn.call(componet, componet, element);
+            falseFn.call(componet, componet, element, newSubject);
     }
 
-    public static tmplRender(id, componet:Componet, element:HTMLElement,
+    public static tmplRender(id, componet:Componet, element:HTMLElement, subject:CompileSubject,
         contextFn:(componet:Componet, element:HTMLElement)=>void):void {
 
         var tmpls = componet[_tmplName];
         tmpls || (tmpls = componet[_tmplName] = {});
 
-        tmpls[id] = function(componet:Componet, element:HTMLElement){
-            contextFn && contextFn.call(componet, componet,  element)
+        tmpls[id] = function(componet:Componet, element:HTMLElement, subject:CompileSubject){
+            contextFn && contextFn.call(componet, componet,  element, subject)
         };
     }
 
-    public static includeRender(id:string, componet:Componet, element:HTMLElement):void{
+    public static includeRender(id:string, componet:Componet, element:HTMLElement, subject:CompileSubject):void{
         var tmpl = _getComponetTmpl(componet, id);
-        tmpl && tmpl.call(componet, componet,  element);
+        if (tmpl){
+            let newSubject:CompileSubject = new CompileSubject(subject);
+            newSubject.subscribe({
+                remove:(p:any)=> {
+                    newSubject.unLinkSubject();
+                }
+            });
+            tmpl.call(componet, componet,  element, newSubject);
+        }
     }
 
     private tmpl: string;

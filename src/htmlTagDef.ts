@@ -24,7 +24,7 @@
 //     $("svg")[0].appendChild(obj);
 // });
 
-import Cmpx from "./cmpx";
+import CmpxLib from "./cmpxLib";
 
 /**
  * HtmlTag内容类型
@@ -69,7 +69,7 @@ export class HtmlTagDef {
    * @param p 标签配置
    */
   static extendHtmlTagDef(p: IHtmlTagDefConfig): void {
-    Cmpx.extend(_htmlTagDefConfig, p);
+    CmpxLib.extend(_htmlTagDefConfig, p);
     _makeSpecTags();
   }
 
@@ -86,7 +86,7 @@ export class HtmlTagDef {
    * @param p 
    */
   static extendHtmlAttrDef(p: IHtmlAttrDef): void {
-    Cmpx.extend(_htmlAttrDefConfig, p);
+    CmpxLib.extend(_htmlAttrDefConfig, p);
   }
 
   /**
@@ -108,7 +108,7 @@ export class HtmlTagDef {
    */
   static handleTagContent(html: string): string {
      return _removeSpace(html).replace(_rawContentRegex, function (find: string, name: string, content: string) {
-      return ['<', name, '>', Cmpx.encodeHtml(content), '</', name, '>'].join('');
+      return ['<', name, '>', CmpxLib.encodeHtml(content), '</', name, '>'].join('');
     });
   }
 
@@ -220,17 +220,17 @@ function _makeSpecTags() {
   let singleTags = [],
     rawTags = [],
     escapeRawTags = [];
-  Cmpx.eachProp(_htmlTagDefConfig, (item: HtmlTagDef, name: string) => {
+  CmpxLib.eachProp(_htmlTagDefConfig, (item: HtmlTagDef, name: string) => {
     item.single && singleTags.push(name);
     item.contentType == HtmlTagContentType.RAW_TEXT && rawTags.push(name);
     item.contentType == HtmlTagContentType.ESCAPABLE_RAW_TEXT && escapeRawTags.push(name);
   });
   let o = HtmlTagDef.singelTags = {};
-  Cmpx.each(singleTags, (name: string) => o[name] = true);
+  CmpxLib.each(singleTags, (name: string) => o[name] = true);
   o = HtmlTagDef.rawTags = {};
-  Cmpx.each(rawTags, (name: string) => o[name] = true);
+  CmpxLib.each(rawTags, (name: string) => o[name] = true);
   o = HtmlTagDef.escapeRawTags = {};
-  Cmpx.each(escapeRawTags, (name: string) => o[name] = true);
+  CmpxLib.each(escapeRawTags, (name: string) => o[name] = true);
 
   let rawNames = rawTags.concat(escapeRawTags).join('|');
   _rawContentRegex = new RegExp('<\\s*(' + rawNames + ')\\s*>((?:.|\\n|\\r)*?)</\\1>', 'gmi');
