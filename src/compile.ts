@@ -303,29 +303,12 @@ let _tmplName = '__tmpl__',
     _getComponetTmpl = function(componet:Componet, id:string):any{
         let tmpls = componet[_tmplName];
         if (!tmpls || !tmpls[id])
-            return componet.parent ?_getComponetTmpl(componet.parent, id) : null;
+            return componet.$parent ?_getComponetTmpl(componet.$parent, id) : null;
         else
             return tmpls[id];
     }
 
 export class Compile {
-    public static createElement(name:string, componet:Componet, element:HTMLElement, subject:CompileSubject,
-        contextFn:(componet:Componet, element:HTMLElement, subject:CompileSubject)=>void):void {
-            
-            if (subject.isRemove)return;
-            let ele:HTMLElement = HtmlTagDef.getHtmlTagDef(name).createElement(name, element);
-            element && element.appendChild(ele);
-            subject.subscribe({
-                remove:function(p:ISubscribeRemoveEvent) {
-                    //如果父节点删除，这里就不用处理了。
-                    if (p.parentElement == element){
-                        element.removeChild(ele);
-                        return element;
-                    }
-                }
-            });
-            contextFn && contextFn(componet, ele, subject);
-    }
 
     public static createComponet(
             name:string, componet:Componet, element:HTMLElement, subject:CompileSubject,
@@ -334,20 +317,54 @@ export class Compile {
             if (subject.isRemove)return;
 
             let cmp:any = _registerVM[name];
-            let cmpObj:Componet = new cmp();
             let newSubject:CompileSubject = new CompileSubject(subject);
+            let newComponet:any = new cmp();
+            newComponet.$subObject = newSubject;
+            newComponet.$parent = componet;
+            componet && componet.$children.push(newComponet);
+            newComponet.$parentElement = element;
             newSubject.subscribe({
                 remove:function(p:ISubscribeRemoveEvent) {
                     try{
-                        cmpObj.dispose();
+                        newComponet.$dispose();
                     } catch(e){
                         CmpxLib.trace(e);
                     } finally {
+                        if (!componet.$isDisposed){
+                            var childs = componet.$children,
+                                idx = childs.indexOf(newComponet);
+                            (idx >=  0) && childs.splice(idx, 1);
+                        } 
+
+                        newComponet.$subObject = newComponet.$children = newComponet.$elements =
+                            newComponet.$parent = newComponet.$parentElement = null;
+
                         newSubject.unLinkSubject();
                     }
                 }
             });
-            contextFn && contextFn(cmpObj, element, newSubject);
+            contextFn && contextFn(newComponet, element, newSubject);
+    }
+
+    public static createElement(name:string, componet:Componet, element:HTMLElement, subject:CompileSubject,
+        contextFn:(componet:Componet, element:HTMLElement, subject:CompileSubject)=>void):void {
+            
+            if (subject.isRemove)return;
+            let ele:HTMLElement = HtmlTagDef.getHtmlTagDef(name).createElement(name, element);
+            element && element.appendChild(ele);
+            if(element == componet.$parentElement) componet.$elements.push(ele);
+            subject.subscribe({
+                remove:function(p:ISubscribeRemoveEvent) {
+                    //如果父节点删除，这里就不用处理了。
+                    if (p.parentElement == element){
+                        element.removeChild(ele);
+                        var els = componet.$elements,
+                            idx = els.indexOf(ele);
+                        (idx >=  0) && els.splice(idx, 1);
+                    }
+                }
+            });
+            contextFn && contextFn(componet, ele, subject);
     }
 
     public static createTextNode(content:string, componet:Componet, element:HTMLElement, subject:CompileSubject):Text{
@@ -355,12 +372,15 @@ export class Compile {
 
         let textNode = document.createTextNode(content);
         element && element.appendChild(textNode);
+        if(element == componet.$parentElement) componet.$elements.push(textNode);
         subject.subscribe({
             remove:function(p:ISubscribeRemoveEvent) {
                 //如果父节点删除，这里就不用处理了。
                 if (p.parentElement == element){
                     element.removeChild(textNode);
-                    return element;
+                    var els = componet.$elements,
+                        idx = els.indexOf(textNode);
+                    (idx >=  0) && els.splice(idx, 1);
                 }
             }
         });
@@ -491,13 +511,17 @@ export class Compile {
     }
 
     private tmpl: string;
-    private _htmlTags: Array<tagInfo>;
+    private _tagInfos: Array<tagInfo>;
     public getHtmlTagObjects(): Array<tagInfo> {
-        return this._htmlTags;
+        return this._tagInfos;
     };
 
-    constructor(tmpl: string) {
+    constructor(tmpl: string, parentElement:HTMLElement, parentComponet:Componet) {
         this.tmpl = tmpl;
-        this._htmlTags = _makeTagInfos(tmpl);
+        this._tagInfos = _makeTagInfos(tmpl);
     }
 }
+
+var _buildCompileFn = function(tagInfos:Array<tagInfo>){
+    return new Function('Cmpx','Compile', 'componet', 'element', 'subject', 'alert("test")');
+};

@@ -1,7 +1,7 @@
 
 import { expect } from 'chai';
 import 'mocha';
-import { Compile, VM, CompileElement, CompileSubject } from '../compile';
+import { Compile, VM, CompileSubject } from '../compile';
 import { HtmlTagDef } from '../htmlTagDef';
 import Cmpx from '../cmpx';
 import { Componet } from '../componet';

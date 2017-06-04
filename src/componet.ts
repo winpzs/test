@@ -1,17 +1,20 @@
+import { CompileSubject } from './compile';
 
 export class Componet{
-    readonly parent:Componet;
-    readonly elements:Array<HTMLElement|Text> = [];
+    readonly $parent:Componet;
+    readonly $children:Array<Componet> = [];
+    readonly $subObject:CompileSubject;
+    readonly $elements:Array<HTMLElement|Text> = [];
+    readonly $parentElement:HTMLElement;
 
-    $update(p:Object=null){
-
+    $update(p:any=null){
     }
 
-    dispose(){
-        
+    $isDisposed:Boolean = false;
+    $dispose() {
+        this.$isDisposed = true;
     }
 
     constructor(){
-
     }
 }
