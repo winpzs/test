@@ -51,6 +51,9 @@ export function DEFAULT_CREATEELEMENT(name: string, parent: HTMLElement = null):
   return document.createElement(name);
 }
 
+//注释标签
+let _noteTagRegex = /\<\!--(?:.|\n|\r)*?--\>/gim;
+
 /**
  * HtmlTag定义类
  */
@@ -103,13 +106,14 @@ export class HtmlTagDef {
   static escapeRawTags: { [name: string]: boolean };
 
   /**
-   * 处理tag内容，删除多余空格，编码某些类型内容
+   * 处理tag内容，删除多余空格，删除注释，编码某些类型内容
    * @param html 
    */
   static handleTagContent(html: string): string {
-     return _removeSpace(html).replace(_rawContentRegex, function (find: string, name: string, content: string) {
-      return ['<', name, '>', CmpxLib.encodeHtml(content), '</', name, '>'].join('');
-    });
+     return _removeSpace(html.replace(_noteTagRegex, ''))
+                .replace(_rawContentRegex, function (find: string, name: string, content: string) {
+                  return ['<', name, '>', CmpxLib.encodeHtml(content), '</', name, '>'].join('');
+                });
   }
 
   /**
