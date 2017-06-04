@@ -1,6 +1,7 @@
 import { CompileSubject } from './compile';
 
 export class Componet{
+    readonly $name:string;
     readonly $parent:Componet;
     readonly $children:Array<Componet> = [];
     readonly $subObject:CompileSubject;

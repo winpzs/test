@@ -47,7 +47,7 @@ export interface IHtmlTagDefConfig {
  * @param name 
  * @param parent 
  */
-export function DEFAULT_CREATEELEMENT(name: string, parent: HTMLElement = null): HTMLElement {
+export function DEFAULT_CREATEELEMENT(name: string, attrs?:Array<{name:string, value:string}>, parent?: HTMLElement): HTMLElement {
   return document.createElement(name);
 }
 
@@ -135,7 +135,7 @@ export class HtmlTagDef {
   /**
    * element创建器
    */
-  createElement: (name: string, parent?: HTMLElement) => HTMLElement;
+  createElement: (name: string, attrs?:Array<{name:string, value:string}>, parent?: HTMLElement) => HTMLElement;
 
   constructor(
     { single = false, contentType = HtmlTagContentType.PARSABLE_DATA, preFix = null, ignoreFirstLf = false, createElement = null }: {
@@ -143,7 +143,7 @@ export class HtmlTagDef {
       contentType?: HtmlTagContentType;
       preFix?: string;
       ignoreFirstLf?: boolean;
-      createElement?: (name: string, parent: HTMLElement) => HTMLElement;
+      createElement?: (name: string, attrs?:Array<{name:string, value:string}>, parent?: HTMLElement) => HTMLElement;
     } = {}) {
     this.single = single;
     this.preFix = preFix;

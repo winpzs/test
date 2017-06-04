@@ -11,17 +11,17 @@ var tmpl = `before<div><span
     a》&<>}}">spanText</span>{{bbbbbb}}  divT{{ if a}}ext{{else user.isOk > newaaa }} {{ for item in list}} {{/for}}{{/if}}</div>
  {{for item in list tmpl="user.html" /}}{{tmpl}} {{include src="list.html" /}} tmplText {{/tmpl}}{{include}}`;
 
-var tmplCmd = `!{{if user.ok}}
+var tmplCmd = `!{{if this.user.ok}}
   userOk
-{{else server.ok}}
+{{else this.server.ok}}
 serverOk
-{{else role.ok}}
+{{else this.role.ok}}
 roleOk
 {{/if}}
-{{for item in list}}
+{{for this.item in list}}
 for Text
 {{/for}}
-{{for item in list tmpl="index.html" /}}
+{{for this.item in list tmpl="index.html" /}}
 <div text="{{text}}ok"> divText <span id="spanId"> spanText:{{name}}{{this.anem}} </span></div>
 <input type="text">
 <input type="text">aaaa</input>
@@ -36,7 +36,7 @@ a</div>
 asdf<br />
 </script>
 <input type="text" readonly />
-
+{{include src="tmpl1" /}}
 `;
 
 describe('Compile', () => {
@@ -122,4 +122,65 @@ function cmpFun(Cmpx: any, Compile, componet: Componet, element: HTMLElement, su
 
   });
 
+}
+
+
+function cmpFunTemp(Cmpx: any, Compile, componet: Componet, element: HTMLElement, subject: CompileSubject) {
+  Compile.createTextNode("!", componet, element, subject);
+  Compile.ifRender(function (componet, element, subject) {
+    return this.user.ok
+  }, function (componet, element, subject) {
+    Compile.createTextNode(" userOk ", componet, element, subject);
+  }, function (componet, element, subject) {
+    Compile.createTextNode(" serverOk ", componet, element, subject);
+  }, componet, element, subject);
+  Compile.createTextNode(" ", componet, element, subject);
+  Compile.forRender(function (componet, element, subject) {
+    return this.item
+  }, function (item, $index, componet, element, subject) {
+    Compile.createTextNode(" for Text ", componet, element, subject);
+  }, componet, element, subject);
+  Compile.createTextNode(" ", componet, element, subject);
+  Compile.forRender(function (componet, element, subject) {
+    return this.item
+  }, function (item, $index, componet, element, subject) {
+  }, componet, element, subject);
+  Compile.createTextNode(" ", componet, element, subject);
+  Compile.createElement("div", componet, element, subject, function (componet, element, subject) {
+    Compile.setAttribute(element, "text", "\"+text+\"ok");
+    Compile.createTextNode(" divText ", componet, element, subject);
+    Compile.createElement("div", componet, element, subject, function (componet, element, subject) {
+      Compile.setAttribute(element, "id", "spanId");
+      Compile.createTextNode(" spanText:\"+name+\"\"+this.anem+\" ", componet, element, subject);
+    });
+  });
+  Compile.createTextNode(" ", componet, element, subject);
+  Compile.createElement("div", componet, element, subject, function (componet, element, subject) {
+    Compile.setAttribute(element, "type", "text");
+  });
+  Compile.createTextNode(" ", componet, element, subject);
+  Compile.createElement("div", componet, element, subject, function (componet, element, subject) {
+    Compile.setAttribute(element, "type", "text");
+  });
+  Compile.createTextNode("aaaa", componet, element, subject);
+  Compile.createTextNode(" ", componet, element, subject);
+  Compile.createElement("div", componet, element, subject, function (componet, element, subject) {
+    Compile.setAttribute(element, "type", "text");
+  });
+  Compile.createTextNode(" ! a ", componet, element, subject);
+  Compile.createElement("div", componet, element, subject, function (componet, element, subject) {
+    Compile.createTextNode("\n&amp;lt;br&nbsp;/&amp;gt;&amp;lt;div&amp;gt;aa\na&amp;lt;/div&amp;gt;\n", componet, element, subject);
+  });
+  Compile.createTextNode(" ", componet, element, subject);
+  Compile.createElement("div", componet, element, subject, function (componet, element, subject) {
+    Compile.createTextNode("\nasdf&amp;lt;br&nbsp;/&amp;gt;\n", componet, element, subject);
+  });
+  Compile.createTextNode(" ", componet, element, subject);
+  Compile.createElement("div", componet, element, subject, function (componet, element, subject) {
+    Compile.setAttribute(element, "type", "text");
+    Compile.setAttribute(element, "readonly", "");
+  });
+  Compile.createTextNode(" ", componet, element, subject);
+  Compile.includeRender("tmpl1", componet, element, subject);
+  Compile.createTextNode(" ", componet, element, subject);
 }

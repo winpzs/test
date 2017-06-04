@@ -7,7 +7,7 @@ var _undef:any;
 /**
  * 标签信息
  */
-export interface tagInfo {
+export interface TagInfo {
     tagName: string;
     //是否标签，如：<div>
     target: boolean;
@@ -15,21 +15,21 @@ export interface tagInfo {
     cmd: boolean;
     find: string;
     content: string;
-    attrs: Array<attrInfo>;
+    attrs: Array<AttrInfo>;
     end: boolean;
     single: boolean;
     index: number;
     //是否为绑定
     bind?: boolean;
-    children?: Array<tagInfo>;
-    parent?: tagInfo;
+    children?: Array<TagInfo>;
+    parent?: TagInfo;
     componet?:boolean;
 }
 
 /**
  * 属性信息
  */
-export interface attrInfo {
+export interface AttrInfo {
     name: string;
     value: string;
     bind: boolean;
@@ -37,7 +37,7 @@ export interface attrInfo {
 }
 
     //新建一个text节点
-var _newTextContent = function (tmpl: string, start: number, end: number): tagInfo {
+var _newTextContent = function (tmpl: string, start: number, end: number): TagInfo {
         var text = tmpl.substring(start, end),
             bind = _cmdDecodeAttrRegex.test(text);
         return {
@@ -71,8 +71,8 @@ var _newTextContent = function (tmpl: string, start: number, end: number): tagIn
     },
     //查找分析tag和cmd
     _tagInfoRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*?)(\/*)\s*\>|\{\{\s*(\/*)\s*([^\s\{\}]+)\s*(.*?)(\/*)\}\}/gim,
-    _makeTagInfos = function (tmpl: string): Array<tagInfo> {
-        var lastIndex = 0, list: Array<tagInfo> = [],
+    _makeTagInfos = function (tmpl: string): Array<TagInfo> {
+        var lastIndex = 0, list: Array<TagInfo> = [],
             singelTags = HtmlTagDef.singelTags;
         tmpl = _makeTextTag(tmpl);
         tmpl = HtmlTagDef.handleTagContent(tmpl);
@@ -91,11 +91,23 @@ var _newTextContent = function (tmpl: string, start: number, end: number): tagIn
             if (cmd || !(single && !!end1)) {
 
                 var attrs = !cmd && !!tagContent ? _getAttrInfos(tagContent) : null;
-                if (cmd && (single || !end) && txtName == 'for') {
-                    attrs = _getForAttrInfos(txtContent);
+                if (cmd) {
+                    if ((single || !end)){
+                        switch(txtName){
+                            case 'for':
+                                attrs = _getForAttrInfos(txtContent);
+                                break;
+                            case 'tmpl':
+                            case 'include':
+                                attrs = _getAttrInfos(txtContent);
+                                break;
+                        }
+                    }
+                } else {
+                    attrs = !!tagContent ? _getAttrInfos(tagContent) : null;
                 }
 
-                var item: tagInfo = {
+                var item: TagInfo = {
                     tagName: (tagName || txtName).toLowerCase(),
                     target: !cmd,
                     cmd: cmd,
@@ -118,14 +130,14 @@ var _newTextContent = function (tmpl: string, start: number, end: number): tagIn
         if (index > lastIndex) {
             list.push(_newTextContent(tmpl, lastIndex, index));
         }
-        var outList: Array<tagInfo> = [];
+        var outList: Array<TagInfo> = [];
         _makeTagInfoChildren(list, outList, list.length);
         return outList;
     },
     //获取attrInfo
     _attrInfoRegex = /\s*([^= ]+)\s*=\s*(["'])((?:.|\b|\r)*?)\2|\s*([^= /]+)\s*/gm,
-    _getAttrInfos = function (content: string): Array<attrInfo> {
-        var attrs: Array<attrInfo> = [];
+    _getAttrInfos = function (content: string): Array<AttrInfo> {
+        var attrs: Array<AttrInfo> = [];
         content.replace(_attrInfoRegex, function (find: string, name: string, split: string,
             value: string, name1:string, index: number) {
             var bind = _cmdDecodeAttrRegex.test(value);
@@ -143,9 +155,9 @@ var _newTextContent = function (tmpl: string, start: number, end: number): tagIn
     },
     //获取cmd form attrInfo
     _forAttrRegex = /\s*([^\s]+)\s*\in\s*([^\s]+)\s*(?:\s*tmpl\s*=\s*([\'\"])(.*?)\3)*/i,
-    _getForAttrInfos = function (content: string): Array<attrInfo> {
+    _getForAttrInfos = function (content: string): Array<AttrInfo> {
         var extend = _forAttrRegex.exec(content);
-        var attrs: Array<attrInfo> = [{
+        var attrs: Array<AttrInfo> = [{
             name: '',
             value: '',
             bind: true,
@@ -163,9 +175,9 @@ var _newTextContent = function (tmpl: string, start: number, end: number): tagIn
             return [split, decodeURIComponent(content), split].join('+');
         });
     },
-    _makeTagInfoChildren = function (attrs: Array<tagInfo>, outList: Array<tagInfo>,
-        len: number, index: number = 0, parent: tagInfo = null): number {
-        var item: tagInfo;
+    _makeTagInfoChildren = function (attrs: Array<TagInfo>, outList: Array<TagInfo>,
+        len: number, index: number = 0, parent: TagInfo = null): number {
+        var item: TagInfo;
         while (index < len) {
             item = attrs[index++];
             if (item.cmd || item.target) {
@@ -319,6 +331,7 @@ export class Compile {
             let cmp:any = _registerVM[name];
             let newSubject:CompileSubject = new CompileSubject(subject);
             let newComponet:any = new cmp();
+            newComponet.$name = name;
             newComponet.$subObject = newSubject;
             newComponet.$parent = componet;
             componet && componet.$children.push(newComponet);
@@ -350,7 +363,7 @@ export class Compile {
         contextFn:(componet:Componet, element:HTMLElement, subject:CompileSubject)=>void):void {
             
             if (subject.isRemove)return;
-            let ele:HTMLElement = HtmlTagDef.getHtmlTagDef(name).createElement(name, element);
+            let ele:HTMLElement = HtmlTagDef.getHtmlTagDef(name).createElement(name, null, element);
             element && element.appendChild(ele);
             if(element == componet.$parentElement) componet.$elements.push(ele);
             subject.subscribe({
@@ -511,17 +524,95 @@ export class Compile {
     }
 
     private tmpl: string;
-    private _tagInfos: Array<tagInfo>;
-    public getHtmlTagObjects(): Array<tagInfo> {
+    private _tagInfos: Array<TagInfo>;
+    public getHtmlTagObjects(): Array<TagInfo> {
         return this._tagInfos;
     };
 
-    constructor(tmpl: string, parentElement:HTMLElement, parentComponet:Componet) {
+    constructor(tmpl: string, parentElement?:HTMLElement, parentComponet?:Componet) {
         this.tmpl = tmpl;
         this._tagInfos = _makeTagInfos(tmpl);
+        _buildCompileFn(this._tagInfos);
     }
 }
 
-var _buildCompileFn = function(tagInfos:Array<tagInfo>){
-    return new Function('Cmpx','Compile', 'componet', 'element', 'subject', 'alert("test")');
-};
+var _buildCompileFn = function(tagInfos:Array<TagInfo>){
+        var outList = [];
+        _buildCompileFnContent(tagInfos, outList);
+        console.log(outList.join('\n'));
+
+        return new Function('Cmpx','Compile', 'componet', 'element', 'subject', outList.join('\n'));
+    },
+    _escapeStringRegex = /([\"\\])/gm,
+    _escapeBuildString = function(s:string):string{
+        return s ? s.replace(/([\"\\])/gm, '\\$1').replace(/\n/gm, '\\n').replace(/\r/gm, '\\r') : '';
+    },
+    _buildAttrContent = function(attrs:Array<AttrInfo>, outList:Array<string>){
+        if (!attrs)return;
+        CmpxLib.each(attrs, function(attr:AttrInfo, index:number){
+            outList.push('Compile.setAttribute(element, "' + attr.name + '", "'+_escapeBuildString(attr.value)+'");');
+        });
+    },
+    _buildCompileFnContent = function(tagInfos:Array<TagInfo>, outList:Array<string>){
+        if (!tagInfos) return;
+        CmpxLib.each(tagInfos, function(tag:TagInfo, index:number){
+            let tagName = tag.tagName;
+            if (!tag.cmd){
+                if (tag.target){
+                    if (_registerVM[tagName]){
+                        if (tag.children && tag.children.length > 0){
+                           outList.push('Compile.createComponet("div", componet, element, subject, function (componet, element, subject) {');
+                           //_buildAttrContent(tag.attrs, outList);
+                           _buildCompileFnContent(tag.children, outList);
+                           outList.push('});');
+                        } else {
+                            outList.push('Compile.createComponet("div", componet, element, subject);');
+                        }
+                    } else {
+                        if ((tag.attrs && tag.attrs.length > 0) || (tag.children && tag.children.length > 0)){
+                           outList.push('Compile.createElement("div", componet, element, subject, function (componet, element, subject) {');
+                           _buildAttrContent(tag.attrs, outList);
+                           _buildCompileFnContent(tag.children, outList);
+                           outList.push('});');
+                        } else {
+                            outList.push('Compile.createElement("div", componet, element, subject);');
+                        }
+                    }
+                } else {
+                    outList.push('Compile.createTextNode("'+ _escapeBuildString(tag.content)+'", componet, element, subject);');
+                }
+            } else{
+                switch(tagName){
+                    case 'for':
+                        outList.push('Compile.forRender(function (componet, element, subject) {');
+                        outList.push('return ' + tag.attrs[0].extend.item);
+                        outList.push('}, function (item, $index, componet, element, subject) {');
+                        _buildCompileFnContent(tag.children, outList);
+                        outList.push('}, componet, element, subject);');
+                        break;
+                    case 'if':
+                        var children = tag.children,
+                            hasElse = children ? children[children.length-1].tagName == 'else' : false,
+                            elseTag = hasElse ? children.pop() : null;
+                        outList.push('Compile.ifRender(function (componet, element, subject) {');
+                        outList.push('return ' + tag.content);
+                        outList.push('}, function (componet, element, subject) {');
+                        _buildCompileFnContent(tag.children, outList);
+                        outList.push('}, function (componet, element, subject) {');
+                        elseTag && _buildCompileFnContent(elseTag.children, outList);
+                        outList.push('}, componet, element, subject);');
+                        break;
+                    case 'include':
+                        var attr = tag.attrs && tag.attrs[0];
+                        outList.push('Compile.includeRender("'+ (attr ? _escapeBuildString(attr.value):'')+'", componet, element, subject);');
+                        break;
+                    case 'tmpl':
+                        var attr = tag.attrs && tag.attrs[0];
+                        outList.push('Compile.tmplRender("'+ (attr ? _escapeBuildString(attr.value):'')+'", componet, element, subject, function (componet, element) {');
+                        _buildCompileFnContent(tag.children, outList);
+                        outList.push('});');
+                        break;
+                }
+            }
+        });
+    };
