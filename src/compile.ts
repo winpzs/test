@@ -144,7 +144,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): TagIn
             if (bind)
                 value = _getBind(value, split);
             attrs.push({
-                name: name || name1,
+                name: (name || name1).toLowerCase(),
                 value: value,
                 bind: bind
             });
@@ -535,8 +535,8 @@ export class Compile {
 
     }
 
-    public static tmplRender(id, componet:Componet, parentElement:HTMLElement, subject:CompileSubject,
-        contextFn:(componet:Componet, element:HTMLElement, subject:CompileSubject)=>void):void {
+    public static tmplRender(id, componet:Componet, parentElement:HTMLElement, subject:CompileSubject, param:any,
+        contextFn:(componet:Componet, element:HTMLElement, subject:CompileSubject, param:any)=>void):void {
 
         if (subject.isRemove)return;
 
@@ -548,11 +548,11 @@ export class Compile {
         };
     }
 
-    public static includeRender(id:string, componet:Componet, parentElement:HTMLElement, insertTemp:boolean, subject:CompileSubject):void{
+    public static includeRender(id:string, componet:Componet, parentElement:HTMLElement, insertTemp:boolean, subject:CompileSubject, param:any):void{
         if (subject.isRemove)return;
 
         var tmpl = _getComponetTmpl(componet, id);
-        tmpl && tmpl.call(componet, componet,  parentElement, subject);
+        tmpl && tmpl.call(componet, componet,  parentElement, subject, param);
     }
 
     private tmpl: string;
@@ -630,10 +630,16 @@ var _buildCompileFn = function(tagInfos:Array<TagInfo>){
             } else{
                 switch(tagName){
                     case 'for':
+                        var extend = tag.attrs[0].extend,
+                            itemName = extend.item
                         outList.push('Compile.forRender(function (componet, element, subject) {');
-                        outList.push('return ' + tag.attrs[0].extend.datas);
-                        outList.push('}, function ('+tag.attrs[0].extend.item+', $index, componet, element, subject) {');
-                        _buildCompileFnContent(tag.children, outList, preInsert);
+                        outList.push('return ' + extend.datas);
+                        outList.push('}, function ('+itemName+', $index, componet, element, subject) {');
+                        var forTmpl = extend.tmpl;
+                        if(forTmpl)
+                            outList.push('Compile.includeRender("'+ _escapeBuildString(forTmpl) + '", componet, element, '+_getInsertTemp(preInsert)+', subject, '+itemName+');');
+                        else
+                            _buildCompileFnContent(tag.children, outList, preInsert);
                         outList.push('}, componet, element, subject, '+_getInsertTemp(preInsert)+');');
                         preInsert = true;
                         break;
@@ -651,13 +657,16 @@ var _buildCompileFn = function(tagInfos:Array<TagInfo>){
                         preInsert = true;
                         break;
                     case 'include':
-                        var attr = tag.attrs && tag.attrs[0];
-                        outList.push('Compile.includeRender("'+ (attr ? _escapeBuildString(attr.value):'')+'", componet, element, '+_getInsertTemp(preInsert)+', subject);');
+                        var incAttr = CmpxLib.arrayToObject<AttrInfo>(tag.attrs, 'name'),
+                            incTmpl = incAttr['tmpl'];
+                        outList.push('Compile.includeRender("'+ (incTmpl ? _escapeBuildString(incTmpl.value):'')+'", componet, element, '+_getInsertTemp(preInsert)+', subject);');
                         preInsert = true;
                         break;
                     case 'tmpl':
-                        var attr = tag.attrs && tag.attrs[0];
-                        outList.push('Compile.tmplRender("'+ (attr ? _escapeBuildString(attr.value):'')+'", componet, element, subject, function (componet, element, subject) {');
+                        var tmplAttr = CmpxLib.arrayToObject<AttrInfo>(tag.attrs, 'name'),
+                            tmplId = tmplAttr['id'],
+                            tmplForItem = tmplAttr['foritem'];
+                        outList.push('Compile.tmplRender("'+ (tmplId ? _escapeBuildString(tmplId.value):'')+'", componet, element, subject, function (componet, element, subject'+(tmplForItem ?　', '+tmplForItem.value : '')+') {');
                         _buildCompileFnContent(tag.children, outList, preInsert);
                         outList.push('});');
                         break;

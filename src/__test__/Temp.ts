@@ -18,6 +18,10 @@ var tmpl = `
   {{include tmpl="tmpl1" /}}{{for userItem in this.users}}
     <div> for div text </div>
   {{/for}}
+  {{tmpl id="tmpl2" forItem="item"}}
+    {{item.name}}
+  {{/tmpl}}
+  {{for item in this.list tmpl="tmpl2" /}}
 </div>
 `;
 

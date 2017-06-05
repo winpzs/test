@@ -139,6 +139,14 @@ export default class CmpxLib {
         return p ? slice.apply(p, [start, count]) : p;
     }
 
+    static arrayToObject<T>(array:Array<T>, fieldName:string):{[name:string]:T}{
+        var obj:{[name:string]:T} = {};
+        CmpxLib.each(array, function(item:any, index:number){
+            obj[item[fieldName]] = item;
+        });
+        return obj;
+    }
+
     static each(list:Array<any>, fn:(item:any, idx:number)=>any, thisArg:any=null){
         if (!list)return;
         var len = list.length;

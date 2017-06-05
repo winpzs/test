@@ -23,6 +23,16 @@ function anonymous(Cmpx, Compile, componet, element, subject
             Compile.createTextNode(" ", componet, element, subject);
         }, componet, element, subject, true);
         Compile.createTextNode(" ", componet, element, subject);
+        Compile.tmplRender("tmpl2", componet, element, subject, function (componet, element, subject, item) {
+            Compile.createTextNode(" \"+item.name+\" ", componet, element, subject);
+        });
+        Compile.createTextNode(" ", componet, element, subject);
+        Compile.forRender(function (componet, element, subject) {
+            return this.list
+        }, function (item, $index, componet, element, subject) {
+            Compile.includeRender("tmpl2", componet, element, false, subject, item);
+        }, componet, element, subject, false);
+        Compile.createTextNode(" ", componet, element, subject);
     });
     Compile.createTextNode(" ", componet, element, subject);
 }
