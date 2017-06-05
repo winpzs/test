@@ -318,13 +318,45 @@ let _tmplName = '__tmpl__',
             return componet.$parent ?_getComponetTmpl(componet.$parent, id) : null;
         else
             return tmpls[id];
-    }
+    },
+    _insertAfter = function(newElement:Node, refElement:Node, parent:Node){
+        if (refElement.nextSibling){
+            parent.insertBefore(newElement, refElement);
+        } else
+            parent.appendChild(newElement);
+    },
+    _inserToParent = function(newElement:Node, type:string, refElement:Node,parent?:Node){
+        parent || (parent = refElement.parentElement);
+        switch(type){
+            case 'insert':
+                _insertAfter(newElement, refElement, parent);
+                break;
+            default:
+                parent.appendChild(newElement);
+                break;
+        }
+    },
+    _getRefElement = function(content:string, parentElement:HTMLElement, insertTemp:boolean):{tmplElement:Node, insertTemp:boolean}{
+        var tmplElement:Node;
+        if (insertTemp){
+            tmplElement = document.createComment(content);
+            parentElement.appendChild(tmplElement);
+        } else {
+            tmplElement = parentElement.lastChild;
+            if (!tmplElement){
+                insertTemp = true;
+                tmplElement = document.createComment(content);
+                parentElement.appendChild(tmplElement);
+            }
+        }
+       return {tmplElement:tmplElement, insertTemp:insertTemp};
+    };
 
 export class Compile {
 
     public static createComponet(
-            name:string, componet:Componet, element:HTMLElement, insert:string, subject:CompileSubject,
-            contextFn:(component:Componet, element:HTMLElement, insert:string,subject:CompileSubject)=>void
+            name:string, componet:Componet, parentElement:HTMLElement, subject:CompileSubject,
+            contextFn:(component:Componet, element:HTMLElement,subject:CompileSubject)=>void
         ):void {
             if (subject.isRemove)return;
 
@@ -335,7 +367,7 @@ export class Compile {
             newComponet.$subObject = newSubject;
             newComponet.$parent = componet;
             componet && componet.$children.push(newComponet);
-            newComponet.$parentElement = element;
+            newComponet.$parentElement = parentElement;
             newSubject.subscribe({
                 remove:function(p:ISubscribeRemoveEvent) {
                     try{
@@ -347,7 +379,7 @@ export class Compile {
                             var childs = componet.$children,
                                 idx = childs.indexOf(newComponet);
                             (idx >=  0) && childs.splice(idx, 1);
-                        } 
+                        }
 
                         newComponet.$subObject = newComponet.$children = newComponet.$elements =
                             newComponet.$parent = newComponet.$parentElement = null;
@@ -356,44 +388,48 @@ export class Compile {
                     }
                 }
             });
-            contextFn && contextFn(newComponet, element, 'inst', newSubject);
+            contextFn && contextFn(newComponet, parentElement, newSubject);
     }
 
-    public static createElement(name:string, componet:Componet, element:HTMLElement, insert:string, subject:CompileSubject,
-        contextFn:(componet:Componet, element:HTMLElement, insert:string, subject:CompileSubject)=>void):void {
+    public static createElement(name:string, componet:Componet, parentElement:HTMLElement, subject:CompileSubject,
+        contextFn:(componet:Componet, element:HTMLElement, subject:CompileSubject)=>void):void {
             
             if (subject.isRemove)return;
-            let ele:HTMLElement = HtmlTagDef.getHtmlTagDef(name).createElement(name, null, element);
-            element && element.appendChild(ele);
-            if(element == componet.$parentElement) componet.$elements.push(ele);
+            let element:HTMLElement = HtmlTagDef.getHtmlTagDef(name).createElement(name, null, parentElement);
+            parentElement.appendChild(element);
+            if(parentElement == componet.$parentElement) componet.$elements.push(element);
             subject.subscribe({
                 remove:function(p:ISubscribeRemoveEvent) {
                     //如果父节点删除，这里就不用处理了。
-                    if (p.parentElement == element){
-                        element.removeChild(ele);
-                        var els = componet.$elements,
-                            idx = els.indexOf(ele);
-                        (idx >=  0) && els.splice(idx, 1);
+                    if (p.parentElement == parentElement){
+                        parentElement.removeChild(element);
+                        if (!componet.$isDisposed){
+                            var els = componet.$elements,
+                                idx = els.indexOf(element);
+                            (idx >=  0) && els.splice(idx, 1);
+                        }
                     }
                 }
             });
-            contextFn && contextFn(componet, ele, null, subject);
+            contextFn && contextFn(componet, element, subject);
     }
 
-    public static createTextNode(content:string, componet:Componet, element:HTMLElement, insert:string, subject:CompileSubject):Text{
+    public static createTextNode(content:string, componet:Componet, parentElement:HTMLElement, subject:CompileSubject):Text{
         if (subject.isRemove)return;
 
         let textNode = document.createTextNode(content);
-        element && element.appendChild(textNode);
-        if(element == componet.$parentElement) componet.$elements.push(textNode);
+        parentElement.appendChild(textNode);
+        if(parentElement == componet.$parentElement) componet.$elements.push(textNode);
         subject.subscribe({
             remove:function(p:ISubscribeRemoveEvent) {
                 //如果父节点删除，这里就不用处理了。
-                if (p.parentElement == element){
-                    element.removeChild(textNode);
-                    var els = componet.$elements,
-                        idx = els.indexOf(textNode);
-                    (idx >=  0) && els.splice(idx, 1);
+                if (p.parentElement == parentElement){
+                    parentElement.removeChild(textNode);
+                    if (!componet.$isDisposed){
+                        var els = componet.$elements,
+                            idx = els.indexOf(textNode);
+                        (idx >=  0) && els.splice(idx, 1);
+                    }
                 }
             }
         });
@@ -404,27 +440,29 @@ export class Compile {
         HtmlTagDef.getHtmlAttrDef(name).setAttribute(element, name, value);
     }
 
-
     public static forRender(
             dataFn:(componet:Componet, element:HTMLElement, subject:CompileSubject)=>any,
-            eachFn:(componet:Componet, element:HTMLElement, insert:string, subject:CompileSubject)=>any,
-            componet:Componet, element:HTMLElement, insert:string, subject:CompileSubject
+            eachFn:(componet:Componet, element:HTMLElement, subject:CompileSubject)=>any,
+            componet:Componet, parentElement:HTMLElement, insertTemp:boolean, subject:CompileSubject
         ):void {
+            
+            if (subject.isRemove || !dataFn || !eachFn)return;
 
-            if (subject.isRemove)return;
+            var { tmplElement, insertTemp } = _getRefElement('for', parentElement, insertTemp);
+
             var value:any, newSubject:CompileSubject;
             var removeFn = function(){
                 if (newSubject){
                     newSubject.remove({
                         componet:componet,
-                        parentElement:element.parentElement,
-                        element:element
+                        parentElement:parentElement,
+                        element:null
                     });
                 }
             };
             subject.subscribe({
                 update:function(p:ISubscribeEvent){
-                    let datas = dataFn.call(componet, componet, element, subject);
+                    let datas = dataFn.call(componet, componet, parentElement, subject);
                     if (datas != value){
                         value = datas;
                         removeFn();
@@ -434,13 +472,18 @@ export class Compile {
                                 newSubject.unLinkSubject();
                             }
                         });
+                        var fr = document.createDocumentFragment();
                         CmpxLib.each(datas, function(item, index){
-                            eachFn.call(componet, item, index, componet, element, insert, newSubject);
+                            eachFn.call(componet, item, index, componet, fr, newSubject);
                         });
+                        _inserToParent(fr, 'insert', tmplElement, parentElement);
                     }
                 },
                 remove:function(p:ISubscribeRemoveEvent){
-                    removeFn();
+                    if (insertTemp && p.parentElement == parentElement){
+                        parentElement.removeChild(tmplElement);
+                    }
+                    //removeFn();
                     newSubject = null;
                 }
             });
@@ -448,26 +491,28 @@ export class Compile {
 
     public static ifRender(
             ifFun:(componet:Componet, element:HTMLElement, subject:CompileSubject)=>any,
-            trueFn:(componet:Componet, element:HTMLElement, insert:string, subject:CompileSubject)=>any,
-            falseFn:(componet:Componet, element:HTMLElement, insert:string, subject:CompileSubject)=>any,
-            componet:Componet, element:HTMLElement, insert:string, subject:CompileSubject
+            trueFn:(componet:Componet, element:HTMLElement, subject:CompileSubject)=>any,
+            falseFn:(componet:Componet, element:HTMLElement, subject:CompileSubject)=>any,
+            componet:Componet, parentElement:HTMLElement, insertTemp:boolean, subject:CompileSubject
         ):void {
 
             if (subject.isRemove)return;
+
+            var { tmplElement, insertTemp } = _getRefElement('if', parentElement, insertTemp);
 
             var value, newSubject:CompileSubject;
             var removeFn = function(){
                 if (newSubject){
                     newSubject.remove({
                         componet:componet,
-                        parentElement:element.parentElement,
-                        element:element
+                        parentElement:parentElement,
+                        element:null
                     });
                 }
             };
             subject.subscribe({
                 update:function(p:ISubscribeEvent){
-                    let newValue = !!ifFun.call(componet, componet, element, subject);
+                    let newValue = !!ifFun.call(componet, componet, parentElement, subject);
 
                     if (newValue != value){
                         value = newValue;
@@ -481,34 +526,39 @@ export class Compile {
                             }
                         });
 
+                        var fr = document.createDocumentFragment();
                         if (newValue)
-                            trueFn.call(componet, componet, element, insert, newSubject);
+                            trueFn.call(componet, componet, parentElement, newSubject);
                         else
-                            falseFn.call(componet, componet, element, insert, newSubject);
+                            falseFn.call(componet, componet, parentElement, newSubject);
+                        _inserToParent(fr, 'insert', tmplElement, parentElement);
                     }
                 },
                 remove:function(p:ISubscribeRemoveEvent){
-                    removeFn();
+                    //removeFn();
+                    if (insertTemp && p.parentElement == parentElement){
+                        parentElement.removeChild(tmplElement);
+                    }
                     newSubject = null;
                 }
             });
 
     }
 
-    public static tmplRender(id, componet:Componet, element:HTMLElement, subject:CompileSubject,
-        contextFn:(componet:Componet, element:HTMLElement, insert:string, subject:CompileSubject)=>void):void {
+    public static tmplRender(id, componet:Componet, parentElement:HTMLElement, subject:CompileSubject,
+        contextFn:(componet:Componet, element:HTMLElement, subject:CompileSubject)=>void):void {
 
         if (subject.isRemove)return;
 
         var tmpls = componet[_tmplName];
         tmpls || (tmpls = componet[_tmplName] = {});
 
-        tmpls[id] = function(componet:Componet, element:HTMLElement, insert:string, subject:CompileSubject){
-            contextFn && contextFn.call(componet, componet,  element, insert, subject)
+        tmpls[id] = function(componet:Componet, element:HTMLElement, subject:CompileSubject){
+            contextFn && contextFn.call(componet, componet,  element, subject)
         };
     }
 
-    public static includeRender(id:string, componet:Componet, element:HTMLElement, insert:string, subject:CompileSubject):void{
+    public static includeRender(id:string, componet:Componet, parentElement:HTMLElement, insertTemp:boolean, subject:CompileSubject):void{
         if (subject.isRemove)return;
 
         var tmpl = _getComponetTmpl(componet, id);
@@ -519,7 +569,7 @@ export class Compile {
                     newSubject.unLinkSubject();
                 }
             });
-            tmpl.call(componet, componet,  element, insert, newSubject);
+            tmpl.call(componet, componet,  parentElement, newSubject);
         }
     }
 
@@ -528,21 +578,28 @@ export class Compile {
     public getHtmlTagObjects(): Array<TagInfo> {
         return this._tagInfos;
     };
+    readonly contextFn:any;
 
     constructor(tmpl: string, parentElement?:HTMLElement, parentComponet?:Componet) {
         this.tmpl = tmpl;
         this._tagInfos = _makeTagInfos(tmpl);
         var fn =_buildCompileFn(this._tagInfos);
-        console.log(fn.toString());
+
+        this.contextFn = fn;
+        // var componet:Componet = new Componet(),
+        //     //必须DocumentFragment
+        //     fr = document.createDocumentFragment(),
+        //     subject = new CompileSubject();
+        // fn.call(componet, Cmpx, Compile, componet, fr, subject);
     }
 }
 
 var _buildCompileFn = function(tagInfos:Array<TagInfo>){
         var outList = [];
-        _buildCompileFnContent(tagInfos, outList);
+        _buildCompileFnContent(tagInfos, outList, true);
         //console.log(outList.join('\n'));
 
-        return new Function('Cmpx','Compile', 'componet', 'element', 'insert', 'subject', outList.join('\n'));
+        return new Function('Cmpx','Compile', 'componet', 'element', 'subject', outList.join('\n'));
     },
     _escapeStringRegex = /([\"\\])/gm,
     _escapeBuildString = function(s:string):string{
@@ -554,7 +611,10 @@ var _buildCompileFn = function(tagInfos:Array<TagInfo>){
             outList.push('Compile.setAttribute(element, "' + attr.name + '", "'+_escapeBuildString(attr.value)+'");');
         });
     },
-    _buildCompileFnContent = function(tagInfos:Array<TagInfo>, outList:Array<string>){
+    _getInsertTemp = function(preInsert:boolean){
+        return preInsert ? 'true' : 'false';
+    },
+    _buildCompileFnContent = function(tagInfos:Array<TagInfo>, outList:Array<string>, preInsert:boolean){
         if (!tagInfos) return;
         CmpxLib.each(tagInfos, function(tag:TagInfo, index:number){
             let tagName = tag.tagName;
@@ -562,34 +622,38 @@ var _buildCompileFn = function(tagInfos:Array<TagInfo>){
                 if (tag.target){
                     if (_registerVM[tagName]){
                         if (tag.children && tag.children.length > 0){
-                           outList.push('Compile.createComponet("'+tagName+'", componet, element, insert, subject, function (componet, element, insert, subject) {');
+                           outList.push('Compile.createComponet("'+tagName+'", componet, element, subject, function (componet, element, subject) {');
                            //_buildAttrContent(tag.attrs, outList);
-                           _buildCompileFnContent(tag.children, outList);
+                           _buildCompileFnContent(tag.children, outList, preInsert);
                            outList.push('});');
                         } else {
-                            outList.push('Compile.createComponet("'+tagName+'", componet, element, insert, subject);');
+                            outList.push('Compile.createComponet("'+tagName+'", componet, element, subject);');
                         }
+                        preInsert=true;
                     } else {
                         if ((tag.attrs && tag.attrs.length > 0) || (tag.children && tag.children.length > 0)){
-                           outList.push('Compile.createElement("'+tagName+'", componet, element, insert, subject, function (componet, element, insert, subject) {');
+                           outList.push('Compile.createElement("'+tagName+'", componet, element, subject, function (componet, element, subject) {');
                            _buildAttrContent(tag.attrs, outList);
-                           _buildCompileFnContent(tag.children, outList);
+                           _buildCompileFnContent(tag.children, outList, preInsert);
                            outList.push('});');
                         } else {
-                            outList.push('Compile.createElement("'+tagName+'", componet, element, insert, subject);');
+                            outList.push('Compile.createElement("'+tagName+'", componet, element, subject);');
                         }
+                        preInsert = false;
                     }
                 } else {
-                    outList.push('Compile.createTextNode("'+ _escapeBuildString(tag.content)+'", componet, element, insert, subject);');
+                    outList.push('Compile.createTextNode("'+ _escapeBuildString(tag.content)+'", componet, element, subject);');
+                    preInsert = false;
                 }
             } else{
                 switch(tagName){
                     case 'for':
                         outList.push('Compile.forRender(function (componet, element, subject) {');
-                        outList.push('return ' + tag.attrs[0].extend.item);
-                        outList.push('}, function (item, $index, componet, element, insert, subject) {');
-                        _buildCompileFnContent(tag.children, outList);
-                        outList.push('}, componet, element, subject, insert);');
+                        outList.push('return ' + tag.attrs[0].extend.datas);
+                        outList.push('}, function ('+tag.attrs[0].extend.item+', $index, componet, element, subject) {');
+                        _buildCompileFnContent(tag.children, outList, preInsert);
+                        outList.push('}, componet, element, subject, '+_getInsertTemp(preInsert)+');');
+                        preInsert = true;
                         break;
                     case 'if':
                         var children = tag.children,
@@ -597,20 +661,22 @@ var _buildCompileFn = function(tagInfos:Array<TagInfo>){
                             elseTag = hasElse ? children.pop() : null;
                         outList.push('Compile.ifRender(function (componet, element, subject) {');
                         outList.push('return ' + tag.content);
-                        outList.push('}, function (componet, element, insert, subject) {');
-                        _buildCompileFnContent(tag.children, outList);
-                        outList.push('}, function (componet, element, insert, subject) {');
-                        elseTag && _buildCompileFnContent(elseTag.children, outList);
-                        outList.push('}, componet, element, subject, insert);');
+                        outList.push('}, function (componet, element, subject) {');
+                        _buildCompileFnContent(tag.children, outList, preInsert);
+                        outList.push('}, function (componet, element, subject) {');
+                        elseTag && _buildCompileFnContent(elseTag.children, outList, preInsert);
+                        outList.push('}, componet, element, subject, '+_getInsertTemp(preInsert)+');');
+                        preInsert = true;
                         break;
                     case 'include':
                         var attr = tag.attrs && tag.attrs[0];
-                        outList.push('Compile.includeRender("'+ (attr ? _escapeBuildString(attr.value):'')+'", componet, element, insert, subject);');
+                        outList.push('Compile.includeRender("'+ (attr ? _escapeBuildString(attr.value):'')+'", componet, element, '+_getInsertTemp(preInsert)+', subject);');
+                        preInsert = true;
                         break;
                     case 'tmpl':
                         var attr = tag.attrs && tag.attrs[0];
-                        outList.push('Compile.tmplRender("'+ (attr ? _escapeBuildString(attr.value):'')+'", componet, element, subject, function (componet, element, insert, subject) {');
-                        _buildCompileFnContent(tag.children, outList);
+                        outList.push('Compile.tmplRender("'+ (attr ? _escapeBuildString(attr.value):'')+'", componet, element, subject, function (componet, element, subject) {');
+                        _buildCompileFnContent(tag.children, outList, preInsert);
                         outList.push('});');
                         break;
                 }

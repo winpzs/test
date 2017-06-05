@@ -140,6 +140,7 @@ export default class CmpxLib {
     }
 
     static each(list:Array<any>, fn:(item:any, idx:number)=>any, thisArg:any=null){
+        if (!list)return;
         var len = list.length;
         for (let i=0, len = list.length; i<len; i++){
             if (fn.call(thisArg, list[i], i) === false) break;

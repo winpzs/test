@@ -19,6 +19,6 @@
     },
     //"compileOnSave": true,
     "exclude": [
-        "node_modules", "dist", "./*.*", "test", "src/__test__/**"
+        "node_modules", "dist", "./*.*", "test", "src/__test__/**", "src/output/**"
     ]
 }

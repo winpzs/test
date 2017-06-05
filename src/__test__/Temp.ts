@@ -6,49 +6,35 @@ import { HtmlTagDef } from '../htmlTagDef';
 import Cmpx from '../cmpx';
 import { Componet } from '../componet';
 
-var tmpl = `before<div><span 
- id="spanId" name="spanName" content="{{aaa+aa
-    a》&<>}}">spanText</span>{{bbbbbb}}  divT{{ if a}}ext{{else user.isOk > newaaa }} {{ for item in list}} {{/for}}{{/if}}</div>
- {{for item in list tmpl="user.html" /}}{{tmpl}} {{include src="list.html" /}} tmplText {{/tmpl}}{{include}}`;
+import fs = require('fs');
 
-var tmplCmd = `!{{if this.user.ok}}
-  userOk
-{{else this.server.ok}}
-serverOk
-{{else this.role.ok}}
-roleOk
-{{/if}}
-{{for this.item in list}}
-for Text
-{{/for}}
-{{for this.item in list tmpl="index.html" /}}
-<div text="{{text}}ok"> divText <span id="spanId"> spanText:{{name}}{{this.anem}} </span></div>
-<input type="text">
-<input type="text">aaaa</input>
-<input type="text" />
-!
-a
-<textarea>
-<br /><div>aa
-a</div>
-</textarea>
-<script>
-asdf<br />
-</script>
-<input type="text" readonly />
-{{tmpl id="tmpl1"}}
-  <span> tmpl span</span>
-{{/tmpl}}
-{{include src="tmpl1" /}}
+var tmpl = `
+<div>
+  divText
+  <span id="span1"> spanText </Span>
+  {{tmpl id="tmpl1"}}
+    tmpl text
+  {{/tmpl}}
+  {{include tmpl="tmpl1" /}}{{for userItem in this.users}}
+    <div> for div text </div>
+  {{/for}}
+</div>
 `;
 
 describe('Compile', () => {
   it('_makeTags', () => {
     console.time('Compile');
-    var cp = new Compile(tmplCmd);
+    var cp = new Compile(tmpl);
     console.timeEnd('Compile');
     var tags = cp.getHtmlTagObjects();
     console.log(JSON.stringify(tags));
+
+    let src = __dirname + '/../output/complieContext.ts'
+    fs.writeFileSync(src, cp.contextFn.toString());
+    
+    src = __dirname + '/../output/htmlTagObjects.json'
+    fs.writeFileSync(src, JSON.stringify(tags));
+
     //console.log((tags));
 
     expect(tags.length == 23).to.equal(true);

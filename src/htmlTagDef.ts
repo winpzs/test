@@ -250,6 +250,7 @@ _makeSpecTags();
 export interface IHtmlAttrDef {
   setAttribute: (element: HTMLElement, name: string, value: string) => void;
   getAttribute: (element: HTMLElement, name: string) => string;
+  writeable:boolean;
 }
 
 /**
@@ -261,7 +262,8 @@ export const DEFAULT_ATTR: IHtmlAttrDef = {
   },
   getAttribute(element: HTMLElement, name: string) {
     return element.getAttribute(name);
-  }
+  },
+  writeable:false
 };
 
 /**
@@ -273,7 +275,8 @@ export const DEFAULT_ATTR_PROP: IHtmlAttrDef = {
   },
   getAttribute(element: HTMLElement, name: string) {
     return element[name];
-  }
+  },
+  writeable:true
 };
 
 /**
