@@ -320,23 +320,13 @@ let _tmplName = '__tmpl__',
             return tmpls[id];
     },
     _insertAfter = function(newElement:Node, refElement:Node, parent:Node){
-        if (refElement.nextSibling){
-            parent.insertBefore(newElement, refElement);
+        var nextSibling = refElement.nextSibling;
+        if (nextSibling){
+            parent.insertBefore(newElement, nextSibling);
         } else
             parent.appendChild(newElement);
     },
-    _inserToParent = function(newElement:Node, type:string, refElement:Node,parent?:Node){
-        parent || (parent = refElement.parentElement);
-        switch(type){
-            case 'insert':
-                _insertAfter(newElement, refElement, parent);
-                break;
-            default:
-                parent.appendChild(newElement);
-                break;
-        }
-    },
-    _getRefElement = function(content:string, parentElement:HTMLElement, insertTemp:boolean):{tmplElement:Node, insertTemp:boolean}{
+    _getRefElement = function(content:string, parentElement:HTMLElement, insertTemp:boolean):{tmplElement:Node, isInsertTemp:boolean}{
         var tmplElement:Node;
         if (insertTemp){
             tmplElement = document.createComment(content);
@@ -349,7 +339,7 @@ let _tmplName = '__tmpl__',
                 parentElement.appendChild(tmplElement);
             }
         }
-       return {tmplElement:tmplElement, insertTemp:insertTemp};
+       return {tmplElement:tmplElement, isInsertTemp:insertTemp};
     };
 
 export class Compile {
@@ -448,7 +438,7 @@ export class Compile {
             
             if (subject.isRemove || !dataFn || !eachFn)return;
 
-            var { tmplElement, insertTemp } = _getRefElement('for', parentElement, insertTemp);
+            var { tmplElement, isInsertTemp } = _getRefElement('for', parentElement, insertTemp);
 
             var value:any, newSubject:CompileSubject;
             var removeFn = function(){
@@ -472,15 +462,15 @@ export class Compile {
                                 newSubject.unLinkSubject();
                             }
                         });
-                        var fr = document.createDocumentFragment();
+                        var fragment = document.createDocumentFragment();
                         CmpxLib.each(datas, function(item, index){
-                            eachFn.call(componet, item, index, componet, fr, newSubject);
+                            eachFn.call(componet, item, index, componet, fragment, newSubject);
                         });
-                        _inserToParent(fr, 'insert', tmplElement, parentElement);
+                        _insertAfter(fragment, tmplElement, parentElement);
                     }
                 },
                 remove:function(p:ISubscribeRemoveEvent){
-                    if (insertTemp && p.parentElement == parentElement){
+                    if (isInsertTemp && p.parentElement == parentElement){
                         parentElement.removeChild(tmplElement);
                     }
                     //removeFn();
@@ -498,7 +488,7 @@ export class Compile {
 
             if (subject.isRemove)return;
 
-            var { tmplElement, insertTemp } = _getRefElement('if', parentElement, insertTemp);
+            var { tmplElement, isInsertTemp } = _getRefElement('if', parentElement, insertTemp);
 
             var value, newSubject:CompileSubject;
             var removeFn = function(){
@@ -526,17 +516,17 @@ export class Compile {
                             }
                         });
 
-                        var fr = document.createDocumentFragment();
+                        var fragment = document.createDocumentFragment();
                         if (newValue)
-                            trueFn.call(componet, componet, parentElement, newSubject);
+                            trueFn.call(componet, componet, fragment, newSubject);
                         else
-                            falseFn.call(componet, componet, parentElement, newSubject);
-                        _inserToParent(fr, 'insert', tmplElement, parentElement);
+                            falseFn.call(componet, componet, fragment, newSubject);
+                        _insertAfter(fragment, tmplElement, parentElement);
                     }
                 },
                 remove:function(p:ISubscribeRemoveEvent){
                     //removeFn();
-                    if (insertTemp && p.parentElement == parentElement){
+                    if (isInsertTemp && p.parentElement == parentElement){
                         parentElement.removeChild(tmplElement);
                     }
                     newSubject = null;
@@ -562,15 +552,7 @@ export class Compile {
         if (subject.isRemove)return;
 
         var tmpl = _getComponetTmpl(componet, id);
-        if (tmpl){
-            let newSubject:CompileSubject = new CompileSubject(subject);
-            newSubject.subscribe({
-                remove:function(p:ISubscribeRemoveEvent){
-                    newSubject.unLinkSubject();
-                }
-            });
-            tmpl.call(componet, componet,  parentElement, newSubject);
-        }
+        tmpl && tmpl.call(componet, componet,  parentElement, subject);
     }
 
     private tmpl: string;
