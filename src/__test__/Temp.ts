@@ -36,6 +36,9 @@ a</div>
 asdf<br />
 </script>
 <input type="text" readonly />
+{{tmpl id="tmpl1"}}
+  <span> tmpl span</span>
+{{/tmpl}}
 {{include src="tmpl1" /}}
 `;
 
@@ -81,42 +84,42 @@ describe('Compile', () => {
 // new TestComponet();
 
 
-function cmpFun(Cmpx: any, Compile, componet: Componet, element: HTMLElement, subject:CompileSubject) {
-  Compile.createElement('div', componet, element, subject, function (componet, element, subject) {
+function cmpFun(Cmpx: any, Compile, componet: Componet, element: HTMLElement, insert:string, subject:CompileSubject) {
+  Compile.createElement('div', componet, element, insert, subject, function (componet, element, insert, subject) {
 
     Compile.setAttribute(element, 'name', 'value');
 
-    Compile.createComponet('user', componet, element, subject, function (componet, element, subject) {
+    Compile.createComponet('user', componet, element, 'inst', subject, function (componet, element, insert, subject) {
 
-      Compile.createTextNode('aaaaaa', componet, element, subject);
+      Compile.createTextNode('aaaaaa', componet, element, insert, subject);
 
-      Compile.createElement('aaaaaa', componet, element, subject, function (componet, element, subject) {
-        Compile.createTextNode('aaaaaa', componet, element, subject);
-        Compile.createElement('aaaaaa', componet, element, subject);
+      Compile.createElement('aaaaaa', componet, element, insert, subject, function (componet, element, insert, subject) {
+        Compile.createTextNode('aaaaaa', componet, element, insert, subject);
+        Compile.createElement('aaaaaa', componet, element, insert, subject);
       });
 
       Compile.forRender(function (componet, element, subject) {
         return this.list;
-      }, function (item, $index, componet, element, subject) {
-          Compile.createElement('div', componet, element, subject, function (componet, element, subject) { })
-      }, componet, element, subject);
+      }, function (item, $index, componet, element, insert, subject) {
+          Compile.createElement('div', componet, element, insert, subject, function (componet, element, insert, subject) { })
+      }, componet, element, subject, insert);
       //end for
 
       Compile.ifRender(function (componet, element, subject) {
         return this.isOk;
+      }, function (componet, element, insert, subject) {
+          Compile.createElement('div', componet, element, insert, subject);
       }, function (componet, element, subject) {
-          Compile.createElement('div', componet, element, subject);
-      }, function (componet, element, subject) {
-          Compile.createElement('div', componet, element, subject);
-      }, componet, element, subject);
+          Compile.createElement('div', componet, element, insert, subject);
+      }, componet, element, insert, insert, subject);
       //end if
 
-      Compile.tmplRender('tmpl1', componet, element, subject, function (componet, element) {
-          Compile.createElement('div', componet, element, subject)
+      Compile.tmplRender('tmpl1', componet, element, subject, function (componet, element, insert, subject) {
+          Compile.createElement('div', componet, element, insert, subject)
       });
       //end tmpl
 
-      Compile.includeRender('tmpl1', componet, element, subject);
+      Compile.includeRender('tmpl1', componet, element, insert, subject);
 
     });
 
@@ -125,62 +128,84 @@ function cmpFun(Cmpx: any, Compile, componet: Componet, element: HTMLElement, su
 }
 
 
-function cmpFunTemp(Cmpx: any, Compile, componet: Componet, element: HTMLElement, subject: CompileSubject) {
-  Compile.createTextNode("!", componet, element, subject);
+function anonymous(Cmpx, Compile, componet, element, insert, subject
+/**/) {
+
+  Compile.createTextNode("!", componet, element, insert, subject);
+
   Compile.ifRender(function (componet, element, subject) {
     return this.user.ok
-  }, function (componet, element, subject) {
-    Compile.createTextNode(" userOk ", componet, element, subject);
-  }, function (componet, element, subject) {
-    Compile.createTextNode(" serverOk ", componet, element, subject);
-  }, componet, element, subject);
-  Compile.createTextNode(" ", componet, element, subject);
+  }, function (componet, element, insert, subject) {
+    Compile.createTextNode(" userOk ", componet, element, insert, subject);
+  }, function (componet, element, insert, subject) {
+    Compile.createTextNode(" serverOk ", componet, element, insert, subject);
+  }, componet, element, subject, insert);
+
+  Compile.createTextNode(" ", componet, element, insert, subject);
+
   Compile.forRender(function (componet, element, subject) {
     return this.item
-  }, function (item, $index, componet, element, subject) {
-    Compile.createTextNode(" for Text ", componet, element, subject);
-  }, componet, element, subject);
-  Compile.createTextNode(" ", componet, element, subject);
+  }, function (item, $index, componet, element, insert, subject) {
+    Compile.createTextNode(" for Text ", componet, element, insert, subject);
+  }, componet, element, subject, insert);
+
+  Compile.createTextNode(" ", componet, element, insert, subject);
+
   Compile.forRender(function (componet, element, subject) {
     return this.item
-  }, function (item, $index, componet, element, subject) {
-  }, componet, element, subject);
-  Compile.createTextNode(" ", componet, element, subject);
-  Compile.createElement("div", componet, element, subject, function (componet, element, subject) {
+  }, function (item, $index, componet, element, insert, subject) {
+  }, componet, element, subject, insert);
+
+  Compile.createTextNode(" ", componet, element, insert, subject);
+
+  Compile.createElement("div", componet, element, insert, subject, function (componet, element, insert, subject) {
     Compile.setAttribute(element, "text", "\"+text+\"ok");
-    Compile.createTextNode(" divText ", componet, element, subject);
-    Compile.createElement("div", componet, element, subject, function (componet, element, subject) {
+    Compile.createTextNode(" divText ", componet, element, insert, subject);
+    Compile.createElement("span", componet, element, insert, subject, function (componet, element, insert, subject) {
       Compile.setAttribute(element, "id", "spanId");
-      Compile.createTextNode(" spanText:\"+name+\"\"+this.anem+\" ", componet, element, subject);
+      Compile.createTextNode(" spanText:\"+name+\"\"+this.anem+\" ", componet, element, insert, subject);
     });
   });
-  Compile.createTextNode(" ", componet, element, subject);
-  Compile.createElement("div", componet, element, subject, function (componet, element, subject) {
+
+  Compile.createTextNode(" ", componet, element, insert, subject);
+  Compile.createElement("input", componet, element, insert, subject, function (componet, element, insert, subject) {
     Compile.setAttribute(element, "type", "text");
   });
-  Compile.createTextNode(" ", componet, element, subject);
-  Compile.createElement("div", componet, element, subject, function (componet, element, subject) {
+  Compile.createTextNode(" ", componet, element, insert, subject);
+  Compile.createElement("input", componet, element, insert, subject, function (componet, element, insert, subject) {
     Compile.setAttribute(element, "type", "text");
   });
-  Compile.createTextNode("aaaa", componet, element, subject);
-  Compile.createTextNode(" ", componet, element, subject);
-  Compile.createElement("div", componet, element, subject, function (componet, element, subject) {
+  Compile.createTextNode("aaaa", componet, element, insert, subject);
+  Compile.createTextNode(" ", componet, element, insert, subject);
+  Compile.createElement("input", componet, element, insert, subject, function (componet, element, insert, subject) {
     Compile.setAttribute(element, "type", "text");
   });
-  Compile.createTextNode(" ! a ", componet, element, subject);
-  Compile.createElement("div", componet, element, subject, function (componet, element, subject) {
-    Compile.createTextNode("\n&amp;lt;br&nbsp;/&amp;gt;&amp;lt;div&amp;gt;aa\na&amp;lt;/div&amp;gt;\n", componet, element, subject);
+  Compile.createTextNode(" ! a ", componet, element, insert, subject);
+  Compile.createElement("textarea", componet, element, insert, subject, function (componet, element, insert, subject) {
+    Compile.createTextNode("\n&amp;lt;br&nbsp;/&amp;gt;&amp;lt;div&amp;gt;aa\na&amp;lt;/div&amp;gt;\n", componet, element, insert, subject);
   });
-  Compile.createTextNode(" ", componet, element, subject);
-  Compile.createElement("div", componet, element, subject, function (componet, element, subject) {
-    Compile.createTextNode("\nasdf&amp;lt;br&nbsp;/&amp;gt;\n", componet, element, subject);
+  Compile.createTextNode(" ", componet, element, insert, subject);
+  Compile.createElement("script", componet, element, insert, subject, function (componet, element, insert, subject) {
+    Compile.createTextNode("\nasdf&amp;lt;br&nbsp;/&amp;gt;\n", componet, element, insert, subject);
   });
-  Compile.createTextNode(" ", componet, element, subject);
-  Compile.createElement("div", componet, element, subject, function (componet, element, subject) {
+  Compile.createTextNode(" ", componet, element, insert, subject);
+  Compile.createElement("input", componet, element, insert, subject, function (componet, element, insert, subject) {
     Compile.setAttribute(element, "type", "text");
     Compile.setAttribute(element, "readonly", "");
   });
-  Compile.createTextNode(" ", componet, element, subject);
-  Compile.includeRender("tmpl1", componet, element, subject);
-  Compile.createTextNode(" ", componet, element, subject);
+  Compile.createTextNode(" ", componet, element, insert, subject);
+
+  Compile.tmplRender("tmpl1", componet, element, subject, function (componet, element, insert, subject) {
+    Compile.createTextNode(" ", componet, element, insert, subject);
+    Compile.createElement("span", componet, element, insert, subject, function (componet, element, insert, subject) {
+      Compile.createTextNode(" tmpl span", componet, element, insert, subject);
+    });
+    Compile.createTextNode(" ", componet, element, insert, subject);
+  });
+
+  Compile.createTextNode(" ", componet, element, insert, subject);
+
+  Compile.includeRender("tmpl1", componet, element, insert, subject);
+
+  Compile.createTextNode(" ", componet, element, insert, subject);
 }
