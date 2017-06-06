@@ -4,7 +4,7 @@ import 'mocha';
 import { Compile, VM, CompileSubject } from '../compile';
 import { HtmlTagDef } from '../htmlTagDef';
 import { Componet } from '../componet';
-import Browser from '../Browser';
+import Browser from '../browser';
 
 import fs = require('fs');
 

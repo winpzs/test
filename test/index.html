@@ -4,10 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    <title>Test Cmpx</title>
 </head>
 <body>
-    <script type="text/javascript" data-main="dist/index.js"  src="require.js"></script>
-    
+    <!--<script type="text/javascript" data-main="../dist/browser/index.js"  src="require.js"></script>-->
+    <script type="text/javascript" src="require.js"></script>
+    <script type="text/javascript" src="../dist/browser/index.js"></script>
+    <script type="text/javascript">
+            require(["testing/test"]);
+        </script>
+    <div>Test Cmpx</div>
+    <app></app>
 </body>
 </html>

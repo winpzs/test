@@ -217,6 +217,7 @@ export function VM(vm: {
             complie:new Compile(vm.tmpl, constructor),
             componetDef:constructor
         };
+        constructor.prototype.$name = vm.name;
         constructor.prototype[_vmName] = vm;
     };
 }
