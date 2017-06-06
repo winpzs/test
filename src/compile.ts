@@ -154,7 +154,8 @@ var _newTextContent = function (tmpl: string, start: number, end: number): TagIn
         return attrs;
     },
     //获取cmd form attrInfo
-    _forAttrRegex = /\s*([^\s]+)\s*\in\s*([^\s]+)\s*(?:\s*tmpl\s*=\s*([\'\"])(.*?)\3)*/i,
+    //_forAttrRegex = /\s*([^\s]+)\s*\in\s*([^\s]+)\s*(?:\s*tmpl\s*=\s*([\'\"])(.*?)\3)*/i,
+    _forAttrRegex = /\s*([^\s]+)\s*\in\s*([^\s]+)\s*/i,
     _getForAttrInfos = function (content: string): Array<AttrInfo> {
         var extend = _forAttrRegex.exec(content);
         var attrs: Array<AttrInfo> = [{
@@ -199,7 +200,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): TagIn
         return index;
     };
 
-var _registerVM: { [selector: string]: Function } = {},
+var _registerVM: { [selector: string]: {complie:Compile, componetDef:Function} } = {},
     _vmName = '__vm__';
 
 /**
@@ -212,7 +213,10 @@ export function VM(vm: {
     tmplUrl?: string;
 }) {
     return function (constructor: Function) {
-        _registerVM[vm.name] = constructor;
+        _registerVM[vm.name] = {
+            complie:new Compile(vm.tmpl, constructor),
+            componetDef:constructor
+        };
         constructor.prototype[_vmName] = vm;
     };
 }
@@ -351,34 +355,13 @@ export class Compile {
             if (subject.isRemove)return;
 
             let cmp:any = _registerVM[name];
-            let newSubject:CompileSubject = new CompileSubject(subject);
-            let newComponet:any = new cmp();
-            newComponet.$name = name;
-            newComponet.$subObject = newSubject;
-            newComponet.$parent = componet;
-            componet && componet.$children.push(newComponet);
-            newComponet.$parentElement = parentElement;
-            newSubject.subscribe({
-                remove:function(p:ISubscribeRemoveEvent) {
-                    try{
-                        newComponet.$dispose();
-                    } catch(e){
-                        CmpxLib.trace(e);
-                    } finally {
-                        if (!componet.$isDisposed){
-                            var childs = componet.$children,
-                                idx = childs.indexOf(newComponet);
-                            (idx >=  0) && childs.splice(idx, 1);
-                        }
 
-                        newComponet.$subObject = newComponet.$children = newComponet.$elements =
-                            newComponet.$parent = newComponet.$parentElement = null;
+            let vm = _registerVM[name];
+            let {newSubject, refComponet} = vm.complie.render(parentElement, componet);
 
-                        newSubject.unLinkSubject();
-                    }
-                }
-            });
-            contextFn && contextFn(newComponet, parentElement, newSubject);
+            //let newSubject:CompileSubject = newComponet.$subObject;
+
+            contextFn && contextFn(refComponet, parentElement, newSubject);
     }
 
     public static createElement(name:string, componet:Componet, parentElement:HTMLElement, subject:CompileSubject,
@@ -552,36 +535,94 @@ export class Compile {
         if (subject.isRemove)return;
 
         var tmpl = _getComponetTmpl(componet, id);
-        tmpl && tmpl.call(componet, componet,  parentElement, subject, param);
+        tmpl && tmpl.call(componet, componet,  parentElement, subject, param || {});
     }
 
-    private tmpl: string;
-    private _tagInfos: Array<TagInfo>;
-    public getHtmlTagObjects(): Array<TagInfo> {
-        return this._tagInfos;
-    };
-    readonly contextFn:any;
+    private contextFn:Function;
+    private componetDef:any;
 
-    constructor(tmpl: string, parentElement?:HTMLElement, parentComponet?:Componet) {
-        this.tmpl = tmpl;
-        this._tagInfos = _makeTagInfos(tmpl);
-        var fn =_buildCompileFn(this._tagInfos);
+    //调试临时用
+    tagInfos:TagInfo[];
+    tempFn:Function;
+    //end 调试临时用
+
+    constructor(tmpl: string, componetDef?:Componet|Function) {
+        this.componetDef = componetDef;
+        let tagInfos = this.tagInfos = _makeTagInfos(CmpxLib.trim(tmpl, true));
+        var fn = this.tempFn = _buildCompileFn(tagInfos);
 
         this.contextFn = fn;
-        // var componet:Componet = new Componet(),
-        //     //必须DocumentFragment
-        //     fr = document.createDocumentFragment(),
-        //     subject = new CompileSubject();
-        // fn.call(componet, Cmpx, Compile, componet, fr, subject);
+    }
+
+    static renderComponet(componetDef:any,refElement:HTMLElement, parentComponet?:Componet):{newSubject:CompileSubject, refComponet: Componet}{
+        var compile = componetDef.prototype[_vmName].compile as Compile;
+        return compile.render(refElement, parentComponet);
+    }
+
+    render(refElement:HTMLElement, parentComponet?:Componet):{newSubject:CompileSubject, refComponet: Componet}{
+        var componetDef:any = this.componetDef;
+
+        let componet:any,
+            isNewComponet:boolean = false,
+            parentElement:HTMLElement = refElement.parentElement,
+            newSubject:CompileSubject = new CompileSubject(parentComponet?parentComponet.$subObject:null);
+
+        if (componetDef){
+            isNewComponet = true;
+            componet = new componetDef();
+            componet.$name = name;
+            componet.$subObject = newSubject;
+            componet.$parentElement = parentElement;
+
+            parentComponet && parentComponet.$children.push(componet);
+        } else {
+            //如果没有componetDef，为临时tmpl
+            //传入的parentComponet为当前的componet
+            componet = parentComponet;
+        }
+
+        //如果临时tmpl没有parentComponet报错
+        if (!componet){
+            throw new Error('render缺少Componet参数');
+        }
+
+
+        newSubject.subscribe({
+            remove:function(p:ISubscribeRemoveEvent) {
+                try{
+                    isNewComponet && componet.$dispose();
+                } catch(e){
+                    CmpxLib.trace(e);
+                } finally {
+                    newSubject.unLinkSubject();
+
+                    if (isNewComponet){
+                        if (!parentComponet.$isDisposed){
+                            var childs = parentComponet.$children,
+                                idx = childs.indexOf(componet);
+                            (idx >=  0) && childs.splice(idx, 1);
+                        }
+
+                        componet.$subObject = componet.$children = componet.$elements =
+                            componet.$parent = componet.$parentElement = null;
+                    }
+                }
+            }
+        });
+
+        let fragment = document.createDocumentFragment();
+        this.contextFn.call(componet, CmpxLib, Compile, componet, fragment, newSubject);
+        _insertAfter(fragment, refElement, parentElement);
+        return {newSubject:newSubject, refComponet:componet};
     }
 }
 
-var _buildCompileFn = function(tagInfos:Array<TagInfo>){
+var _buildCompileFn = function(tagInfos:Array<TagInfo>):Function{
         var outList = [];
         _buildCompileFnContent(tagInfos, outList, true);
         //console.log(outList.join('\n'));
 
-        return new Function('Cmpx','Compile', 'componet', 'element', 'subject', outList.join('\n'));
+        return new Function('CmpxLib','Compile', 'componet', 'element', 'subject', outList.join('\n'));
     },
     _escapeStringRegex = /([\"\\])/gm,
     _escapeBuildString = function(s:string):string{
@@ -658,15 +699,17 @@ var _buildCompileFn = function(tagInfos:Array<TagInfo>){
                         break;
                     case 'include':
                         var incAttr = CmpxLib.arrayToObject<AttrInfo>(tag.attrs, 'name'),
-                            incTmpl = incAttr['tmpl'];
-                        outList.push('Compile.includeRender("'+ (incTmpl ? _escapeBuildString(incTmpl.value):'')+'", componet, element, '+_getInsertTemp(preInsert)+', subject);');
+                            incTmpl = incAttr['tmpl'],
+                            incParam = incAttr['param'] ? incAttr['param'].value : 'null';
+                        outList.push('Compile.includeRender("'+ (incTmpl ? _escapeBuildString(incTmpl.value):'')+'", componet, element, '+_getInsertTemp(preInsert)+', subject, '+incParam+');');
                         preInsert = true;
                         break;
                     case 'tmpl':
                         var tmplAttr = CmpxLib.arrayToObject<AttrInfo>(tag.attrs, 'name'),
                             tmplId = tmplAttr['id'],
-                            tmplForItem = tmplAttr['foritem'];
-                        outList.push('Compile.tmplRender("'+ (tmplId ? _escapeBuildString(tmplId.value):'')+'", componet, element, subject, function (componet, element, subject'+(tmplForItem ?　', '+tmplForItem.value : '')+') {');
+                            tmplLet = tmplAttr['let'];
+                        outList.push('Compile.tmplRender("'+ (tmplId ? _escapeBuildString(tmplId.value):'')+'", componet, element, subject, function (componet, element, subject, param) {');
+                        tmplLet && outList.push('var ' + tmplLet.value + ';');
                         _buildCompileFnContent(tag.children, outList, preInsert);
                         outList.push('});');
                         break;

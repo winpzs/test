@@ -1,6 +1,5 @@
-function anonymous(Cmpx, Compile, componet, element, subject
+function anonymous(CmpxLib, Compile, componet, element, subject
 /**/) {
-    Compile.createTextNode(" ", componet, element, subject);
     Compile.createElement("div", componet, element, subject, function (componet, element, subject) {
         Compile.createTextNode(" divText ", componet, element, subject);
         Compile.createElement("span", componet, element, subject, function (componet, element, subject) {
@@ -8,11 +7,11 @@ function anonymous(Cmpx, Compile, componet, element, subject
             Compile.createTextNode(" spanText ", componet, element, subject);
         });
         Compile.createTextNode(" ", componet, element, subject);
-        Compile.tmplRender("tmpl1", componet, element, subject, function (componet, element, subject) {
+        Compile.tmplRender("tmpl1", componet, element, subject, function (componet, element, subject, param) {
+            var item = param.item, index = param.index;
             Compile.createTextNode(" tmpl text ", componet, element, subject);
         });
         Compile.createTextNode(" ", componet, element, subject);
-        Compile.includeRender("tmpl1", componet, element, false, subject);
         Compile.forRender(function (componet, element, subject) {
             return this.users
         }, function (userItem, $index, componet, element, subject) {
@@ -21,18 +20,13 @@ function anonymous(Cmpx, Compile, componet, element, subject
                 Compile.createTextNode(" for div text ", componet, element, subject);
             });
             Compile.createTextNode(" ", componet, element, subject);
-        }, componet, element, subject, true);
+            Compile.includeRender("tmpl1", componet, element, false, subject, { item: userItem, $index: $index });
+            Compile.createTextNode(" ", componet, element, subject);
+        }, componet, element, subject, false);
         Compile.createTextNode(" ", componet, element, subject);
-        Compile.tmplRender("tmpl2", componet, element, subject, function (componet, element, subject, item) {
+        Compile.tmplRender("tmpl2", componet, element, subject, function (componet, element, subject, param) {
             Compile.createTextNode(" \"+item.name+\" ", componet, element, subject);
         });
         Compile.createTextNode(" ", componet, element, subject);
-        Compile.forRender(function (componet, element, subject) {
-            return this.list
-        }, function (item, $index, componet, element, subject) {
-            Compile.includeRender("tmpl2", componet, element, false, subject, item);
-        }, componet, element, subject, false);
-        Compile.createTextNode(" ", componet, element, subject);
     });
-    Compile.createTextNode(" ", componet, element, subject);
 }

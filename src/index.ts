@@ -1,6 +1,9 @@
-import { Compile } from './compile';
-
-export * from './Cmpx';
+import { Compile, VM } from './compile';
+import { Componet } from './componet';
+import Browser from './Browser';
+export * from './cmpxLib';
+export * from './compile';
+export * from './componet';
 
 var tmpl = `before<div><span 
  id="spanId" name="spanName" content="{{aaa+aa
@@ -8,4 +11,29 @@ var tmpl = `before<div><span
  {{for item in list tmpl="user.html" /}}{{tmpl}} {{include src="list.html" /}} tmplText {{/tmpl}}{{include}}`;
 
 
-new Compile(tmpl);
+@VM({
+    name:'app',
+    tmpl:`<div>
+  divText
+  <span id="span1"> spanText </Span>
+  {{tmpl id="tmpl1"}}
+    tmpl text
+  {{/tmpl}}
+  {{include tmpl="tmpl1" /}}{{for userItem in this.users}}
+    <div> for div text </div>
+  {{/for}}
+  {{tmpl id="tmpl2" forItem="item"}}
+    {{item.name}}
+  {{/tmpl}}
+  {{for item in this.list tmpl="tmpl2" /}}
+</div>`
+})
+class MyComponet extends Componet{
+    constructor(){
+        super();
+    }
+
+}
+
+
+new Browser().boot(MyComponet);

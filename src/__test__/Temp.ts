@@ -3,13 +3,52 @@ import { expect } from 'chai';
 import 'mocha';
 import { Compile, VM, CompileSubject } from '../compile';
 import { HtmlTagDef } from '../htmlTagDef';
-import Cmpx from '../cmpx';
 import { Componet } from '../componet';
+import Browser from '../Browser';
 
 import fs = require('fs');
 
 var tmpl = `
 <div>
+  divText
+  <span id="span1"> spanText </Span>
+  {{tmpl id="tmpl1" let="item = param.item, index = param.index"}}
+    tmpl text
+  {{/tmpl}}
+  {{for userItem in this.users}}
+    <div> for div text </div>
+    {{include tmpl="tmpl1" param="{item: userItem, $index:$index}" /}}
+  {{/for}}
+  {{tmpl id="tmpl2"}}
+    {{item.name}}
+  {{/tmpl}}
+</div>
+`;
+
+describe('Compile', () => {
+  it('_makeTags', () => {
+    console.time('Compile');
+    var cp = new Compile(tmpl);
+    console.timeEnd('Compile');
+    var tags = cp.tagInfos;
+    console.log(JSON.stringify(tags));
+
+    let src = __dirname + '/../output/complieContext.ts'
+    fs.writeFileSync(src, cp.tempFn.toString());
+    
+    src = __dirname + '/../output/htmlTagObjects.json'
+    fs.writeFileSync(src, JSON.stringify(tags));
+
+    //console.log((tags));
+
+    expect(tags.length == 23).to.equal(true);
+  });
+});
+
+
+@VM({
+    name:'app',
+    tmpl:`<div>
   divText
   <span id="span1"> spanText </Span>
   {{tmpl id="tmpl1"}}
@@ -22,30 +61,17 @@ var tmpl = `
     {{item.name}}
   {{/tmpl}}
   {{for item in this.list tmpl="tmpl2" /}}
-</div>
-`;
+</div>`
+})
+class MyComponet extends Componet{
+    constructor(){
+        super();
+    }
 
-describe('Compile', () => {
-  it('_makeTags', () => {
-    console.time('Compile');
-    var cp = new Compile(tmpl);
-    console.timeEnd('Compile');
-    var tags = cp.getHtmlTagObjects();
-    console.log(JSON.stringify(tags));
-
-    let src = __dirname + '/../output/complieContext.ts'
-    fs.writeFileSync(src, cp.contextFn.toString());
-    
-    src = __dirname + '/../output/htmlTagObjects.json'
-    fs.writeFileSync(src, JSON.stringify(tags));
-
-    //console.log((tags));
-
-    expect(tags.length == 23).to.equal(true);
-  });
-});
+}
 
 
+//new Browser().boot(MyComponet);
 // @VM({
 //   name:'app',
 //   tmpl:`before<div><span 
