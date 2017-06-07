@@ -223,18 +223,9 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
             return readTxt;
         }), split].join('');
 
-        var once:string = 'null';
-        if (event){
-            event = 'function(){ return '+event+'; }';
-            onceList = write = null;
-            read = false;
-        } else if (eventEval){
-            eventEval = 'function(){ return '+eventEval+'; }';
-            onceList = write = null;
-            read = false;
-        } else {
-            onceList = write = null;
-            if (read && onceList.length>0){
+        var once:string;
+        if (write || read || onceList.length>0){
+            if (onceList.length > 0){
                 let oList = [];
                 CmpxLib.each(onceList, function(item:string, index:number){
                     oList.push(['once',index,' = (' , item , ')'].join(''));
@@ -242,17 +233,21 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
                 once = 'var ' + oList.join(',') + ';';
             }
             write && (write = 'function(val){ '+write+' = val; }');
+            event = eventEval = null;
+        } else if (event){
+            event = 'function(){ return '+event+'; }';
+        } else if (eventEval){
+            eventEval = 'function(){ return '+eventEval+'; }';
         }
 
         content = `(function(){
-  ${once}
+  ${once?once:''}
   return {
     read:${read ? 'function(){ return '+content+'; }' : 'null'},
     write:${write ? write : 'null'},
     event:${event ? event : 'null'},
     eventEval:${eventEval ? eventEval : 'null'}
   };
-  
 }).call(componet)`;
 
         return { type:type, content:content };
@@ -487,9 +482,10 @@ export class Compile {
     public static createTextNode(content:any, componet:Componet, parentElement:HTMLElement, subject:CompileSubject):Text{
         if (subject.isRemove)return;
 
-        let isFn = CmpxLib.isFunction(content),
+        let isObj = !CmpxLib.isString(content),
             value:string = '',
-            textNode = document.createTextNode(isFn ? value : content);
+            textNode = document.createTextNode(isObj ? value : content),
+            readFn = isObj ?　content.read : null;
         parentElement.appendChild(textNode);
         if(parentElement == componet.$parentElement) componet.$elements.push(textNode);
         subject.subscribe({
@@ -505,8 +501,8 @@ export class Compile {
                 }
             },
             update:function(p:ISubscribeEvent){
-                if (isFn){
-                    var newValue = content.call(componet);
+                if (readFn){
+                    var newValue = readFn.call(componet);
                     if (value != newValue){
                         value = newValue;
                         textNode.textContent = newValue;
@@ -518,21 +514,59 @@ export class Compile {
     }
     
     public static setAttribute(element:HTMLElement, name:string, content:any, componet:Componet, subject:CompileSubject):void {
-        let isFn = CmpxLib.isFunction(content),
-            value:string = '',
-            attrDef:IHtmlAttrDef = HtmlTagDef.getHtmlAttrDef(name);
-        attrDef.setAttribute(element, name, isFn ? value : content);
-        if (isFn){
-            subject.subscribe({
-                update:function(p:ISubscribeEvent){
-                    var newValue = content.call(componet);
-                    if (value != newValue){
-                        value = newValue;
-                        attrDef.setAttribute(element, name, newValue);
+        let isObj = !CmpxLib.isString(content);
+        if (isObj){
+            let isEvent = content.event || content.eventEval,
+                update;
+            if (isEvent){
+                let isBind = false,
+                    eventDef = HtmlTagDef.getHtmlEventDef(name),
+                    eventFn:any = content.event.bind(componet) ? content.event
+                        : function(e){ return content.eventEval.call(componet); };
+                subject.subscribe({
+                    update: function (p: ISubscribeEvent) {
+                        if (isBind) return;
+                        isBind = true;
+                        eventDef.addEventListener(element, name, eventFn, false);
+                    },
+                    remove:function(p:ISubscribeRemoveEvent){
+                        if (isBind) {
+                            eventDef.removeEventListener(element, name, eventFn, false);
+                        }
                     }
-                }
-            });
-        }
+                });
+
+            } else {
+                let value: any = '', newValue:any,
+                    isWrite:boolean = !!content.write,
+                    isRead:boolean = !!content.read,
+                    attrDef: IHtmlAttrDef = HtmlTagDef.getHtmlAttrDef(name),
+                    writeFn = function (p: ISubscribeEvent) {
+                        newValue = attrDef.getAttribute(element, name);
+                        if (value != newValue) {
+                            value = newValue;
+                            content.write.call(componet, newValue);
+                        }
+                    };
+                attrDef.setAttribute(element, name, value);
+                subject.subscribe({
+                    update: function (p: ISubscribeEvent) {
+                        if (isRead){
+                            newValue = content.read.call(componet);
+                            if (value != newValue) {
+                                value = newValue;
+                                attrDef.setAttribute(element, name, newValue);
+                            } else if (isWrite){
+                                writeFn(p);
+                            }
+                        } else if (isWrite){
+                            writeFn(p);
+                        }
+                    }
+                });
+            }
+        } else
+            HtmlTagDef.getHtmlAttrDef(name).setAttribute(element, name, content);
     }
 
     public static forRender(
@@ -678,7 +712,7 @@ export class Compile {
         this.componetDef = componetDef;
         let tagInfos = this.tagInfos = _makeTagInfos(CmpxLib.trim(tmpl, true));
         var fn = this.tempFn = _buildCompileFn(tagInfos);
-        //console.log(fn.toString());
+        console.log(fn.toString());
 
         this.contextFn = fn;
     }
@@ -764,7 +798,7 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
         if (!attrs)return;
         CmpxLib.each(attrs, function(attr:IAttrInfo, index:number){
             if (attr.bind)
-                outList.push('Compile.setAttribute(element, "' + attr.name + '", function(){ return '+ attr.bindInfo.content+'}, componet, subject);');
+                outList.push('Compile.setAttribute(element, "' + attr.name + '", '+attr.bindInfo.content+', componet, subject);');
             else
                 outList.push('Compile.setAttribute(element, "' + attr.name + '", "'+_escapeBuildString(attr.value)+'", componet, subject);');
         });
@@ -801,7 +835,7 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
                     }
                 } else {
                     if (tag.bind){
-                        outList.push('Compile.createTextNode(function(){ return '+ tag.bindInfo.content+'}, componet, element, subject);');
+                        outList.push('Compile.createTextNode('+tag.bindInfo.content+', componet, element, subject);');
                     } else
                         outList.push('Compile.createTextNode("'+ _escapeBuildString(tag.content)+'", componet, element, subject);');
                     preInsert = false;

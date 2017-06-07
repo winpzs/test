@@ -64,7 +64,7 @@ export class HtmlTagDef {
    * @param tagName 标签名称
    */
   static getHtmlTagDef(tagName: string): HtmlTagDef {
-    return _htmlTagDefConfig[tagName.toLowerCase()] || _DEFULE_TAG;
+    return _htmlTagDefConfig[tagName.toLowerCase()] || DEFULE_TAG;
   }
 
   /**
@@ -74,6 +74,10 @@ export class HtmlTagDef {
   static extendHtmlTagDef(p: IHtmlTagDefConfig): void {
     CmpxLib.extend(_htmlTagDefConfig, p);
     _makeSpecTags();
+  }
+
+  static setDefaulHtmlTagDef(p: HtmlTagDef): void {
+    DEFULE_TAG = p;
   }
 
   /**
@@ -88,8 +92,28 @@ export class HtmlTagDef {
    * 扩展属性定义
    * @param p 
    */
-  static extendHtmlAttrDef(p: IHtmlAttrDef): void {
+  static extendHtmlAttrDef(p: IHtmlAttrDefConfig): void {
     CmpxLib.extend(_htmlAttrDefConfig, p);
+  }
+
+  static setDefaultHtmlArrDef(p: IHtmlAttrDef): void {
+    DEFAULT_ATTR = p;
+  }
+
+  static getHtmlEventDef(name: string): IHtmlEventDef {
+    return _htmlEventDefConfig[name] || DEFAULT_EVENT_DEF;
+  }
+
+  /**
+   * 扩展事件定义
+   * @param p 
+   */
+  static extendHtmlEventDef(p: IHtmlEventDefConfig): void {
+    CmpxLib.extend(_htmlEventDefConfig, p);
+  }
+
+  static setDefaulHtmlEventDef(p: IHtmlEventDef): void {
+    DEFAULT_EVENT_DEF = p;
   }
 
   /**
@@ -154,42 +178,42 @@ export class HtmlTagDef {
 
 }
 
-const _SINGLE_TAG = new HtmlTagDef({ single: true }),
-  _DEFULE_TAG = new HtmlTagDef();
+var SINGLE_TAG = new HtmlTagDef({ single: true }),
+  DEFULE_TAG = new HtmlTagDef();
 
 var _htmlTagDefConfig: IHtmlTagDefConfig = {
-  'base': _SINGLE_TAG,
-  'meta': _SINGLE_TAG,
-  'area': _SINGLE_TAG,
-  'embed': _SINGLE_TAG,
-  'link': _SINGLE_TAG,
-  'img': _SINGLE_TAG,
-  'input': _SINGLE_TAG,
-  'param': _SINGLE_TAG,
-  'hr': _SINGLE_TAG,
-  'br': _SINGLE_TAG,
-  'source': _SINGLE_TAG,
-  'track': _SINGLE_TAG,
-  'wbr': _SINGLE_TAG,
-  'p': _DEFULE_TAG,
-  'thead': _DEFULE_TAG,
-  'tbody': _DEFULE_TAG,
-  'tfoot': _DEFULE_TAG,
-  'tr': _DEFULE_TAG,
-  'td': _DEFULE_TAG,
-  'th': _DEFULE_TAG,
-  'col': _SINGLE_TAG,
+  'base': SINGLE_TAG,
+  'meta': SINGLE_TAG,
+  'area': SINGLE_TAG,
+  'embed': SINGLE_TAG,
+  'link': SINGLE_TAG,
+  'img': SINGLE_TAG,
+  'input': SINGLE_TAG,
+  'param': SINGLE_TAG,
+  'hr': SINGLE_TAG,
+  'br': SINGLE_TAG,
+  'source': SINGLE_TAG,
+  'track': SINGLE_TAG,
+  'wbr': SINGLE_TAG,
+  'p': DEFULE_TAG,
+  'thead': DEFULE_TAG,
+  'tbody': DEFULE_TAG,
+  'tfoot': DEFULE_TAG,
+  'tr': DEFULE_TAG,
+  'td': DEFULE_TAG,
+  'th': DEFULE_TAG,
+  'col': SINGLE_TAG,
   'svg': new HtmlTagDef({ preFix: 'svg' }),
   'math': new HtmlTagDef({ preFix: 'math' }),
-  'li': _DEFULE_TAG,
-  'dt': _DEFULE_TAG,
-  'dd': _DEFULE_TAG,
-  'rb': _DEFULE_TAG,
-  'rt': _DEFULE_TAG,
-  'rtc': _DEFULE_TAG,
-  'rp': _DEFULE_TAG,
-  'optgroup': _DEFULE_TAG,
-  'option': _DEFULE_TAG,
+  'li': DEFULE_TAG,
+  'dt': DEFULE_TAG,
+  'dd': DEFULE_TAG,
+  'rb': DEFULE_TAG,
+  'rt': DEFULE_TAG,
+  'rtc': DEFULE_TAG,
+  'rp': DEFULE_TAG,
+  'optgroup': DEFULE_TAG,
+  'option': DEFULE_TAG,
   'pre': new HtmlTagDef({ ignoreFirstLf: true }),
   'listing': new HtmlTagDef({ ignoreFirstLf: true }),
   'style': new HtmlTagDef({ contentType: HtmlTagContentType.RAW_TEXT }),
@@ -256,7 +280,7 @@ export interface IHtmlAttrDef {
 /**
  * 默认HtmlAttr定义
  */
-export const DEFAULT_ATTR: IHtmlAttrDef = {
+var DEFAULT_ATTR: IHtmlAttrDef = {
   setAttribute(element: HTMLElement, name: string, value: string) {
     element.setAttribute(name, value);
   },
@@ -269,7 +293,7 @@ export const DEFAULT_ATTR: IHtmlAttrDef = {
 /**
  * 默认HtmlAttr prop定义
  */
-export const DEFAULT_ATTR_PROP: IHtmlAttrDef = {
+var DEFAULT_ATTR_PROP: IHtmlAttrDef = {
   setAttribute(element: HTMLElement, name: string, value: string) {
     element[name] = value;
   },
@@ -294,3 +318,33 @@ var _htmlAttrDefConfig: IHtmlAttrDefConfig = {
   'disabled': DEFAULT_ATTR_PROP,
   'checked': DEFAULT_ATTR_PROP
 };
+
+export interface IHtmlEventDef{
+  addEventListener: (element: HTMLElement, eventName:string, context:(event:any)=>any, useCapture:boolean) => void;
+  removeEventListener: (element: HTMLElement, eventName:string, context:(event:any)=>any, useCapture:boolean) => void;
+}
+
+/**
+ * 默认事件定义
+ */
+var DEFAULT_EVENT_DEF: IHtmlEventDef = {
+  addEventListener(element: HTMLElement, eventName:string, context:(event:any)=>any, useCapture:boolean) {
+    element.addEventListener(eventName, context, useCapture);
+    //attachEvent
+  },
+  removeEventListener(element: HTMLElement, eventName:string, context:(event:any)=>any, useCapture:boolean) {
+    element.addEventListener(eventName, context, useCapture);
+    //detachEvent
+  }
+};
+
+/**
+ * 事件配置
+ */
+export interface IHtmlEventDefConfig {
+  [name: string]: IHtmlEventDef;
+}
+
+
+var _htmlEventDefConfig: IHtmlEventDefConfig = {};
+

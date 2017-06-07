@@ -4,8 +4,8 @@ import { VM, Componet, Browser } from "../index";
 @VM({
     name:'app',
     tmpl:`<div><input type="text" value="{{'aaaa'}}" />
-  divText ({{this.text}}){{: this.text}} {{< this.text}} {{@this.text}} {{& this.click}}{{! this.clickCall(element, this.text)}}
-  <span id="span1"> spanText {{new Date().toString()}} | {{new Date().getDay()}}  </Span>
+  divText ({{this.text}}){{: this.text}}
+  <span id="span1"> spanText {{:new Date().toString()}} | {{:new Date().getDay()}}  </Span>
   {{tmpl id="tmpl1" let="index=param.index"}}
     tmpl text {{index}}
   {{/tmpl}}
