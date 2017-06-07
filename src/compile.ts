@@ -4,10 +4,16 @@ import { Componet } from './componet';
 
 
 var _undef:any;
+
+interface IBindInfo{
+    type:string;
+    content:string;
+}
+
 /**
  * 标签信息
  */
-export interface TagInfo {
+export interface ITagInfo {
     tagName: string;
     //是否标签，如：<div>
     target: boolean;
@@ -15,42 +21,47 @@ export interface TagInfo {
     cmd: boolean;
     find: string;
     content: string;
-    attrs: Array<AttrInfo>;
+    attrs: Array<IAttrInfo>;
     end: boolean;
     single: boolean;
     index: number;
     //是否为绑定
     bind?: boolean;
-    children?: Array<TagInfo>;
-    parent?: TagInfo;
+    bindInfo?:IBindInfo;
+    children?: Array<ITagInfo>;
+    parent?: ITagInfo;
     componet?:boolean;
 }
+
 
 /**
  * 属性信息
  */
-export interface AttrInfo {
+export interface IAttrInfo {
     name: string;
     value: string;
     bind: boolean;
+    bindInfo?:IBindInfo;
     extend?: any;
 }
 
     //新建一个text节点
-var _newTextContent = function (tmpl: string, start: number, end: number): TagInfo {
+var _newTextContent = function (tmpl: string, start: number, end: number): ITagInfo {
         var text = tmpl.substring(start, end),
-            bind = _cmdDecodeAttrRegex.test(text);
+            bind = _cmdDecodeAttrRegex.test(text),
+            bindInfo:IBindInfo = bind ? _getBind(text, '"') : null;
         return {
             tagName: '',
             target: false,
             cmd: false,
             find: text,
-            content: bind ? _getBind(text, '"') : text,
+            content: bind ? "" : text,
             attrs: null,
             end: true,
             single: true,
             index: start,
-            bind: bind
+            bind: bind,
+            bindInfo:bindInfo
         };
     },
     //将{{this.name}}绑定标签转成$($this.name$)$
@@ -71,8 +82,8 @@ var _newTextContent = function (tmpl: string, start: number, end: number): TagIn
     },
     //查找分析tag和cmd
     _tagInfoRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*?)(\/*)\s*\>|\{\{\s*(\/*)\s*([^\s\{\}]+)\s*(.*?)(\/*)\}\}/gim,
-    _makeTagInfos = function (tmpl: string): Array<TagInfo> {
-        var lastIndex = 0, list: Array<TagInfo> = [],
+    _makeTagInfos = function (tmpl: string): Array<ITagInfo> {
+        var lastIndex = 0, list: Array<ITagInfo> = [],
             singelTags = HtmlTagDef.singelTags;
         tmpl = _makeTextTag(tmpl);
         tmpl = HtmlTagDef.handleTagContent(tmpl);
@@ -107,7 +118,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): TagIn
                     attrs = !!tagContent ? _getAttrInfos(tagContent) : null;
                 }
 
-                var item: TagInfo = {
+                var item: ITagInfo = {
                     tagName: (tagName || txtName).toLowerCase(),
                     target: !cmd,
                     cmd: cmd,
@@ -130,23 +141,23 @@ var _newTextContent = function (tmpl: string, start: number, end: number): TagIn
         if (index > lastIndex) {
             list.push(_newTextContent(tmpl, lastIndex, index));
         }
-        var outList: Array<TagInfo> = [];
+        var outList: Array<ITagInfo> = [];
         _makeTagInfoChildren(list, outList, list.length);
         return outList;
     },
     //获取attrInfo
     _attrInfoRegex = /\s*([^= ]+)\s*=\s*(["'])((?:.|\b|\r)*?)\2|\s*([^= /]+)\s*/gm,
-    _getAttrInfos = function (content: string): Array<AttrInfo> {
-        var attrs: Array<AttrInfo> = [];
+    _getAttrInfos = function (content: string): Array<IAttrInfo> {
+        var attrs: Array<IAttrInfo> = [];
         content.replace(_attrInfoRegex, function (find: string, name: string, split: string,
             value: string, name1:string, index: number) {
-            var bind = _cmdDecodeAttrRegex.test(value);
-            if (bind)
-                value = _getBind(value, split);
+            var bind = _cmdDecodeAttrRegex.test(value),
+                bindInfo = bind ? _getBind(value, split) : null;
             attrs.push({
                 name: (name || name1).toLowerCase(),
                 value: value,
-                bind: bind
+                bind: bind,
+                bindInfo:bindInfo
             });
             return find;
         });
@@ -156,9 +167,9 @@ var _newTextContent = function (tmpl: string, start: number, end: number): TagIn
     //获取cmd form attrInfo
     //_forAttrRegex = /\s*([^\s]+)\s*\in\s*([^\s]+)\s*(?:\s*tmpl\s*=\s*([\'\"])(.*?)\3)*/i,
     _forAttrRegex = /\s*([^\s]+)\s*\in\s*([^\s]+)\s*/i,
-    _getForAttrInfos = function (content: string): Array<AttrInfo> {
+    _getForAttrInfos = function (content: string): Array<IAttrInfo> {
         var extend = _forAttrRegex.exec(content);
-        var attrs: Array<AttrInfo> = [{
+        var attrs: Array<IAttrInfo> = [{
             name: '',
             value: '',
             bind: true,
@@ -170,15 +181,85 @@ var _newTextContent = function (tmpl: string, start: number, end: number): TagIn
         }];
         return attrs;
     },
+    _bindTypeRegex = /^\s*([\<\>\:\@\&\!])\s*(.*)/,
     //获取内容绑定信息，如 name="aaa{{this.name}}"
-    _getBind = function (value: string, split: string) {
-        return [split, value.replace(_cmdDecodeAttrRegex, function (find: string, content: string, index: number) {
-            return [split, decodeURIComponent(content), split].join('+');
+    _getBind = function (value: string, split: string) :IBindInfo {
+        let write:string, event:string, eventEval:string,
+            onceList = [], read:boolean = false;
+        let type:string = '', txt:string, reg:any, content:string = [split, value.replace(_cmdDecodeAttrRegex, function (find: string, content: string, index: number) {
+            content = decodeURIComponent(content);
+            reg = _bindTypeRegex.exec(content);
+            if (reg){
+                type = reg[1];
+                txt = reg[2];
+            } else{
+                type = '';
+                txt = content;
+            }
+            var readTxt = '';
+            switch(type){
+                case ':':
+                    onceList.push(txt);
+                    read = true;
+                    readTxt = [split, 'once'+(onceList.length-1), split].join('+');
+                    break;
+                case '&':
+                    event = txt;
+                    break;
+                case '!':
+                    eventEval = txt;
+                    break;
+                case '>':
+                    write = txt;
+                    break;
+                case '@':
+                    write = txt;
+                case '<':
+                default:
+                    read = true;
+                    readTxt = [split, txt, split].join('+');
+                    break;
+            }
+            return readTxt;
         }), split].join('');
+
+        var once:string = 'null';
+        if (event){
+            event = 'function(){ return '+event+'; }';
+            onceList = write = null;
+            read = false;
+        } else if (eventEval){
+            eventEval = 'function(){ return '+eventEval+'; }';
+            onceList = write = null;
+            read = false;
+        } else {
+            onceList = write = null;
+            if (read && onceList.length>0){
+                let oList = [];
+                CmpxLib.each(onceList, function(item:string, index:number){
+                    oList.push(['once',index,' = (' , item , ')'].join(''));
+                });
+                once = 'var ' + oList.join(',') + ';';
+            }
+            write && (write = 'function(val){ '+write+' = val; }');
+        }
+
+        content = `(function(){
+  ${once}
+  return {
+    read:${read ? 'function(){ return '+content+'; }' : 'null'},
+    write:${write ? write : 'null'},
+    event:${event ? event : 'null'},
+    eventEval:${eventEval ? eventEval : 'null'}
+  };
+  
+}).call(componet)`;
+
+        return { type:type, content:content };
     },
-    _makeTagInfoChildren = function (attrs: Array<TagInfo>, outList: Array<TagInfo>,
-        len: number, index: number = 0, parent: TagInfo = null): number {
-        var item: TagInfo;
+    _makeTagInfoChildren = function (attrs: Array<ITagInfo>, outList: Array<ITagInfo>,
+        len: number, index: number = 0, parent: ITagInfo = null): number {
+        var item: ITagInfo;
         while (index < len) {
             item = attrs[index++];
             if (item.cmd || item.target) {
@@ -589,7 +670,7 @@ export class Compile {
     private componetDef:any;
 
     //调试临时用
-    tagInfos:TagInfo[];
+    tagInfos:ITagInfo[];
     tempFn:Function;
     //end 调试临时用
 
@@ -668,7 +749,7 @@ export class Compile {
     }
 }
 
-var _buildCompileFn = function(tagInfos:Array<TagInfo>):Function{
+var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
         var outList = [];
         _buildCompileFnContent(tagInfos, outList, true);
         //console.log(outList.join('\n'));
@@ -679,11 +760,11 @@ var _buildCompileFn = function(tagInfos:Array<TagInfo>):Function{
     _escapeBuildString = function(s:string):string{
         return s ? s.replace(/([\"\\])/gm, '\\$1').replace(/\n/gm, '\\n').replace(/\r/gm, '\\r') : '';
     },
-    _buildAttrContent = function(attrs:Array<AttrInfo>, outList:Array<string>){
+    _buildAttrContent = function(attrs:Array<IAttrInfo>, outList:Array<string>){
         if (!attrs)return;
-        CmpxLib.each(attrs, function(attr:AttrInfo, index:number){
+        CmpxLib.each(attrs, function(attr:IAttrInfo, index:number){
             if (attr.bind)
-                outList.push('Compile.setAttribute(element, "' + attr.name + '", function(){ return '+ attr.value+'}, componet, subject);');
+                outList.push('Compile.setAttribute(element, "' + attr.name + '", function(){ return '+ attr.bindInfo.content+'}, componet, subject);');
             else
                 outList.push('Compile.setAttribute(element, "' + attr.name + '", "'+_escapeBuildString(attr.value)+'", componet, subject);');
         });
@@ -691,9 +772,9 @@ var _buildCompileFn = function(tagInfos:Array<TagInfo>):Function{
     _getInsertTemp = function(preInsert:boolean){
         return preInsert ? 'true' : 'false';
     },
-    _buildCompileFnContent = function(tagInfos:Array<TagInfo>, outList:Array<string>, preInsert:boolean){
+    _buildCompileFnContent = function(tagInfos:Array<ITagInfo>, outList:Array<string>, preInsert:boolean){
         if (!tagInfos) return;
-        CmpxLib.each(tagInfos, function(tag:TagInfo, index:number){
+        CmpxLib.each(tagInfos, function(tag:ITagInfo, index:number){
             let tagName = tag.tagName;
             if (!tag.cmd){
                 if (tag.target){
@@ -720,7 +801,7 @@ var _buildCompileFn = function(tagInfos:Array<TagInfo>):Function{
                     }
                 } else {
                     if (tag.bind){
-                        outList.push('Compile.createTextNode(function(){ return '+ tag.content+'}, componet, element, subject);');
+                        outList.push('Compile.createTextNode(function(){ return '+ tag.bindInfo.content+'}, componet, element, subject);');
                     } else
                         outList.push('Compile.createTextNode("'+ _escapeBuildString(tag.content)+'", componet, element, subject);');
                     preInsert = false;
@@ -755,14 +836,14 @@ var _buildCompileFn = function(tagInfos:Array<TagInfo>):Function{
                         preInsert = true;
                         break;
                     case 'include':
-                        var incAttr = CmpxLib.arrayToObject<AttrInfo>(tag.attrs, 'name'),
+                        var incAttr = CmpxLib.arrayToObject<IAttrInfo>(tag.attrs, 'name'),
                             incTmpl = incAttr['tmpl'],
                             incParam = incAttr['param'] ? incAttr['param'].value : 'null';
                         outList.push('Compile.includeRender("'+ (incTmpl ? _escapeBuildString(incTmpl.value):'')+'", componet, element, '+_getInsertTemp(preInsert)+', subject, '+incParam+');');
                         preInsert = true;
                         break;
                     case 'tmpl':
-                        var tmplAttr = CmpxLib.arrayToObject<AttrInfo>(tag.attrs, 'name'),
+                        var tmplAttr = CmpxLib.arrayToObject<IAttrInfo>(tag.attrs, 'name'),
                             tmplId = tmplAttr['id'],
                             tmplLet = tmplAttr['let'];
                         outList.push('Compile.tmplRender("'+ (tmplId ? _escapeBuildString(tmplId.value):'')+'", componet, element, subject, function (componet, element, subject, param) {');

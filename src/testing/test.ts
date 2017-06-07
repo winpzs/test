@@ -4,15 +4,22 @@ import { VM, Componet, Browser } from "../index";
 @VM({
     name:'app',
     tmpl:`<div><input type="text" value="{{'aaaa'}}" />
-  divText ({{this.text}})
+  divText ({{this.text}}){{: this.text}} {{< this.text}} {{@this.text}} {{& this.click}}{{! this.clickCall(element, this.text)}}
   <span id="span1"> spanText {{new Date().toString()}} | {{new Date().getDay()}}  </Span>
   {{tmpl id="tmpl1" let="index=param.index"}}
     tmpl text {{index}}
   {{/tmpl}}
   
   {{for userItem in this.users}}
-    <div> {{$index}} for div text inc:{{include tmpl="tmpl1" param="{index:$index}" /}} </div>
+    <div> {{$index}} for div text
+           inc:{{include tmpl="tmpl1" param="{index:$index}" /}} </div>
   {{/for}}
+  {{if this.ok}}
+    ok:{{this.ok}}
+  {{else}}
+    <br />
+    !ok:{{this.ok}}
+  {{/if}}
 </div>`
 })
 class MyComponet extends Componet{
@@ -38,6 +45,7 @@ class MyComponet extends Componet{
         }, 5000);
 
         setTimeout(()=>{
+          this.ok = false;
           this.text = 'update8000';
           this.users = null;
           console.time('update8000');
@@ -47,12 +55,19 @@ class MyComponet extends Componet{
 
     }
     text:string = "text";
+    ok:boolean = true;
     users = [{}];
     addItem(num:number){
       var list = [];
       for (var i=0;i<num;i++)
         list.push({});
       this.users = list;
+    }
+    click(){
+
+    }
+    clickCall(el:any, s:string):string{
+      return 'clickCall'+s;
     }
 }
 

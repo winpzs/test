@@ -10,7 +10,7 @@ import fs = require('fs');
 var tmpl = `
 <div>
   divText
-  <span id="span1" text="{{'asdfafd'}}"> spanText </Span>
+  <span id="span1" text="{{'asdfafd'}}"> spanText{{> "this"}}{{!"this"}} </Span>
   {{tmpl id="tmpl1" let="item = param.item, index = param.index"}}
     tmpl text
   {{/tmpl}}
@@ -43,6 +43,18 @@ describe('Compile', () => {
     expect(tags.length == 23).to.equal(true);
   });
 });
+
+var componet;
+(function(){
+  var once1 = this.aaaa;
+  return {
+    read:function(){ return this.aaaa; },
+    write:function(val){ this.aaaa = val; },
+    event:function(){ return this.click; },
+    eventEval:function(){ return this.click(this.user); }
+  };
+  
+}).call(componet);
 
 
 // @VM({
