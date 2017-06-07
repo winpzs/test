@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "./node_modules/.bin/mocha -u tdd --timeout 999999 --colors ./node_modules/ts-node/register src/__test__/**/*.ts",
-    "start": "tsc -w",
+    "start": "gulp",
+    "tscw": "tsc -w",
     "build": "tsc -p ."
   },
   "author": "",

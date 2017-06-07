@@ -8,7 +8,11 @@ export class Componet{
     readonly $elements:Array<HTMLElement|Text> = [];
     readonly $parentElement:HTMLElement;
 
-    $update(p:any=null){
+    $update(p?:any){
+        this.$subObject.update({
+            componet:this,
+            param:p
+        })
     }
 
     $isDisposed:Boolean = false;

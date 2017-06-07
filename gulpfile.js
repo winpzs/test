@@ -43,18 +43,25 @@ gulp.task('browser', function(cb){
 
 });
 
-var tsProject = ts.createProject('tsconfig-browser.json');
-gulp.task('tscBrowser', function () {
-    return gulp.src(['src/*.ts','src/testing/*.ts'])
+var tsBrowserProject = ts.createProject('tsconfig-browser.json'),
+    tsBrowserSrc = ['src/*.ts','src/testing/*.ts'];
+gulp.task('tsc-browser', function () {
+    return gulp.src(tsBrowserSrc)
         .pipe(sourcemaps.init())
-        .pipe(tsProject())
+        .pipe(tsBrowserProject())
         .js.pipe(sourcemaps.write('./'))
         .pipe(gulp.dest('./dist/browser'));
 });
 
+gulp.task('watch-browser', function(){
+    gulp.watch(tsBrowserSrc, function(){
+        gulp.start('tsc-browser');
+    });
+});
+
 
 gulp.task('default', function () {
-    gulp.start('tscBrowser');
+    gulp.start('tsc-browser', 'watch-browser');
 });
 
 

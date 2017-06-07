@@ -15,7 +15,15 @@ export class Browser extends Platform {
         if (!bootElement)
             throw new Error(`没有${name}标签`);
 
-        let _doc = document;
+        let _doc = document, parentElement =bootElement.parentElement;
+        let preElement:any = bootElement.previousSibling;
+        if (!preElement){
+            preElement = _doc.createComment(name);
+            parentElement.insertBefore(preElement, bootElement);
+        }
+        parentElement.removeChild(bootElement);
+        bootElement = preElement;
+
         ////DOMContentLoaded 时起动
         let _readyName = 'DOMContentLoaded', _ready = function () {
             _doc.removeEventListener(_readyName, _ready, false);
@@ -23,6 +31,7 @@ export class Browser extends Platform {
 
             let parentElement =bootElement.parentElement,
                 {newSubject, refComponet} = Compile.renderComponet(componetDef, bootElement);
+            parentElement.removeChild(bootElement);
 
             let _unload = function(){
                 window.removeEventListener('unload', _unload);
@@ -34,8 +43,13 @@ export class Browser extends Platform {
             window.addEventListener('unload', _unload, false);
         };
 
-        _doc.addEventListener(_readyName, _ready, false);
-        window.addEventListener("load", _ready, false);
+        if (/loaded|complete|undefined/i.test(_doc.readyState))
+            _ready();
+        else{
+            _doc.addEventListener(_readyName, _ready, false);
+            window.addEventListener("load", _ready, false);
+
+        }
 
         return this;
     }

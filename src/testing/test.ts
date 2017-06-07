@@ -21,14 +21,30 @@ var tmpl = `before<div><span
   {{tmpl id="tmpl2" forItem="item"}}
     {{item.name}}
   {{/tmpl}}
-  {{for item in this.list tmpl="tmpl2" /}}
+  <select multiple>
+    {{for item in this.users}}
+    <option>aaa</option>
+    {{/for}}
+  </select>
+  {{for item in this.users}}
+  <input type="text" />
+  {{/for}}
 </div>`
 })
 class MyComponet extends Componet{
     constructor(){
         super();
-    }
+        setTimeout(()=>{
+          this.users = [{},{},{}];
+          this.$update();
+        }, 2000);
 
+        setTimeout(()=>{
+          this.users = [{},{}];
+          this.$update();
+        }, 5000);
+    }
+    users = [{}];
 }
 
 
