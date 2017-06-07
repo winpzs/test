@@ -4,14 +4,13 @@ import 'mocha';
 import { Compile, VM, CompileSubject } from '../compile';
 import { HtmlTagDef } from '../htmlTagDef';
 import { Componet } from '../componet';
-import Browser from '../browser';
 
 import fs = require('fs');
 
 var tmpl = `
 <div>
   divText
-  <span id="span1"> spanText </Span>
+  <span id="span1" text="{{'asdfafd'}}"> spanText </Span>
   {{tmpl id="tmpl1" let="item = param.item, index = param.index"}}
     tmpl text
   {{/tmpl}}
@@ -46,29 +45,29 @@ describe('Compile', () => {
 });
 
 
-@VM({
-    name:'app',
-    tmpl:`<div>
-  divText
-  <span id="span1"> spanText </Span>
-  {{tmpl id="tmpl1"}}
-    tmpl text
-  {{/tmpl}}
-  {{include tmpl="tmpl1" /}}{{for userItem in this.users}}
-    <div> for div text </div>
-  {{/for}}
-  {{tmpl id="tmpl2" forItem="item"}}
-    {{item.name}}
-  {{/tmpl}}
-  {{for item in this.list tmpl="tmpl2" /}}
-</div>`
-})
-class MyComponet extends Componet{
-    constructor(){
-        super();
-    }
+// @VM({
+//     name:'app',
+//     tmpl:`<div>
+//   divText
+//   <span id="span1"> spanText </Span>
+//   {{tmpl id="tmpl1"}}
+//     tmpl text
+//   {{/tmpl}}
+//   {{include tmpl="tmpl1" /}}{{for userItem in this.users}}
+//     <div> for div text </div>
+//   {{/for}}
+//   {{tmpl id="tmpl2" forItem="item"}}
+//     {{item.name}}
+//   {{/tmpl}}
+//   {{for item in this.list tmpl="tmpl2" /}}
+// </div>`
+// })
+// class MyComponet extends Componet{
+//     constructor(){
+//         super();
+//     }
 
-}
+// }
 
 
 //new Browser().boot(MyComponet);

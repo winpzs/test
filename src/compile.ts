@@ -172,9 +172,9 @@ var _newTextContent = function (tmpl: string, start: number, end: number): TagIn
     },
     //获取内容绑定信息，如 name="aaa{{this.name}}"
     _getBind = function (value: string, split: string) {
-        return value.replace(_cmdDecodeAttrRegex, function (find: string, content: string, index: number) {
+        return [split, value.replace(_cmdDecodeAttrRegex, function (find: string, content: string, index: number) {
             return [split, decodeURIComponent(content), split].join('+');
-        });
+        }), split].join('');
     },
     _makeTagInfoChildren = function (attrs: Array<TagInfo>, outList: Array<TagInfo>,
         len: number, index: number = 0, parent: TagInfo = null): number {
@@ -318,8 +318,9 @@ export class CompileSubject {
     remove(p:ISubscribeRemoveEvent){
         if (this.isRemove) return;
         this.isRemove = true;
+        var datas = this.datas;
         this.datas = [];
-        CmpxLib.each(this.datas, function(item:ISubscribeParam){
+        CmpxLib.each(datas, function(item:ISubscribeParam){
             if (item.remove){
                 var t = item.remove(p);
                 item.remove= null;
@@ -382,6 +383,7 @@ export class Compile {
         contextFn:(componet:Componet, element:HTMLElement, subject:CompileSubject)=>void):void {
             
             if (subject.isRemove)return;
+
             let element:HTMLElement = HtmlTagDef.getHtmlTagDef(name).createElement(name, null, parentElement);
             parentElement.appendChild(element);
             if(parentElement == componet.$parentElement) componet.$elements.push(element);
@@ -389,7 +391,7 @@ export class Compile {
                 remove:function(p:ISubscribeRemoveEvent) {
                     //如果父节点删除，这里就不用处理了。
                     if (p.parentElement == parentElement){
-                        parentElement.removeChild(element);
+                        element.parentElement.removeChild(element);
                         if (!componet.$isDisposed){
                             var els = componet.$elements,
                                 idx = els.indexOf(element);
@@ -401,21 +403,32 @@ export class Compile {
             contextFn && contextFn(componet, element, subject);
     }
 
-    public static createTextNode(content:string, componet:Componet, parentElement:HTMLElement, subject:CompileSubject):Text{
+    public static createTextNode(content:any, componet:Componet, parentElement:HTMLElement, subject:CompileSubject):Text{
         if (subject.isRemove)return;
 
-        let textNode = document.createTextNode(content);
+        let isFn = CmpxLib.isFunction(content),
+            value:string = '',
+            textNode = document.createTextNode(isFn ? value : content);
         parentElement.appendChild(textNode);
         if(parentElement == componet.$parentElement) componet.$elements.push(textNode);
         subject.subscribe({
             remove:function(p:ISubscribeRemoveEvent) {
                 //如果父节点删除，这里就不用处理了。
                 if (p.parentElement == parentElement){
-                    parentElement.removeChild(textNode);
+                    textNode.parentElement.removeChild(textNode);
                     if (!componet.$isDisposed){
                         var els = componet.$elements,
                             idx = els.indexOf(textNode);
                         (idx >=  0) && els.splice(idx, 1);
+                    }
+                }
+            },
+            update:function(p:ISubscribeEvent){
+                if (isFn){
+                    var newValue = content.call(componet);
+                    if (value != newValue){
+                        value = newValue;
+                        textNode.textContent = newValue;
                     }
                 }
             }
@@ -423,8 +436,22 @@ export class Compile {
         return textNode;
     }
     
-    public static setAttribute(element:HTMLElement, name:string, value:string):void {
-        HtmlTagDef.getHtmlAttrDef(name).setAttribute(element, name, value);
+    public static setAttribute(element:HTMLElement, name:string, content:any, componet:Componet, subject:CompileSubject):void {
+        let isFn = CmpxLib.isFunction(content),
+            value:string = '',
+            attrDef:IHtmlAttrDef = HtmlTagDef.getHtmlAttrDef(name);
+        attrDef.setAttribute(element, name, isFn ? value : content);
+        if (isFn){
+            subject.subscribe({
+                update:function(p:ISubscribeEvent){
+                    var newValue = content.call(componet);
+                    if (value != newValue){
+                        value = newValue;
+                        attrDef.setAttribute(element, name, newValue);
+                    }
+                }
+            });
+        }
     }
 
     public static forRender(
@@ -437,21 +464,14 @@ export class Compile {
 
             var { tmplElement, isInsertTemp } = _getRefElement('for', parentElement, insertTemp);
 
-            var value:any, newSubject:CompileSubject,
-                elementList:any;
-            var removeFn = function(){
+            var value:any, newSubject:CompileSubject;
+            var fragment:any, removeFn = function(){
                 if (newSubject){
                     newSubject.remove({
                         componet:componet,
-                        parentElement:parentElement,
+                        parentElement:fragment,
                         element:null
                     });
-                }
-                if (elementList){
-                    CmpxLib.each(elementList, function(item:any){
-                        parentElement.removeChild(item);
-                    });
-                    elementList = null;
                 }
             };
             subject.subscribe({
@@ -466,11 +486,13 @@ export class Compile {
                                 newSubject.unLinkSubject();
                             }
                         });
-                        var fragment = document.createDocumentFragment();
+                        fragment = document.createDocumentFragment();
                         CmpxLib.each(datas, function(item, index){
                             eachFn.call(componet, item, index, componet, fragment, newSubject);
                         });
-                        elementList = CmpxLib.toArray(fragment.childNodes);
+                        newSubject.update({
+                            componet:componet
+                        });
                         _insertAfter(fragment, tmplElement, parentElement);
                     }
                 },
@@ -479,7 +501,7 @@ export class Compile {
                         parentElement.removeChild(tmplElement);
                     }
                     //removeFn();
-                    newSubject = null;
+                    newSubject = fragment = null;
                 }
             });
     }
@@ -495,21 +517,14 @@ export class Compile {
 
             var { tmplElement, isInsertTemp } = _getRefElement('if', parentElement, insertTemp);
 
-            var value, newSubject:CompileSubject,
-                elementList:any;
-            var removeFn = function(){
+            var value, newSubject:CompileSubject;
+            var fragment, removeFn = function(){
                 if (newSubject){
                     newSubject.remove({
                         componet:componet,
-                        parentElement:parentElement,
+                        parentElement:fragment,
                         element:null
                     });
-                }
-                if (elementList){
-                    CmpxLib.each(elementList, function(item:any){
-                        parentElement.removeChild(item);
-                    });
-                    elementList = null;
                 }
             };
             subject.subscribe({
@@ -528,12 +543,14 @@ export class Compile {
                             }
                         });
 
-                        var fragment = document.createDocumentFragment();
+                        fragment = document.createDocumentFragment();
                         if (newValue)
                             trueFn.call(componet, componet, fragment, newSubject);
                         else
                             falseFn.call(componet, componet, fragment, newSubject);
-                        elementList = CmpxLib.toArray(fragment.childNodes);
+                        newSubject.update({
+                            componet:componet
+                        });
                         _insertAfter(fragment, tmplElement, parentElement);
                     }
                 },
@@ -542,13 +559,13 @@ export class Compile {
                     if (isInsertTemp && p.parentElement == parentElement){
                         parentElement.removeChild(tmplElement);
                     }
-                    newSubject = null;
+                    newSubject = fragment = null;
                 }
             });
 
     }
 
-    public static tmplRender(id, componet:Componet, parentElement:HTMLElement, subject:CompileSubject, param:any,
+    public static tmplRender(id, componet:Componet, parentElement:HTMLElement, subject:CompileSubject,
         contextFn:(componet:Componet, element:HTMLElement, subject:CompileSubject, param:any)=>void):void {
 
         if (subject.isRemove)return;
@@ -556,8 +573,8 @@ export class Compile {
         var tmpls = componet[_tmplName];
         tmpls || (tmpls = componet[_tmplName] = {});
 
-        tmpls[id] = function(componet:Componet, element:HTMLElement, subject:CompileSubject){
-            contextFn && contextFn.call(componet, componet,  element, subject)
+        tmpls[id] = function(componet:Componet, element:HTMLElement, subject:CompileSubject, param:any){
+            contextFn && contextFn.call(componet, componet,  element, subject, param);
         };
     }
 
@@ -580,6 +597,7 @@ export class Compile {
         this.componetDef = componetDef;
         let tagInfos = this.tagInfos = _makeTagInfos(CmpxLib.trim(tmpl, true));
         var fn = this.tempFn = _buildCompileFn(tagInfos);
+        //console.log(fn.toString());
 
         this.contextFn = fn;
     }
@@ -620,7 +638,7 @@ export class Compile {
         newSubject.subscribe({
             remove:function(p:ISubscribeRemoveEvent) {
                 try{
-                    isNewComponet && componet.$dispose();
+                    isNewComponet && componet.onDispose();
                 } catch(e){
                     CmpxLib.trace(e);
                 } finally {
@@ -664,7 +682,10 @@ var _buildCompileFn = function(tagInfos:Array<TagInfo>):Function{
     _buildAttrContent = function(attrs:Array<AttrInfo>, outList:Array<string>){
         if (!attrs)return;
         CmpxLib.each(attrs, function(attr:AttrInfo, index:number){
-            outList.push('Compile.setAttribute(element, "' + attr.name + '", "'+_escapeBuildString(attr.value)+'");');
+            if (attr.bind)
+                outList.push('Compile.setAttribute(element, "' + attr.name + '", function(){ return '+ attr.value+'}, componet, subject);');
+            else
+                outList.push('Compile.setAttribute(element, "' + attr.name + '", "'+_escapeBuildString(attr.value)+'", componet, subject);');
         });
     },
     _getInsertTemp = function(preInsert:boolean){
@@ -698,7 +719,10 @@ var _buildCompileFn = function(tagInfos:Array<TagInfo>):Function{
                         preInsert = false;
                     }
                 } else {
-                    outList.push('Compile.createTextNode("'+ _escapeBuildString(tag.content)+'", componet, element, subject);');
+                    if (tag.bind){
+                        outList.push('Compile.createTextNode(function(){ return '+ tag.content+'}, componet, element, subject);');
+                    } else
+                        outList.push('Compile.createTextNode("'+ _escapeBuildString(tag.content)+'", componet, element, subject);');
                     preInsert = false;
                 }
             } else{

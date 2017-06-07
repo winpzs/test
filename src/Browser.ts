@@ -29,9 +29,11 @@ export class Browser extends Platform {
             _doc.removeEventListener(_readyName, _ready, false);
             window.removeEventListener('load', _ready, false);
 
+            console.time('start');
             let parentElement =bootElement.parentElement,
                 {newSubject, refComponet} = Compile.renderComponet(componetDef, bootElement);
             parentElement.removeChild(bootElement);
+            console.timeEnd('start');
 
             let _unload = function(){
                 window.removeEventListener('unload', _unload);

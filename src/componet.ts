@@ -16,7 +16,7 @@ export class Componet{
     }
 
     $isDisposed:Boolean = false;
-    $dispose() {
+    onDispose() {
         this.$isDisposed = true;
     }
 

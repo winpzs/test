@@ -1,50 +1,59 @@
 
 import { VM, Componet, Browser } from "../index";
 
-var tmpl = `before<div><span 
- id="spanId" name="spanName" content="{{aaa+aa
-    a》&<>}}">spanText</span>{{bbbbbb}}  divT{{ if a}}ext{{else user.isOk > newaaa }} {{ for item in list}} {{/for}}{{/if}}</div>
- {{for item in list tmpl="user.html" /}}{{tmpl}} {{include src="list.html" /}} tmplText {{/tmpl}}{{include}}`;
-
-
 @VM({
     name:'app',
-    tmpl:`<div>
-  divText
-  <span id="span1"> spanText </Span>
-  {{tmpl id="tmpl1"}}
-    tmpl text
+    tmpl:`<div><input type="text" value="{{'aaaa'}}" />
+  divText ({{this.text}})
+  <span id="span1"> spanText {{new Date().toString()}} | {{new Date().getDay()}}  </Span>
+  {{tmpl id="tmpl1" let="index=param.index"}}
+    tmpl text {{index}}
   {{/tmpl}}
-  {{include tmpl="tmpl1" /}}{{for userItem in this.users}}
-    <div> for div text </div>
-  {{/for}}
-  {{tmpl id="tmpl2" forItem="item"}}
-    {{item.name}}
-  {{/tmpl}}
-  <select multiple>
-    {{for item in this.users}}
-    <option>aaa</option>
-    {{/for}}
-  </select>
-  {{for item in this.users}}
-  <input type="text" />
+  
+  {{for userItem in this.users}}
+    <div> {{$index}} for div text inc:{{include tmpl="tmpl1" param="{index:$index}" /}} </div>
   {{/for}}
 </div>`
 })
 class MyComponet extends Componet{
     constructor(){
         super();
+        // for (var i=0;i<1000;i++)
+        //   this.users.push({});
+        //   return;
         setTimeout(()=>{
-          this.users = [{},{},{}];
+          this.addItem(5);
+          this.text = 'update2000';
+          console.time('update2000');
           this.$update();
+          console.timeEnd('update2000');
         }, 2000);
 
         setTimeout(()=>{
-          this.users = [{},{}];
+          this.addItem(2);
+          this.text = 'update5000';
+          console.time('update5000');
           this.$update();
+          console.timeEnd('update5000');
         }, 5000);
+
+        setTimeout(()=>{
+          this.text = 'update8000';
+          this.users = null;
+          console.time('update8000');
+          this.$update();
+          console.timeEnd('update8000');
+        }, 8000);
+
     }
+    text:string = "text";
     users = [{}];
+    addItem(num:number){
+      var list = [];
+      for (var i=0;i<num;i++)
+        list.push({});
+      this.users = list;
+    }
 }
 
 
