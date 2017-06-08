@@ -770,7 +770,7 @@ export class Compile {
         this.componetDef = componetDef;
         let tagInfos = this.tagInfos = _makeTagInfos(CmpxLib.trim(tmpl, true));
         var fn = this.tempFn = _buildCompileFn(tagInfos);
-        // console.log(fn.toString());
+        console.log(fn.toString());
 
         this.contextFn = fn;
     }
@@ -871,9 +871,11 @@ export class Compile {
 }
 
 var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
-        var outList = [];
-        _buildCompileFnContent(tagInfos, outList, true);
+        var outList = [], tmplOutList = [];
+        _buildCompileFnContent(tagInfos, outList, tmplOutList, true);
         //console.log(outList.join('\n'));
+
+        outList = tmplOutList.concat(outList);
 
         return new Function('CmpxLib','Compile', 'componet', 'element', 'subject', outList.join('\n'));
     },
@@ -903,7 +905,7 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
     _getInsertTemp = function(preInsert:boolean){
         return preInsert ? 'true' : 'false';
     },
-    _buildCompileFnContent = function(tagInfos:Array<ITagInfo>, outList:Array<string>, preInsert:boolean){
+    _buildCompileFnContent = function(tagInfos:Array<ITagInfo>, outList:Array<string>, tmplOutList:string[],  preInsert:boolean){
         if (!tagInfos) return;
         CmpxLib.each(tagInfos, function(tag:ITagInfo, index:number){
             let tagName = tag.tagName;
@@ -913,7 +915,7 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
                         if (tag.children && tag.children.length > 0){
                            outList.push('Compile.createComponet("'+tagName+'", componet, element, subject, function (componet, element, subject) {');
                            //_buildAttrContent(tag.attrs, outList);
-                           _buildCompileFnContent(tag.children, outList, preInsert);
+                           _buildCompileFnContent(tag.children, outList, tmplOutList, preInsert);
                            outList.push('});');
                         } else {
                             outList.push('Compile.createComponet("'+tagName+'", componet, element, subject);');
@@ -924,12 +926,12 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
                             if (HtmlTagDef.isCreateElementByName){
                                 outList.push('Compile.createElement("'+tagName+'", "<'+tagName+'>", componet, element, subject, function (componet, element, subject) {');
                                 _buildAttrContent(tag.attrs, outList);
-                                _buildCompileFnContent(tag.children, outList, preInsert);
+                                _buildCompileFnContent(tag.children, outList, tmplOutList, preInsert);
                             } else {
                                 let {bindAttrs, tagStr} = _makeElementTag(tagName, tag.attrs);
                                 outList.push('Compile.createElement("'+tagName+'", \''+tagStr+'\', componet, element, subject, function (componet, element, subject) {');
                                 _buildAttrContent(bindAttrs, outList);
-                                _buildCompileFnContent(tag.children, outList, preInsert);
+                                _buildCompileFnContent(tag.children, outList, tmplOutList, preInsert);
                             }
                            outList.push('});');
                         } else {
@@ -956,7 +958,7 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
                         if(forTmpl)
                             outList.push('Compile.includeRender("'+ _escapeBuildString(forTmpl) + '", componet, element, '+_getInsertTemp(preInsert)+', subject, '+itemName+');');
                         else
-                            _buildCompileFnContent(tag.children, outList, preInsert);
+                            _buildCompileFnContent(tag.children, outList, tmplOutList, preInsert);
                         outList.push('}, componet, element, '+_getInsertTemp(preInsert)+', subject);');
                         preInsert = true;
                         break;
@@ -967,9 +969,9 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
                         outList.push('Compile.ifRender(function (componet, element, subject) {');
                         outList.push('return ' + tag.content);
                         outList.push('}, function (componet, element, subject) {');
-                        _buildCompileFnContent(tag.children, outList, preInsert);
+                        _buildCompileFnContent(tag.children, outList, tmplOutList, preInsert);
                         outList.push('}, function (componet, element, subject) {');
-                        elseTag && _buildCompileFnContent(elseTag.children, outList, preInsert);
+                        elseTag && _buildCompileFnContent(elseTag.children, outList, tmplOutList, preInsert);
                         outList.push('}, componet, element, '+_getInsertTemp(preInsert)+', subject);');
                         preInsert = true;
                         break;
@@ -984,10 +986,10 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
                         var tmplAttr = CmpxLib.arrayToObject<IAttrInfo>(tag.attrs, 'name'),
                             tmplId = tmplAttr['id'],
                             tmplLet = tmplAttr['let'];
-                        outList.push('Compile.tmplRender("'+ (tmplId ? _escapeBuildString(tmplId.value):'')+'", componet, element, subject, function (componet, element, subject, param) {');
-                        tmplLet && outList.push('var ' + tmplLet.value + ';');
-                        _buildCompileFnContent(tag.children, outList, preInsert);
-                        outList.push('});');
+                        tmplOutList.push('Compile.tmplRender("'+ (tmplId ? _escapeBuildString(tmplId.value):'')+'", componet, element, subject, function (componet, element, subject, param) {');
+                        tmplLet && tmplOutList.push('var ' + tmplLet.value + ';');
+                        _buildCompileFnContent(tag.children, tmplOutList, tmplOutList, preInsert);
+                        tmplOutList.push('});');
                         break;
                 }
             }

@@ -3,7 +3,7 @@ import { VM, Componet, Browser } from "../index";
 
 @VM({
     name:'app',
-    tmpl:`<div><input type="text" value="{{'aaaa'}}" /><input type="text" value="#4@#&" />
+    tmpl:`<div><input type="text" value="{{this.num}}" /><input type="text" value="#4@#&" />
   divText ({{this.text}}){{: this.text}}
   <span id="span1"> spanText {{:new Date().toString()}} | {{:new Date().getDay()}}  </Span>
   <div>
@@ -11,7 +11,7 @@ import { VM, Componet, Browser } from "../index";
     <button click="{{@this.clickItem()}}">测试item.id</button>
   </div>
   {{tmpl id="tmpl1" let="index=param.index"}}
-    tmpl text {{index}}
+    <span>tmpl text</span> {{index}}
   {{/tmpl}}
   
   {{for userItem in this.users}}
