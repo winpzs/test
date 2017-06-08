@@ -6,12 +6,16 @@ import { VM, Componet, Browser } from "../index";
     tmpl:`<div><input type="text" value="{{'aaaa'}}" />
   divText ({{this.text}}){{: this.text}}
   <span id="span1"> spanText {{:new Date().toString()}} | {{:new Date().getDay()}}  </Span>
+  <div>
+    <button click="{{@this.click(1)}}">测试, 数量:{{this.num}}</button>
+    <button click="{{@this.clickItem()}}">测试item.id</button>
+  </div>
   {{tmpl id="tmpl1" let="index=param.index"}}
     tmpl text {{index}}
   {{/tmpl}}
   
   {{for userItem in this.users}}
-    <div> {{:$index}} for div text
+    <div> {{:$index}} ({{userItem.id}}) for div text
            inc:{{include tmpl="tmpl1" param="{index:$index}" /}} </div>
   {{/for}}
   {{if this.ok}}
@@ -28,30 +32,30 @@ class MyComponet extends Componet{
         // for (var i=0;i<1000;i++)
         //   this.users.push({});
         //   return;
-        setTimeout(()=>{
-          this.addItem(5);
-          this.text = 'update2000';
-          console.time('update2000');
-          this.$update();
-          console.timeEnd('update2000');
-        }, 2000);
+        // setTimeout(()=>{
+        //   this.addItem(1000);
+        //   this.text = 'update2000';
+        //   console.time('update2000');
+        //   this.$update();
+        //   console.timeEnd('update2000');
+        // }, 2000);
 
-        setTimeout(()=>{
-          this.addItem(2);
-          this.text = 'update5000';
-          console.time('update5000');
-          this.$update();
-          console.timeEnd('update5000');
-        }, 5000);
+        // setTimeout(()=>{
+        //   this.addItem(5);
+        //   this.text = 'update5000';
+        //   console.time('update5000');
+        //   this.$update();
+        //   console.timeEnd('update5000');
+        // }, 5000);
 
-        setTimeout(()=>{
-          this.ok = false;
-          this.text = 'update8000';
-          this.users = null;
-          console.time('update8000');
-          this.$update();
-          console.timeEnd('update8000');
-        }, 8000);
+        // setTimeout(()=>{
+        //   this.ok = false;
+        //   this.text = 'update8000';
+        //   this.users = null;
+        //   console.time('update8000');
+        //   this.$update();
+        //   console.timeEnd('update8000');
+        // }, 8000);
 
     }
 
@@ -75,20 +79,31 @@ class MyComponet extends Componet{
 
     text:string = "text";
     ok:boolean = true;
-    users = [{}];
-    addItem(num:number){
+    users = [{id:'id 0'}];
+    makeItem(num:number){
       var list = [];
       for (var i=0;i<num;i++)
-        list.push({});
+        list.push({id:'id '+i});
       this.users = list;
     }
+    num:number = 0;
     click(){
-
+      let n = 1 + Math.round(Math.random() * 500);
+      this.makeItem(n);
+      this.num = n ;
+      console.time('update '+n);
+      this.$update();
+      console.timeEnd('update '+n);
     }
-    clickCall(el:any, s:string):string{
-      return 'clickCall'+s;
+    clickItem(){
+      this.users[0].id = new Date().toString();
+      console.time('updateItem');
+      this.$update();
+      console.timeEnd('updateItem');
     }
 }
 
 
 new Browser().boot(MyComponet);
+
+//new IE8Browser().boot(MyComponet);

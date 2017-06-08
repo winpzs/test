@@ -184,7 +184,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
     _bindTypeRegex = /^\s*([\<\>\:\@\&\!])\s*(.*)/,
     //获取内容绑定信息，如 name="aaa{{this.name}}"
     _getBind = function (value: string, split: string) :IBindInfo {
-        let write:string, event:string, eventEval:string,
+        let write:string, event:string,
             onceList = [], read:boolean = false, isOnce:boolean = false;
         let type:string = '', txt:string, reg:any, content:string = [split, value.replace(_cmdDecodeAttrRegex, function (find: string, content: string, index: number) {
             content = decodeURIComponent(content);
@@ -198,23 +198,20 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
             }
             var readTxt = '';
             switch(type){
-                case ':':
+                case ':'://一次只读
                     onceList.push(txt);
                     isOnce = true;
                     readTxt = [split, 'once'+(onceList.length-1), split].join('+');
                     break;
-                case '&':
+                case '@'://事件
                     event = txt;
                     break;
-                case '!':
-                    eventEval = txt;
-                    break;
-                case '>':
+                case '>'://只写
                     write = txt;
                     break;
-                case '@':
+                case '&'://读写
                     write = txt;
-                case '<':
+                case '<'://只读
                 default:
                     read = true;
                     readTxt = [split, txt, split].join('+');
@@ -233,11 +230,9 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
                 once = 'var ' + oList.join(',') + ';';
             }
             write && (write = 'function(val){ '+write+' = val; }');
-            event = eventEval = null;
+            event = null;
         } else if (event){
-            event = 'function(){ return '+event+'; }';
-        } else if (eventEval){
-            eventEval = 'function(){ return '+eventEval+'; }';
+            event = 'function(event){ return '+event+'; }';
         }
 
         content = `(function(){
@@ -246,8 +241,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
     once:${once?(read? 'false' : 'true') : 'false'},
     read:${read || isOnce ? 'function(){ return '+content+'; }' : 'null'},
     write:${write ? write : 'null'},
-    event:${event ? event : 'null'},
-    eventEval:${eventEval ? eventEval : 'null'}
+    event:${event ? event : 'null'}
   };
 }).call(componet)`;
 
@@ -465,6 +459,20 @@ let _tmplName = '__tmpl__',
             }
         }
        return {tmplElement:tmplElement, isInsertTemp:insertTemp};
+    },
+    _equalArrayIn = function(array1:Array<any>, array2:Array<any>){
+        var ok = true;
+        CmpxLib.each(array1, function(item, index){
+            if (item != array2[index]){
+                ok = false; return false;
+            }
+        });
+        return ok;
+    },
+    _equalArray = function(array1:Array<any>, array2:Array<any>):boolean{
+        if ((!array1 || !array2)) return array1 == array2;
+
+        return array1.length == array2.length && _equalArrayIn(array1, array2);
     };
 
 export class Compile {
@@ -553,13 +561,12 @@ export class Compile {
     public static setAttribute(element:HTMLElement, name:string, content:any, componet:Componet, subject:CompileSubject):void {
         let isObj = !CmpxLib.isString(content);
         if (isObj){
-            let isEvent = content.event || content.eventEval,
+            let isEvent = !!content.event,
                 update;
             if (isEvent){
                 let isBind = false,
                     eventDef = HtmlTagDef.getHtmlEventDef(name),
-                    eventFn:any = content.event.bind(componet) ? content.event
-                        : function(e){ return content.eventEval.call(componet); };
+                    eventFn:any = function(e){ return content.event.call(componet, event); };
                 subject.subscribe({
                     update: function (p: ISubscribeEvent) {
                         if (isBind) return;
@@ -629,7 +636,7 @@ export class Compile {
             subject.subscribe({
                 update:function(p:ISubscribeEvent){
                     let datas = dataFn.call(componet, componet, parentElement, subject);
-                    if (datas != value){
+                    if (!_equalArray(datas , value)){
                         value = datas;
                         removeFn();
                         newSubject = new CompileSubject(subject);
