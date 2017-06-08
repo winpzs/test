@@ -45,7 +45,7 @@ export class Browser extends Platform {
             let _unload = function(){
                 window.removeEventListener('unload', _unload);
                 newSubject.remove({
-                    parentElement:parentElement,
+                    parentElement:parentElement as HTMLElement,
                     componet:refComponet
                 });
             };

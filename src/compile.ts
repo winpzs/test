@@ -308,11 +308,8 @@ export function VM(vm: IVMConfig) {
 interface ISubscribeEvent{
     componet:Componet;
     parentElement:HTMLElement;
-    param?:any;
-}
-
-interface ISubscribeRemoveEvent extends ISubscribeEvent{
     element?:HTMLElement;
+    param?:any;
 }
 
 export interface ISubscribeParam{
@@ -325,7 +322,7 @@ export interface ISubscribeParam{
     //视图准备好
     ready?:(p:ISubscribeEvent)=>void;
     //节点或视图删除
-    remove?:(p:ISubscribeRemoveEvent)=>void;
+    remove?:(p:ISubscribeEvent)=>void;
     isRemove?:boolean;
 }
 
@@ -340,7 +337,7 @@ export class CompileSubject {
                     update:(p:ISubscribeEvent)=> this.update(p),
                     insertDoc:(p:ISubscribeEvent)=> this.insertDoc(p),
                     ready:(p:ISubscribeEvent)=> this.ready(p),
-                    remove:(p:ISubscribeRemoveEvent)=> this.remove(p)
+                    remove:(p:ISubscribeEvent)=> this.remove(p)
                 });
                 this.subject = subject;
                 this.isInit = subject.isInit;
@@ -415,7 +412,7 @@ export class CompileSubject {
     }
 
     isRemove:boolean = false;
-    remove(p:ISubscribeRemoveEvent){
+    remove(p:ISubscribeEvent){
         if (this.isRemove) return;
         this.isRemove = true;
         var datas = this.datas;
@@ -506,7 +503,7 @@ export class Compile {
             parentElement.appendChild(element);
             //if(parentElement == componet.$parentElement) componet.$elements.push(element);
             subject.subscribe({
-                remove:function(p:ISubscribeRemoveEvent) {
+                remove:function(p:ISubscribeEvent) {
                     //如果父节点删除，这里就不用处理了。
                     if (p.parentElement == parentElement){
                         _getParentElement(element).removeChild(element);
@@ -535,7 +532,7 @@ export class Compile {
         parentElement.appendChild(textNode);
         //if(parentElement == componet.$parentElement) componet.$elements.push(textNode);
         subject.subscribe({
-            remove:function(p:ISubscribeRemoveEvent) {
+            remove:function(p:ISubscribeEvent) {
                 //如果父节点删除，这里就不用处理了。
                 if (p.parentElement == parentElement){
                     _getParentElement(textNode).removeChild(textNode);
@@ -577,7 +574,7 @@ export class Compile {
                         isBind = true;
                         eventDef.addEventListener(element, name, eventFn, false);
                     },
-                    remove:function(p:ISubscribeRemoveEvent){
+                    remove:function(p:ISubscribeEvent){
                         if (isBind) {
                             eventDef.removeEventListener(element, name, eventFn, false);
                         }
@@ -645,7 +642,7 @@ export class Compile {
                         removeFn();
                         newSubject = new CompileSubject(subject);
                         newSubject.subscribe({
-                            remove:function(p:ISubscribeRemoveEvent) {
+                            remove:function(p:ISubscribeEvent) {
                                 newSubject.unLinkSubject();
                             }
                         });
@@ -664,7 +661,7 @@ export class Compile {
                         });
                     }
                 },
-                remove:function(p:ISubscribeRemoveEvent){
+                remove:function(p:ISubscribeEvent){
                     if (isInsertTemp && p.parentElement == parentElement){
                         parentElement.removeChild(tmplElement);
                     }
@@ -706,7 +703,7 @@ export class Compile {
 
                         newSubject = new CompileSubject(subject);
                         newSubject.subscribe({
-                            remove:function(p:ISubscribeRemoveEvent) {
+                            remove:function(p:ISubscribeEvent) {
                                 newSubject.unLinkSubject();
                             }
                         });
@@ -727,7 +724,7 @@ export class Compile {
                         });
                     }
                 },
-                remove:function(p:ISubscribeRemoveEvent){
+                remove:function(p:ISubscribeEvent){
                     //removeFn();
                     if (isInsertTemp && p.parentElement == parentElement){
                         parentElement.removeChild(tmplElement);
@@ -810,7 +807,7 @@ export class Compile {
 
 
         newSubject.subscribe({
-            remove:function(p:ISubscribeRemoveEvent) {
+            remove:function(p:ISubscribeEvent) {
                 try{
                     isNewComponet && componet.onDispose();
                 } catch(e){
