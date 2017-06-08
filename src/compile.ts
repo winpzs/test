@@ -313,17 +313,24 @@ export function VM(vm: IVMConfig) {
 
 interface ISubscribeEvent{
     componet:Componet;
+    parentElement:HTMLElement;
     param?:any;
 }
 
 interface ISubscribeRemoveEvent extends ISubscribeEvent{
-    parentElement:HTMLElement;
     element?:HTMLElement;
 }
 
 export interface ISubscribeParam{
+    //视图初始化
     init?:(p:ISubscribeEvent)=>void;
+    //更新视图
     update?:(p:ISubscribeEvent)=>void;
+    //节点插入dom之后
+    insertDoc?:(p:ISubscribeEvent)=>void;
+    //视图准备好
+    ready?:(p:ISubscribeEvent)=>void;
+    //节点或视图删除
     remove?:(p:ISubscribeRemoveEvent)=>void;
     isRemove?:boolean;
 }
@@ -336,8 +343,10 @@ export class CompileSubject {
             if (!(this.isRemove = subject.isRemove)){
                 this.linkParam = subject.subscribe({
                     init:(p:ISubscribeEvent)=> this.init(p),
-                    update:(p:ISubscribeEvent)=> this.init(p),
-                    remove:(p:ISubscribeRemoveEvent)=> this.init(p)
+                    update:(p:ISubscribeEvent)=> this.update(p),
+                    insertDoc:(p:ISubscribeEvent)=> this.insertDoc(p),
+                    ready:(p:ISubscribeEvent)=> this.ready(p),
+                    remove:(p:ISubscribeRemoveEvent)=> this.remove(p)
                 });
                 this.subject = subject;
                 this.isInit = subject.isInit;
@@ -376,7 +385,7 @@ export class CompileSubject {
         this.lastInitP = p;
         CmpxLib.each(this.datas, function(item:ISubscribeParam){
             if(item.init){
-                let t = item.init(p);
+                item.init(p);
                 item.init = null;
             }
         });
@@ -386,7 +395,27 @@ export class CompileSubject {
         if (this.isRemove) return;
         CmpxLib.each(this.datas, function(item:ISubscribeParam){
             if (item.update){
-                let t = item.update && item.update(p);
+                item.update && item.update(p);
+            }
+        });
+    }
+
+    insertDoc(p:ISubscribeEvent){
+        if (this.isRemove) return;
+        CmpxLib.each(this.datas, function(item:ISubscribeParam){
+            if (item.insertDoc){
+                item.insertDoc(p);
+                item.insertDoc = null;
+            }
+        });
+    }
+
+    ready(p:ISubscribeEvent){
+        if (this.isRemove) return;
+        CmpxLib.each(this.datas, function(item:ISubscribeParam){
+            if (item.ready){
+                item.ready(p);
+                item.ready = null;
             }
         });
     }
@@ -399,7 +428,7 @@ export class CompileSubject {
         this.datas = [];
         CmpxLib.each(datas, function(item:ISubscribeParam){
             if (item.remove){
-                var t = item.remove(p);
+                item.remove(p);
                 item.remove= null;
             }
         });
@@ -463,7 +492,7 @@ export class Compile {
 
             let element:HTMLElement = HtmlTagDef.getHtmlTagDef(name).createElement(name, null, parentElement);
             parentElement.appendChild(element);
-            if(parentElement == componet.$parentElement) componet.$elements.push(element);
+            //if(parentElement == componet.$parentElement) componet.$elements.push(element);
             subject.subscribe({
                 remove:function(p:ISubscribeRemoveEvent) {
                     //如果父节点删除，这里就不用处理了。
@@ -475,6 +504,9 @@ export class Compile {
                             (idx >=  0) && els.splice(idx, 1);
                         }
                     }
+                },
+                insertDoc:function(p:ISubscribeEvent){
+                   (element.parentElement == componet.$parentElement) && componet.$elements.push(element);
                 }
             });
             contextFn && contextFn(componet, element, subject);
@@ -489,7 +521,7 @@ export class Compile {
             readFn = isObj ?　content.read : null,
             textNode = document.createTextNode(isObj ? (once ? readFn.call(componet) : value) : content);
         parentElement.appendChild(textNode);
-        if(parentElement == componet.$parentElement) componet.$elements.push(textNode);
+        //if(parentElement == componet.$parentElement) componet.$elements.push(textNode);
         subject.subscribe({
             remove:function(p:ISubscribeRemoveEvent) {
                 //如果父节点删除，这里就不用处理了。
@@ -510,6 +542,9 @@ export class Compile {
                         textNode.textContent = newValue;
                     }
                 }
+            },
+            insertDoc:function(p:ISubscribeEvent){
+               (textNode.parentElement == componet.$parentElement) && componet.$elements.push(textNode);
             }
         });
         return textNode;
@@ -608,9 +643,14 @@ export class Compile {
                             eachFn.call(componet, item, index, componet, fragment, newSubject);
                         });
                         newSubject.update({
-                            componet:componet
+                            componet:componet,
+                            parentElement:parentElement
                         });
                         _insertAfter(fragment, tmplElement, parentElement);
+                        newSubject.insertDoc({
+                            componet:componet,
+                            parentElement:parentElement
+                        });
                     }
                 },
                 remove:function(p:ISubscribeRemoveEvent){
@@ -666,9 +706,14 @@ export class Compile {
                         else
                             falseFn.call(componet, componet, fragment, newSubject);
                         newSubject.update({
-                            componet:componet
+                            componet:componet,
+                            parentElement:parentElement
                         });
                         _insertAfter(fragment, tmplElement, parentElement);
+                        newSubject.insertDoc({
+                            componet:componet,
+                            parentElement:parentElement
+                        });
                     }
                 },
                 remove:function(p:ISubscribeRemoveEvent){
@@ -714,7 +759,7 @@ export class Compile {
         this.componetDef = componetDef;
         let tagInfos = this.tagInfos = _makeTagInfos(CmpxLib.trim(tmpl, true));
         var fn = this.tempFn = _buildCompileFn(tagInfos);
-        console.log(fn.toString());
+        //console.log(fn.toString());
 
         this.contextFn = fn;
     }
@@ -740,6 +785,7 @@ export class Compile {
             componet.$parentElement = parentElement;
 
             parentComponet && parentComponet.$children.push(componet);
+
         } else {
             //如果没有componetDef，为临时tmpl
             //传入的parentComponet为当前的componet
@@ -772,15 +818,43 @@ export class Compile {
                             componet.$parent = componet.$parentElement = null;
                     }
                 }
+            },
+            update:function(p:ISubscribeEvent){
+                isNewComponet && componet.onUpdate(function(){}, p.param);
+            },
+            ready:function(p:ISubscribeEvent){
+                isNewComponet && componet.onReady(function(){}, p.param);
             }
         });
 
-        let fragment = document.createDocumentFragment();
-        this.contextFn.call(componet, CmpxLib, Compile, componet, fragment, newSubject);
-        newSubject.update({
-            componet:componet
-        })
-        _insertAfter(fragment, refElement, parentElement);
+        let initFn = ()=>{
+            newSubject.init({
+                componet: componet,
+                parentElement: parentElement
+            });
+            let fragment = document.createDocumentFragment();
+            this.contextFn.call(componet, CmpxLib, Compile, componet, fragment, newSubject);
+            newSubject.update({
+                componet:componet,
+                parentElement:parentElement
+            });
+            _insertAfter(fragment, refElement, parentElement);
+            newSubject.insertDoc({
+                componet:componet,
+                parentElement:parentElement
+            });
+            newSubject.ready({
+                componet:componet,
+                parentElement:parentElement
+            });
+        };
+        if (isNewComponet){
+            componet.onInit(function(err){
+                initFn();
+            }, null);
+        }
+        else
+            initFn();
         return {newSubject:newSubject, refComponet:componet};
     }
 }

@@ -12,8 +12,21 @@ export class Componet{
         if(this.$isDisposed)return;
         this.$subObject.update({
             componet:this,
+            parentElement:this.$parentElement,
             param:p
         })
+    }
+
+    onInit(cb:(err?:any)=>void, p?:any):void{
+       cb && cb();
+    }
+
+    onReady(cb:(err?:any)=>void, p?:any):void{
+        cb && cb();
+    }
+
+    onUpdate(cb:(err?:any, p?:any)=>void):void{
+        cb && cb();
     }
 
     $isDisposed:Boolean = false;

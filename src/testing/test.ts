@@ -54,6 +54,25 @@ class MyComponet extends Componet{
         }, 8000);
 
     }
+
+    onInit(cb){
+      console.log('onInit');
+      cb();
+      // super.onInit(function(){
+      //   cb();
+      // });
+    }
+
+    onUpdate(cb, p?:any){
+      console.log('onUpdate');
+      cb();
+    }
+
+    onReady(cb){
+      console.log('onReady');
+      cb();
+    }
+
     text:string = "text";
     ok:boolean = true;
     users = [{}];

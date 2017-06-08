@@ -34,6 +34,7 @@ export class Browser extends Platform {
                 {newSubject, refComponet} = Compile.renderComponet(componetDef, bootElement);
             parentElement.removeChild(bootElement);
             console.timeEnd('start');
+            //console.log(refComponet);
 
             let _unload = function(){
                 window.removeEventListener('unload', _unload);
