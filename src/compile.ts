@@ -185,7 +185,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
     //获取内容绑定信息，如 name="aaa{{this.name}}"
     _getBind = function (value: string, split: string) :IBindInfo {
         let write:string, event:string, eventEval:string,
-            onceList = [], read:boolean = false;
+            onceList = [], read:boolean = false, isOnce:boolean = false;
         let type:string = '', txt:string, reg:any, content:string = [split, value.replace(_cmdDecodeAttrRegex, function (find: string, content: string, index: number) {
             content = decodeURIComponent(content);
             reg = _bindTypeRegex.exec(content);
@@ -200,7 +200,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
             switch(type){
                 case ':':
                     onceList.push(txt);
-                    read = true;
+                    isOnce = true;
                     readTxt = [split, 'once'+(onceList.length-1), split].join('+');
                     break;
                 case '&':
@@ -224,8 +224,8 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
         }), split].join('');
 
         var once:string;
-        if (write || read || onceList.length>0){
-            if (onceList.length > 0){
+        if (write || read || isOnce || onceList.length>0){
+            if (isOnce){
                 let oList = [];
                 CmpxLib.each(onceList, function(item:string, index:number){
                     oList.push(['once',index,' = (' , item , ')'].join(''));
@@ -243,7 +243,8 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
         content = `(function(){
   ${once?once:''}
   return {
-    read:${read ? 'function(){ return '+content+'; }' : 'null'},
+    once:${once?(read? 'false' : 'true') : 'false'},
+    read:${read || isOnce ? 'function(){ return '+content+'; }' : 'null'},
     write:${write ? write : 'null'},
     event:${event ? event : 'null'},
     eventEval:${eventEval ? eventEval : 'null'}
@@ -468,7 +469,7 @@ export class Compile {
                     //如果父节点删除，这里就不用处理了。
                     if (p.parentElement == parentElement){
                         element.parentElement.removeChild(element);
-                        if (!componet.$isDisposed){
+                        if (componet && !componet.$isDisposed){
                             var els = componet.$elements,
                                 idx = els.indexOf(element);
                             (idx >=  0) && els.splice(idx, 1);
@@ -484,8 +485,9 @@ export class Compile {
 
         let isObj = !CmpxLib.isString(content),
             value:string = '',
-            textNode = document.createTextNode(isObj ? value : content),
-            readFn = isObj ?　content.read : null;
+            once:boolean = isObj ? content.once : false,
+            readFn = isObj ?　content.read : null,
+            textNode = document.createTextNode(isObj ? (once ? readFn.call(componet) : value) : content);
         parentElement.appendChild(textNode);
         if(parentElement == componet.$parentElement) componet.$elements.push(textNode);
         subject.subscribe({
@@ -493,7 +495,7 @@ export class Compile {
                 //如果父节点删除，这里就不用处理了。
                 if (p.parentElement == parentElement){
                     textNode.parentElement.removeChild(textNode);
-                    if (!componet.$isDisposed){
+                    if (componet && !componet.$isDisposed){
                         var els = componet.$elements,
                             idx = els.indexOf(textNode);
                         (idx >=  0) && els.splice(idx, 1);
@@ -501,7 +503,7 @@ export class Compile {
                 }
             },
             update:function(p:ISubscribeEvent){
-                if (readFn){
+                if (!once && readFn){
                     var newValue = readFn.call(componet);
                     if (value != newValue){
                         value = newValue;
@@ -760,7 +762,7 @@ export class Compile {
                     newSubject.unLinkSubject();
 
                     if (isNewComponet){
-                        if (!parentComponet.$isDisposed){
+                        if (parentComponet && !parentComponet.$isDisposed){
                             var childs = parentComponet.$children,
                                 idx = childs.indexOf(componet);
                             (idx >=  0) && childs.splice(idx, 1);

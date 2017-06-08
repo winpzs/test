@@ -9,6 +9,7 @@ export class Componet{
     readonly $parentElement:HTMLElement;
 
     $update(p?:any){
+        if(this.$isDisposed)return;
         this.$subObject.update({
             componet:this,
             param:p
