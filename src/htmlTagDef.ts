@@ -125,7 +125,7 @@ export class HtmlTagDef {
   /**
    * 单行标签
    */
-  static singelTags: { [name: string]: boolean };
+  static singleTags: { [name: string]: boolean };
   /**
    * 内容标签，不解释内容
    */
@@ -259,7 +259,7 @@ function _makeSpecTags() {
     item.contentType == HtmlTagContentType.RAW_TEXT && rawTags.push(name);
     item.contentType == HtmlTagContentType.ESCAPABLE_RAW_TEXT && escapeRawTags.push(name);
   });
-  let o = HtmlTagDef.singelTags = {};
+  let o = HtmlTagDef.singleTags = {};
   CmpxLib.each(singleTags, (name: string) => o[name] = true);
   o = HtmlTagDef.rawTags = {};
   CmpxLib.each(rawTags, (name: string) => o[name] = true);

@@ -64,8 +64,12 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
             bindInfo:bindInfo
         };
     },
+    _singleCmd ={
+        'include':true,
+        'html':true
+    },
     //将{{this.name}}绑定标签转成$($this.name$)$
-    _cmdEncodeAttrRegex = /\{\{((?!\/|\s*(?:if|else|for|tmpl|include)[ \}])(?:.|\r|\n)+?)\}\}/gm,
+    _cmdEncodeAttrRegex = /\{\{((?!\/|\s*(?:if|else|for|tmpl|include|html)[ \}])(?:.|\r|\n)+?)\}\}/gm,
     _makeTextTag = function (tmpl: string): string {
         //
         return tmpl.replace(_cmdEncodeAttrRegex, function (find, content) {
@@ -84,7 +88,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
     _tagInfoRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*?)(\/*)\s*\>|\{\{\s*(\/*)\s*([^\s\{\}]+)\s*(.*?)(\/*)\}\}/gim,
     _makeTagInfos = function (tmpl: string): Array<ITagInfo> {
         var lastIndex = 0, list: Array<ITagInfo> = [],
-            singelTags = HtmlTagDef.singelTags;
+            singleTags = HtmlTagDef.singleTags;
         tmpl = _makeTextTag(tmpl);
         tmpl = HtmlTagDef.handleTagContent(tmpl);
         //console.log(_backTextTag(tmpl));
@@ -95,7 +99,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
                 list.push(_newTextContent(tmpl, lastIndex, index));
             }
 
-            var single = !!end2 || !!txtEnd2 || (tagName && singelTags[tagName]),
+            var single = !!end2 || !!txtEnd2 || (tagName && singleTags[tagName]) || (txtName && _singleCmd[txtName]),
                 end = !!end1 || !!txtEnd1 || single,
                 cmd = !!txtName;
 
@@ -182,11 +186,12 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
         return attrs;
     },
     _bindTypeRegex = /^\s*([\<\>\:\@\&\!])\s*(.*)/,
+    _removeEmptySplitRegex = /^['"]{2,2}\+|\+['"]{2,2}/g,
     //获取内容绑定信息，如 name="aaa{{this.name}}"
     _getBind = function (value: string, split: string) :IBindInfo {
         let write:string, event:string,
             onceList = [], read:boolean = false, isOnce:boolean = false;
-        let type:string = '', txt:string, reg:any, content:string = [split, value.replace(_cmdDecodeAttrRegex, function (find: string, content: string, index: number) {
+        let type:string = '', txt:string, reg:any, readContent:string = [split, value.replace(_cmdDecodeAttrRegex, function (find: string, content: string, index: number) {
             content = decodeURIComponent(content);
             reg = _bindTypeRegex.exec(content);
             if (reg){
@@ -219,6 +224,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
             }
             return readTxt;
         }), split].join('');
+        readContent = readContent.replace(_removeEmptySplitRegex, '');
 
         var once:string;
         if (write || read || isOnce || onceList.length>0){
@@ -235,17 +241,17 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
             event = 'function(event){ return '+event+'; }';
         }
 
-        content = `(function(){
+        readContent = `(function(){
   ${once?once:''}
   return {
     once:${once?(read? 'false' : 'true') : 'false'},
-    read:${read || isOnce ? 'function(){ return '+content+'; }' : 'null'},
+    read:${read || isOnce ? 'function(){ return '+readContent+'; }' : 'null'},
     write:${write ? write : 'null'},
     event:${event ? event : 'null'}
   };
 }).call(componet)`;
 
-        return { type:type, content:content };
+        return { type:type, content:readContent };
     },
     _makeTagInfoChildren = function (attrs: Array<ITagInfo>, outList: Array<ITagInfo>,
         len: number, index: number = 0, parent: ITagInfo = null): number {
@@ -767,7 +773,7 @@ export class Compile {
         this.componetDef = componetDef;
         let tagInfos = this.tagInfos = _makeTagInfos(CmpxLib.trim(tmpl, true));
         var fn = this.tempFn = _buildCompileFn(tagInfos);
-        // console.log(fn.toString());
+        console.log(fn.toString());
 
         this.contextFn = fn;
     }

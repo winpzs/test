@@ -16,7 +16,7 @@ import { VM, Componet, Browser } from "../index";
   
   {{for userItem in this.users}}
     <div> {{:$index}} ({{userItem.id}}) for div text
-           inc:{{include tmpl="tmpl1" param="{index:$index}" /}} </div>
+           inc:{{include tmpl="tmpl1" param="{index:$index}" }} </div>
   {{/for}}
   {{if this.ok}}
     ok:{{this.ok}}
