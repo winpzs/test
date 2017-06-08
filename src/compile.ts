@@ -65,8 +65,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
         };
     },
     _singleCmd ={
-        'include':true,
-        'html':true
+        'include':true
     },
     //将{{this.name}}绑定标签转成$($this.name$)$
     _cmdEncodeAttrRegex = /\{\{((?!\/|\s*(?:if|else|for|tmpl|include|html)[ \}])(?:.|\r|\n)+?)\}\}/gm,
