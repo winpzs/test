@@ -2,6 +2,10 @@ import Platform from './platform';
 import { Componet } from './componet';
 import { Compile, CompileSubject } from './compile';
 
+var _getParentElement = function(element:Node):Node{
+    return element.parentElement || element.parentNode;
+};
+
 export class Browser extends Platform {
 
     constructor() {
@@ -15,7 +19,7 @@ export class Browser extends Platform {
         if (!bootElement)
             throw new Error(`没有${name}标签`);
 
-        let _doc = document, parentElement =bootElement.parentElement;
+        let _doc = document, parentElement = _getParentElement(bootElement);
         let preElement:any = bootElement.previousSibling;
         if (!preElement){
             preElement = _doc.createComment(name);
@@ -30,7 +34,8 @@ export class Browser extends Platform {
             window.removeEventListener('load', _ready, false);
 
             console.time('start');
-            let parentElement =bootElement.parentElement,
+            //注意tmplElement是Comment, 在IE里只能取到parentNode
+            let parentElement = _getParentElement(bootElement),
                 {newSubject, refComponet} = Compile.renderComponet(componetDef, bootElement);
             parentElement.removeChild(bootElement);
             console.timeEnd('start');

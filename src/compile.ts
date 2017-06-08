@@ -458,6 +458,7 @@ let _tmplName = '__tmpl__',
                 parentElement.appendChild(tmplElement);
             }
         }
+        //注意tmplElement是Comment, 在IE里只能取到parentNode
        return {tmplElement:tmplElement, isInsertTemp:insertTemp};
     },
     _equalArrayIn = function(array1:Array<any>, array2:Array<any>){
@@ -473,6 +474,9 @@ let _tmplName = '__tmpl__',
         if ((!array1 || !array2)) return array1 == array2;
 
         return array1.length == array2.length && _equalArrayIn(array1, array2);
+    },
+    _getParentElement = function(element:Node):any{
+        return element.parentElement || element.parentNode;
     };
 
 export class Compile {
@@ -505,7 +509,7 @@ export class Compile {
                 remove:function(p:ISubscribeRemoveEvent) {
                     //如果父节点删除，这里就不用处理了。
                     if (p.parentElement == parentElement){
-                        element.parentElement.removeChild(element);
+                        _getParentElement(element).removeChild(element);
                         if (componet && !componet.$isDisposed){
                             var els = componet.$elements,
                                 idx = els.indexOf(element);
@@ -514,7 +518,7 @@ export class Compile {
                     }
                 },
                 insertDoc:function(p:ISubscribeEvent){
-                   (element.parentElement == componet.$parentElement) && componet.$elements.push(element);
+                   (_getParentElement(element) == componet.$parentElement) && componet.$elements.push(element);
                 }
             });
             contextFn && contextFn(componet, element, subject);
@@ -534,7 +538,7 @@ export class Compile {
             remove:function(p:ISubscribeRemoveEvent) {
                 //如果父节点删除，这里就不用处理了。
                 if (p.parentElement == parentElement){
-                    textNode.parentElement.removeChild(textNode);
+                    _getParentElement(textNode).removeChild(textNode);
                     if (componet && !componet.$isDisposed){
                         var els = componet.$elements,
                             idx = els.indexOf(textNode);
@@ -552,7 +556,7 @@ export class Compile {
                 }
             },
             insertDoc:function(p:ISubscribeEvent){
-               (textNode.parentElement == componet.$parentElement) && componet.$elements.push(textNode);
+               (_getParentElement(textNode) == componet.$parentElement) && componet.$elements.push(textNode);
             }
         });
         return textNode;
@@ -781,7 +785,7 @@ export class Compile {
 
         let componet:any,
             isNewComponet:boolean = false,
-            parentElement:HTMLElement = refElement.parentElement,
+            parentElement:HTMLElement = _getParentElement(refElement),
             newSubject:CompileSubject = new CompileSubject(parentComponet?parentComponet.$subObject:null);
 
         if (componetDef){
