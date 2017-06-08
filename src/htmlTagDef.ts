@@ -47,8 +47,8 @@ export interface IHtmlTagDefConfig {
  * @param name 
  * @param parent 
  */
-export function DEFAULT_CREATEELEMENT(name: string, attrs?:Array<{name:string, value:string}>, parent?: HTMLElement): HTMLElement {
-  return document.createElement(name);
+export function DEFAULT_CREATEELEMENT(name: string, tag:string, parent?: HTMLElement): HTMLElement {
+  return document.createElement(HtmlTagDef.isCreateElementByName? name : tag );
 }
 
 //注释标签
@@ -58,6 +58,12 @@ let _noteTagRegex = /\<\!--(?:.|\n|\r)*?--\>/gim;
  * HtmlTag定义类
  */
 export class HtmlTagDef {
+
+  /**
+   * 创建element是否用name, 如createElement('input'),
+   *  否为：createElement('<input type="text">')IE8及以下用
+   */
+  static isCreateElementByName:boolean = true;
 
   /**
    * 获取标签定义
@@ -159,7 +165,7 @@ export class HtmlTagDef {
   /**
    * element创建器
    */
-  createElement: (name: string, attrs?:Array<{name:string, value:string}>, parent?: HTMLElement) => HTMLElement;
+  createElement: (name: string, tag:string, parent?: HTMLElement) => HTMLElement;
 
   constructor(
     { single = false, contentType = HtmlTagContentType.PARSABLE_DATA, preFix = null, ignoreFirstLf = false, createElement = null }: {
@@ -167,7 +173,7 @@ export class HtmlTagDef {
       contentType?: HtmlTagContentType;
       preFix?: string;
       ignoreFirstLf?: boolean;
-      createElement?: (name: string, attrs?:Array<{name:string, value:string}>, parent?: HTMLElement) => HTMLElement;
+      createElement?: (name: string, tag:string, parent?: HTMLElement) => HTMLElement;
     } = {}) {
     this.single = single;
     this.preFix = preFix;

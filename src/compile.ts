@@ -497,12 +497,12 @@ export class Compile {
             contextFn && contextFn(refComponet, parentElement, newSubject);
     }
 
-    public static createElement(name:string, componet:Componet, parentElement:HTMLElement, subject:CompileSubject,
+    public static createElement(name:string, tag:string, componet:Componet, parentElement:HTMLElement, subject:CompileSubject,
         contextFn:(componet:Componet, element:HTMLElement, subject:CompileSubject)=>void):void {
             
             if (subject.isRemove)return;
 
-            let element:HTMLElement = HtmlTagDef.getHtmlTagDef(name).createElement(name, null, parentElement);
+            let element:HTMLElement = HtmlTagDef.getHtmlTagDef(name).createElement(name, tag, parentElement);
             parentElement.appendChild(element);
             //if(parentElement == componet.$parentElement) componet.$elements.push(element);
             subject.subscribe({
@@ -770,7 +770,7 @@ export class Compile {
         this.componetDef = componetDef;
         let tagInfos = this.tagInfos = _makeTagInfos(CmpxLib.trim(tmpl, true));
         var fn = this.tempFn = _buildCompileFn(tagInfos);
-        //console.log(fn.toString());
+        // console.log(fn.toString());
 
         this.contextFn = fn;
     }
@@ -881,6 +881,16 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
     _escapeBuildString = function(s:string):string{
         return s ? s.replace(/([\"\\])/gm, '\\$1').replace(/\n/gm, '\\n').replace(/\r/gm, '\\r') : '';
     },
+    _makeElementTag = function(tagName, attrs:Array<IAttrInfo>):{bindAttrs:Array<IAttrInfo>, tagStr:string}{
+        var bindAttrs = [], sAttrs = [];
+        CmpxLib.each(attrs, function(item:IAttrInfo){
+            if (item.bind)
+                bindAttrs.push(item);
+            else
+                sAttrs.push([item.name, '="', CmpxLib.encodeHtml(item.value), '"'].join(''));
+        });
+        return {bindAttrs:bindAttrs, tagStr:['<', tagName, sAttrs.length==0 ? '' : ' ', sAttrs.join(' '), '>'].join('')};
+    },
     _buildAttrContent = function(attrs:Array<IAttrInfo>, outList:Array<string>){
         if (!attrs)return;
         CmpxLib.each(attrs, function(attr:IAttrInfo, index:number){
@@ -911,12 +921,19 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
                         preInsert=true;
                     } else {
                         if ((tag.attrs && tag.attrs.length > 0) || (tag.children && tag.children.length > 0)){
-                           outList.push('Compile.createElement("'+tagName+'", componet, element, subject, function (componet, element, subject) {');
-                           _buildAttrContent(tag.attrs, outList);
-                           _buildCompileFnContent(tag.children, outList, preInsert);
+                            if (HtmlTagDef.isCreateElementByName){
+                                outList.push('Compile.createElement("'+tagName+'", "<'+tagName+'>", componet, element, subject, function (componet, element, subject) {');
+                                _buildAttrContent(tag.attrs, outList);
+                                _buildCompileFnContent(tag.children, outList, preInsert);
+                            } else {
+                                let {bindAttrs, tagStr} = _makeElementTag(tagName, tag.attrs);
+                                outList.push('Compile.createElement("'+tagName+'", \''+tagStr+'\', componet, element, subject, function (componet, element, subject) {');
+                                _buildAttrContent(bindAttrs, outList);
+                                _buildCompileFnContent(tag.children, outList, preInsert);
+                            }
                            outList.push('});');
                         } else {
-                            outList.push('Compile.createElement("'+tagName+'", componet, element, subject);');
+                            outList.push('Compile.createElement("'+tagName+'", "<'+tagName+'>", componet, element, subject);');
                         }
                         preInsert = false;
                     }
