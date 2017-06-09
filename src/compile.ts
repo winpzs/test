@@ -715,8 +715,8 @@ export class Compile {
 
             } else {
                 let value: any = '', newValue:any,
-                    hasSecName:boolean = (name.indexOf('.') > 0),
-                    secName:string,
+                    hasSubName:boolean = (name.indexOf('.') > 0),
+                    subName:string,
                     isWrite:boolean = !!content.write,
                     isRead:boolean = !!content.read,
                     writeFn = function (p: ISubscribeEvent) {
@@ -726,10 +726,10 @@ export class Compile {
                             content.write.call(componet, newValue);
                         }
                     };
-                if (hasSecName){
+                if (hasSubName){
                     let t = name.split('.');
                     name = t[0];
-                    secName = t[1];
+                    subName = t[1];
                 }
                 let attrDef:IHtmlAttrDef = HtmlDef.getHtmlAttrDef(name);
                 subject.subscribe({
@@ -738,10 +738,7 @@ export class Compile {
                             newValue = CmpxLib.toStr(content.read.call(componet));
                             if (value != newValue) {
                                 value = newValue;
-                                if (hasSecName) {
-                                    attrDef.getAttribute(element, name)[secName] = value;
-                                } else
-                                    attrDef.setAttribute(element, name, value);
+                                attrDef.setAttribute(element, name, value, subName);
                             } else if (isWrite){
                                 writeFn(p);
                             }

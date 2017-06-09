@@ -134,8 +134,8 @@ function _removeSpace(html: string): string {
  * HtmlAttr定义
  */
 export interface IHtmlAttrDef {
-  setAttribute: (element: HTMLElement, name: string, value: string) => void;
-  getAttribute: (element: HTMLElement, name: string) => string;
+  setAttribute: (element: HTMLElement, name: string, value: string, subName?:string) => void;
+  getAttribute: (element: HTMLElement, name: string, subName?:string) => string;
   writeable: boolean;
 }
 
@@ -143,11 +143,17 @@ export interface IHtmlAttrDef {
  * 默认HtmlAttr定义
  */
 var DEFAULT_ATTR: IHtmlAttrDef = {
-  setAttribute(element: HTMLElement, name: string, value: string) {
-    element.setAttribute(name, value);
+  setAttribute(element: HTMLElement, name: string, value: string, subName?:string) {
+    if (subName)
+      element[name][subName] = value;
+    else
+      element.setAttribute(name, value);
   },
-  getAttribute(element: HTMLElement, name: string) {
-    return element.getAttribute(name);
+  getAttribute(element: HTMLElement, name: string, subName?:string) {
+    if (subName)
+      return element[name][subName];
+    else
+      return element.getAttribute(name);
   },
   writeable: false
 };
@@ -156,11 +162,17 @@ var DEFAULT_ATTR: IHtmlAttrDef = {
  * 默认HtmlAttr prop定义
  */
 var DEFAULT_ATTR_PROP: IHtmlAttrDef = {
-  setAttribute(element: HTMLElement, name: string, value: string) {
-    element[name] = value;
+  setAttribute(element: HTMLElement, name: string, value: string, subName?:string) {
+    if (subName)
+      element[name][subName] = value;
+    else
+      element[name] = value;
   },
-  getAttribute(element: HTMLElement, name: string) {
-    return element[name];
+  getAttribute(element: HTMLElement, name: string, subName?:string) {
+    if (subName)
+      return element[name][subName];
+    else
+      return element[name];
   },
   writeable: true
 };
