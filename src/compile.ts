@@ -68,12 +68,15 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
     _singleCmd ={
         'include':true
     },
+    _encodeURIComponentEx = function(s:string):string{
+        return encodeURIComponent(s).replace(/'/g, '%27');
+    },
     //将{{this.name}}绑定标签转成$($this.name$)$
     _cmdEncodeAttrRegex = /\{\{((?!\/|\s*(?:if|else|for|tmpl|include|html)[ \}])(?:.|\r|\n)+?)\}\}/gm,
     _makeTextTag = function (tmpl: string): string {
         //
         return tmpl.replace(_cmdEncodeAttrRegex, function (find, content) {
-            return ['$($', encodeURIComponent(content), '$)$'].join('');
+            return ['$($', _encodeURIComponentEx(content), '$)$'].join('');
         });
     },
     //把$($this.name$)$还原
@@ -153,6 +156,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
     //获取attrInfo
     _attrInfoRegex = /\s*([^= ]+)\s*=\s*(?:(["'])((?:.|\n|\r)*?)\2|([^"' ><]*))|\s*([^= /]+)\s*/gm,
     _getAttrInfos = function (content: string): Array<IAttrInfo> {
+        console.log(content);
         var attrs: Array<IAttrInfo> = [];
         content.replace(_attrInfoRegex, function (find: string, name: string, split: string,
             value: string, value1:string, name1:string, index: number) {
