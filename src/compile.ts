@@ -1,5 +1,5 @@
 import CmpxLib from './cmpxLib';
-import { HtmlTagDef, IHtmlAttrDef, HtmlTagContentType } from './htmlDef';
+import { HtmlDef, HtmlTagDef, IHtmlAttrDef, HtmlTagContentType } from './htmlDef';
 import { Componet } from './componet';
 
 
@@ -91,7 +91,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
         var lastIndex = 0, list: Array<ITagInfo> = [];
 
         tmpl = _makeTextTag(tmpl);
-        tmpl = HtmlTagDef.handleTagContent(tmpl);
+        tmpl = HtmlDef.handleTagContent(tmpl);
         tmpl.replace(_tagInfoRegex, function (find: string, end1: string, tagName: string,
             tagContent: string, end2: string, txtEnd1: string, txtName: string, txtContent: string, txtEnd2: string, index: number) {
 
@@ -100,7 +100,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
             }
 
             var cmd = !!txtName,
-                htmlTagDef = cmd ? null : HtmlTagDef.getHtmlTagDef(tagName),
+                htmlTagDef = cmd ? null : HtmlDef.getHtmlTagDef(tagName),
                 single = !!end2 || !!txtEnd2 || (cmd ? _singleCmd[txtName] : htmlTagDef.single),
                 end = !!end1 || !!txtEnd1 || single;
 
@@ -511,7 +511,7 @@ export class Compile {
             
             if (subject.isRemove)return;
 
-            let element:HTMLElement = HtmlTagDef.getHtmlTagDef(name).createElement(name, tag, parentElement);
+            let element:HTMLElement = HtmlDef.getHtmlTagDef(name).createElement(name, tag, parentElement);
             parentElement.appendChild(element);
             //if(parentElement == componet.$parentElement) componet.$elements.push(element);
             subject.subscribe({
@@ -581,7 +581,7 @@ export class Compile {
                 update;
             if (isEvent){
                 let isBind = false,
-                    eventDef = HtmlTagDef.getHtmlEventDef(name),
+                    eventDef = HtmlDef.getHtmlEventDef(name),
                     eventFn:any = function(e){ return content.event.call(componet, event); };
                 subject.subscribe({
                     update: function (p: ISubscribeEvent) {
@@ -614,7 +614,7 @@ export class Compile {
                     name = t[0];
                     secName = t[1];
                 }
-                let attrDef:IHtmlAttrDef = HtmlTagDef.getHtmlAttrDef(name);
+                let attrDef:IHtmlAttrDef = HtmlDef.getHtmlAttrDef(name);
                 subject.subscribe({
                     update: function (p: ISubscribeEvent) {
                         if (isRead){
@@ -635,7 +635,7 @@ export class Compile {
                 });
             }
         } else
-            HtmlTagDef.getHtmlAttrDef(name).setAttribute(element, name, content);
+            HtmlDef.getHtmlAttrDef(name).setAttribute(element, name, content);
     }
 
     public static forRender(
@@ -964,7 +964,7 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
                     } else {
                         _checkTagChild(tag);
                         if ((tag.attrs && tag.attrs.length > 0) || (tag.children && tag.children.length > 0)){
-                            if (HtmlTagDef.isCreateElementByName){
+                            if (HtmlDef.isCreateElementByName){
                                 outList.push('__createElement("'+tagName+'", "<'+tagName+'>", componet, element, subject, function (componet, element, subject) {');
                                 _buildAttrContent(tag.attrs, outList);
                                 _buildCompileFnContent(tag.children, outList, tmplOutList, preInsert);
