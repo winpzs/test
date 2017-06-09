@@ -94,13 +94,13 @@ export default class CmpxLib {
     }
 
     static encodeHtml(html:string):string{
-        return !html ? '' : html.replace(/\</g, '&lt;').replace(/\>/g, '&gt;').
-            replace(/\&/g, '&amp;').replace(/\"/g, '&quot;').replace(/ /g, "&nbsp;").replace(/\'/g, "&#39;");
+        return !html ? '' : html.replace(/\&/g, '&amp;').replace(/\</g, '&lt;').replace(/\>/g, '&gt;')
+            .replace(/\"/g, '&quot;').replace(/ /g, "&nbsp;").replace(/\'/g, "&#39;");
     }
 
     static decodeHtml(html:string):string{
-        return !html ? '' : html.replace('&lt;', '<').replace('&gt;', '>').replace('&amp;', '&')
-            .replace('&quot;', '"').replace("&nbsp;", ' ').replace("&#39;", "'");
+        return !html ? '' : html.replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"').replace(/&nbsp;/g, ' ').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
     }
 
     static isArray(value:any) {

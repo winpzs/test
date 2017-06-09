@@ -24,7 +24,9 @@ import { VM, Componet, Browser } from "../index";
     <br />
     !ok:{{this.ok}}
   {{/if}}
-</div>`
+</div>
+    <textarea><span>aaa</span></textarea>
+`
 })
 class MyComponet extends Componet{
     constructor(){

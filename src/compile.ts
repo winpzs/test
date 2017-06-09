@@ -88,6 +88,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
     _makeTagInfos = function (tmpl: string): Array<ITagInfo> {
         var lastIndex = 0, list: Array<ITagInfo> = [],
             singleTags = HtmlTagDef.singleTags;
+
         tmpl = _makeTextTag(tmpl);
         tmpl = HtmlTagDef.handleTagContent(tmpl);
         //console.log(_backTextTag(tmpl));
@@ -98,9 +99,9 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
                 list.push(_newTextContent(tmpl, lastIndex, index));
             }
 
-            var single = !!end2 || !!txtEnd2 || (tagName && singleTags[tagName]) || (txtName && _singleCmd[txtName]),
-                end = !!end1 || !!txtEnd1 || single,
-                cmd = !!txtName;
+            var cmd = !!txtName,
+                single = !!end2 || !!txtEnd2 || (cmd ? _singleCmd[txtName] : singleTags[tagName]),
+                end = !!end1 || !!txtEnd1 || single;
 
             if (cmd || !(single && !!end1)) {
 
@@ -885,9 +886,9 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
     __includeRender = Compile.includeRender;`);
 
         _buildCompileFnContent(tagInfos, outList, tmplOutList, true);
-        //console.log(outList.join('\n'));
 
         outList = tmplOutList.concat(outList);
+        // console.log(outList.join('\n'));
 
         return new Function('CmpxLib','Compile', 'componet', 'element', 'subject', outList.join('\n'));
     },
@@ -917,8 +918,15 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
     _getInsertTemp = function(preInsert:boolean){
         return preInsert ? 'true' : 'false';
     },
+    _buildEscapeRawTag = function(tagInfos:Array<ITagInfo>):Array<ITagInfo>{
+        CmpxLib.each(tagInfos, function(item:ITagInfo){
+            item.content = CmpxLib.decodeHtml(item.content);
+        });
+        return tagInfos;
+    },
     _buildCompileFnContent = function(tagInfos:Array<ITagInfo>, outList:Array<string>, tmplOutList:string[],  preInsert:boolean){
         if (!tagInfos) return;
+        let escapeRawTags = HtmlTagDef.escapeRawTags
         CmpxLib.each(tagInfos, function(tag:ITagInfo, index:number){
             let tagName = tag.tagName;
             if (!tag.cmd){
@@ -934,6 +942,11 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
                         }
                         preInsert=true;
                     } else {
+                        let isEscapeRawTags = HtmlTagDef.escapeRawTags[tagName];
+                        if (isEscapeRawTags){
+                            _buildEscapeRawTag(tag.children);
+                            console.log('escapeRawTags', tag.children);
+                        }
                         if ((tag.attrs && tag.attrs.length > 0) || (tag.children && tag.children.length > 0)){
                             if (HtmlTagDef.isCreateElementByName){
                                 outList.push('__createElement("'+tagName+'", "<'+tagName+'>", componet, element, subject, function (componet, element, subject) {');
