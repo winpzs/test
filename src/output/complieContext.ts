@@ -36,11 +36,20 @@ __setAttribute(element, "text", (function(){
     event:null
   };
 }).call(componet), componet, subject);
+__setAttribute(element, "style", (function(){
+  
+  return {
+    once:false,
+    read:function(){ return 'color:red'; },
+    write:null,
+    event:null
+  };
+}).call(componet), componet, subject);
 __createTextNode((function(){
   
   return {
     once:false,
-    read:function(){ return " spanText"+"this"+" "; },
+    read:function(){ return " spanText"+!"this"+" "; },
     write:function(val){ this.user = val; },
     event:null
   };
@@ -63,12 +72,12 @@ __createTextNode(" ", componet, element, subject);
 __createTextNode(" ", componet, element, subject);
 });
 __createTextNode(" ", componet, element, subject);
-__createElement("textarea", "<textarea>", componet, element, subject);
+__createElement("textarea", "<textarea>", componet, element, subject, function (componet, element, subject) {
+__createTextNode("<span>aaa</span>", componet, element, subject);
+});
 __createTextNode(" ", componet, element, subject);
 __createElement("script", "<script>", componet, element, subject, function (componet, element, subject) {
 __setAttribute(element, "type", "text/html", componet, subject);
-__createTextNode(" sdf", componet, element, subject);
-__createElement("br", "<br>", componet, element, subject);
-__createTextNode(" ", componet, element, subject);
+__createTextNode("\nsdf&lt;br&nbsp;/&gt;\n", componet, element, subject);
 });
 }

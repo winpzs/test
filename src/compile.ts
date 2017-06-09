@@ -1,5 +1,5 @@
 import CmpxLib from './cmpxLib';
-import { HtmlTagDef, IHtmlAttrDef, HtmlTagContentType } from './htmlTagDef';
+import { HtmlTagDef, IHtmlAttrDef, HtmlTagContentType } from './htmlDef';
 import { Componet } from './componet';
 
 

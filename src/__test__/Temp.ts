@@ -1,9 +1,7 @@
 
 import { expect } from 'chai';
 import 'mocha';
-import { Compile, VM, CompileSubject } from '../compile';
-import { HtmlTagDef } from '../htmlTagDef';
-import { Componet } from '../componet';
+import { Compile, VM, CompileSubject, HtmlTagDef, Componet } from '../index';
 
 import fs = require('fs');
 
