@@ -1,7 +1,7 @@
 
 import { expect } from 'chai';
 import 'mocha';
-import { Compile, VM, CompileSubject, HtmlTagDef, Componet } from '../index';
+import { Compile, VM, CompileSubject, HtmlTagDef, Componet, CompileRender } from '../index';
 
 import fs = require('fs');
 
@@ -29,7 +29,7 @@ sdf<br />
 describe('Compile', () => {
   it('_makeTags', () => {
     console.time('Compile');
-    var cp = new Compile(tmpl);
+    var cp = new CompileRender(tmpl);
     console.timeEnd('Compile');
     var tags = cp.tagInfos;
     console.log(JSON.stringify(tags));

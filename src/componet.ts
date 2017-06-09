@@ -1,4 +1,4 @@
-import { CompileSubject } from './compile';
+import { CompileSubject, CompileRender } from './compile';
 
 export class Componet{
     readonly $name:string;
@@ -15,6 +15,10 @@ export class Componet{
             parentElement:this.$parentElement,
             param:p
         })
+    }
+
+    $render(tmpl:string): CompileRender{
+        return new CompileRender(tmpl);
     }
 
     onInit(cb:(err?:any)=>void, p?:any):void{

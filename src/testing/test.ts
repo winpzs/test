@@ -3,7 +3,7 @@ import { VM, Componet, Browser } from "../index";
 
 @VM({
     name:'app',
-    tmpl:`<div><input type="text" value="{{:this.num}}" /><input type="text" value="#4@#&" />
+    tmpl:`<div><input type="text" value="{{this.num}}" /><input type="text" value="#4@#&" />
   divText ({{this.text}}){{: this.text}}
   <span id="span1" style.color="{{'red'}}" click="{{@console.log(element.innerText);}}"> spanText {{:new Date().toString()}} | {{:new Date().getDay()}}  </Span>
   <div>
