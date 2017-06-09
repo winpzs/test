@@ -521,7 +521,7 @@ export class CompileRender {
      * @param refElement 在element之后插入内容
      * @param parentComponet 父组件
      */
-    complie(refElement:HTMLElement, parentComponet?:Componet):{newSubject:CompileSubject, refComponet: Componet}{
+    complie(refElement:HTMLElement, parentComponet?:Componet, contextFn?:(component:Componet, element:HTMLElement,subject:CompileSubject)=>void):{newSubject:CompileSubject, refComponet: Componet}{
         var componetDef:any = this.componetDef;
 
         let componet:any,
@@ -548,6 +548,8 @@ export class CompileRender {
         if (!componet){
             throw new Error('render缺少Componet参数');
         }
+        //注意parentElement问题，但现在context只能放{{tmpl}}
+        contextFn && contextFn(componet, parentElement, newSubject);
 
         newSubject.subscribe({
             remove:function(p:ISubscribeEvent) {
@@ -621,11 +623,11 @@ export class Compile {
             let cmp:any = _registerVM[name];
 
             let vm = _registerVM[name];
-            let {newSubject, refComponet} = vm.render.complie(parentElement, componet);
+            let {newSubject, refComponet} = vm.render.complie(parentElement, componet, contextFn);
 
             //let newSubject:CompileSubject = newComponet.$subObject;
 
-            contextFn && contextFn(refComponet, parentElement, newSubject);
+            //contextFn && contextFn(refComponet, parentElement, newSubject);
     }
 
     public static createElement(name:string, tag:string, componet:Componet, parentElement:HTMLElement, subject:CompileSubject,
@@ -919,9 +921,6 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
 
         _buildCompileFnContent(tagInfos, outList, true);
 
-        //outList = tmplOutList.concat(outList);
-        // console.log(outList.join('\n'));
-
         return new Function('CmpxLib','Compile', 'componet', 'element', 'subject', outList.join('\n'));
     },
     _escapeStringRegex = /([\"\\])/gm,
@@ -958,18 +957,21 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
             });
         }
     },
-    _buildCompileFnContent = function(tagInfos:Array<ITagInfo>, outList:Array<string>, preInsert:boolean){
+    _buildCompileFnContent = function(tagInfos:Array<ITagInfo>, outList:Array<string>, preInsert:boolean, inclue?:string[]){
         if (!tagInfos) return;
 
         CmpxLib.each(tagInfos, function(tag:ITagInfo, index:number){
             let tagName = tag.tagName;
+            //如果指定include, 非tagName或不包涵，不引入
+            if (inclue && (!tagName || inclue.indexOf(tagName)< 0))return;
             if (!tag.cmd){
                 if (tag.target){
                     if (tag.componet){
                         if (tag.children && tag.children.length > 0){
                            outList.push('__createComponet("'+tagName+'", componet, element, subject, function (componet, element, subject) {');
                            //_buildAttrContent(tag.attrs, outList);
-                           _buildCompileFnContent(tag.children, outList, preInsert);
+                           //createComponet下只能放tmpl
+                           _buildCompileFnContent(tag.children, outList, preInsert, ['tmpl']);
                            outList.push('});');
                         } else {
                             outList.push('__createComponet("'+tagName+'", componet, element, subject);');
