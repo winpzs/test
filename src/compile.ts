@@ -151,11 +151,12 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
         return outList;
     },
     //获取attrInfo
-    _attrInfoRegex = /\s*([^= ]+)\s*=\s*(["'])((?:.|\b|\r)*?)\2|\s*([^= /]+)\s*/gm,
+    _attrInfoRegex = /\s*([^= ]+)\s*=\s*(?:(["'])((?:.|\n|\r)*?)\2|([^"' ><]*))|\s*([^= /]+)\s*/gm,
     _getAttrInfos = function (content: string): Array<IAttrInfo> {
         var attrs: Array<IAttrInfo> = [];
         content.replace(_attrInfoRegex, function (find: string, name: string, split: string,
-            value: string, name1:string, index: number) {
+            value: string, value1:string, name1:string, index: number) {
+                value1 && (split = "\"", value = value1);
             var bind = _cmdDecodeAttrRegex.test(value),
                 bindInfo = bind ? _getBind(value, split) : null;
             attrs.push({
