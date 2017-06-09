@@ -55,13 +55,19 @@ gulp.task('tsc-browser', function () {
 
 gulp.task('watch-browser', function(){
     gulp.watch(tsBrowserSrc, function(){
+        var time = new Date();
+        console.log(`[${_toTimeStr2Len(time.getHours())}:${_toTimeStr2Len(time.getMinutes())}:${_toTimeStr2Len(time.getSeconds())}] ====================================`);
         gulp.start('tsc-browser');
     });
 });
 
 
-gulp.task('default', function () {
-    gulp.start('tsc-browser', 'watch-browser');
+var _toTimeStr2Len = function(n){
+    var s = n.toString();
+    return (s.length < 2) ? '0'+s : s;
+};
+gulp.task('default', ['tsc-browser'], function () {
+    gulp.start('watch-browser');
 });
 
 
