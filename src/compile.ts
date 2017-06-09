@@ -906,9 +906,9 @@ export class Compile {
 }
 
 var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
-        var outList = [], tmplOutList = [];
+        var outList = [];
 
-        tmplOutList.push(`var __tmplRender = Compile.tmplRender,
+        outList.push(`var __tmplRender = Compile.tmplRender,
     __createComponet = Compile.createComponet,
     __createElement = Compile.createElement,
     __setAttribute = Compile.setAttribute,
@@ -917,9 +917,9 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
     __ifRender = Compile.ifRender,
     __includeRender = Compile.includeRender;`);
 
-        _buildCompileFnContent(tagInfos, outList, tmplOutList, true);
+        _buildCompileFnContent(tagInfos, outList, true);
 
-        outList = tmplOutList.concat(outList);
+        //outList = tmplOutList.concat(outList);
         // console.log(outList.join('\n'));
 
         return new Function('CmpxLib','Compile', 'componet', 'element', 'subject', outList.join('\n'));
@@ -958,7 +958,7 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
             });
         }
     },
-    _buildCompileFnContent = function(tagInfos:Array<ITagInfo>, outList:Array<string>, tmplOutList:string[],  preInsert:boolean){
+    _buildCompileFnContent = function(tagInfos:Array<ITagInfo>, outList:Array<string>, preInsert:boolean){
         if (!tagInfos) return;
 
         CmpxLib.each(tagInfos, function(tag:ITagInfo, index:number){
@@ -969,7 +969,7 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
                         if (tag.children && tag.children.length > 0){
                            outList.push('__createComponet("'+tagName+'", componet, element, subject, function (componet, element, subject) {');
                            //_buildAttrContent(tag.attrs, outList);
-                           _buildCompileFnContent(tag.children, outList, tmplOutList, preInsert);
+                           _buildCompileFnContent(tag.children, outList, preInsert);
                            outList.push('});');
                         } else {
                             outList.push('__createComponet("'+tagName+'", componet, element, subject);');
@@ -981,12 +981,12 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
                             if (HtmlDef.isCreateElementByName){
                                 outList.push('__createElement("'+tagName+'", "<'+tagName+'>", componet, element, subject, function (componet, element, subject) {');
                                 _buildAttrContent(tag.attrs, outList);
-                                _buildCompileFnContent(tag.children, outList, tmplOutList, preInsert);
+                                _buildCompileFnContent(tag.children, outList, preInsert);
                             } else {
                                 let {bindAttrs, tagStr} = _makeElementTag(tagName, tag.attrs);
                                 outList.push('__createElement("'+tagName+'", \''+tagStr+'\', componet, element, subject, function (componet, element, subject) {');
                                 _buildAttrContent(bindAttrs, outList);
-                                _buildCompileFnContent(tag.children, outList, tmplOutList, preInsert);
+                                _buildCompileFnContent(tag.children, outList, preInsert);
                             }
                            outList.push('});');
                         } else {
@@ -1013,7 +1013,7 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
                         if(forTmpl)
                             outList.push('__includeRender("'+ _escapeBuildString(forTmpl) + '", componet, element, '+_getInsertTemp(preInsert)+', subject, '+itemName+');');
                         else
-                            _buildCompileFnContent(tag.children, outList, tmplOutList, preInsert);
+                            _buildCompileFnContent(tag.children, outList, preInsert);
                         outList.push('}, componet, element, '+_getInsertTemp(preInsert)+', subject);');
                         preInsert = true;
                         break;
@@ -1024,9 +1024,9 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
                         outList.push('__ifRender(function (componet, element, subject) {');
                         outList.push('return ' + tag.content);
                         outList.push('}, function (componet, element, subject) {');
-                        _buildCompileFnContent(tag.children, outList, tmplOutList, preInsert);
+                        _buildCompileFnContent(tag.children, outList, preInsert);
                         outList.push('}, function (componet, element, subject) {');
-                        elseTag && _buildCompileFnContent(elseTag.children, outList, tmplOutList, preInsert);
+                        elseTag && _buildCompileFnContent(elseTag.children, outList, preInsert);
                         outList.push('}, componet, element, '+_getInsertTemp(preInsert)+', subject);');
                         preInsert = true;
                         break;
@@ -1041,10 +1041,10 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
                         var tmplAttr = CmpxLib.arrayToObject<IAttrInfo>(tag.attrs, 'name'),
                             tmplId = tmplAttr['id'],
                             tmplLet = tmplAttr['let'];
-                        tmplOutList.push('__tmplRender("'+ (tmplId ? _escapeBuildString(tmplId.value):'')+'", componet, element, subject, function (componet, element, subject, param) {');
-                        tmplLet && tmplOutList.push('var ' + tmplLet.value + ';');
-                        _buildCompileFnContent(tag.children, tmplOutList, tmplOutList, preInsert);
-                        tmplOutList.push('});');
+                        outList.push('__tmplRender("'+ (tmplId ? _escapeBuildString(tmplId.value):'')+'", componet, element, subject, function (componet, element, subject, param) {');
+                        tmplLet && outList.push('var ' + tmplLet.value + ';');
+                        _buildCompileFnContent(tag.children, outList, preInsert);
+                        outList.push('});');
                         break;
                 }
             }
