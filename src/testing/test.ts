@@ -3,9 +3,9 @@ import { VM, Componet, Browser } from "../index";
 
 @VM({
     name:'app',
-    tmpl:`<div><input type="text" value="{{this.num}}" /><input type="text" value="#4@#&" />
+    tmpl:`<div><input type="text" value="{{:this.num}}" /><input type="text" value="#4@#&" />
   divText ({{this.text}}){{: this.text}}
-  <span id="span1"> spanText {{:new Date().toString()}} | {{:new Date().getDay()}}  </Span>
+  <span id="span1" style.color="{{'red'}}" click="{{@console.log(element.innerText);}}"> spanText {{:new Date().toString()}} | {{:new Date().getDay()}}  </Span>
   <div>
     <button click="{{@this.click(1)}}">测试, 数量:{{this.num}}</button>
     <button click="{{@this.clickItem()}}">测试item.id</button>
@@ -25,39 +25,17 @@ import { VM, Componet, Browser } from "../index";
     !ok:{{this.ok}}
   {{/if}}
 </div>
-    <textarea><span>aaa</span></textarea>
+    <textarea>
+    <span>aaa
+    </span>
+    </textarea>
+  <pre><span style.color="{{'red'}}">sd   fsfsf</span></pre>
 `
 })
 class MyComponet extends Componet{
     constructor(){
         super();
-        // for (var i=0;i<1000;i++)
-        //   this.users.push({});
-        //   return;
-        // setTimeout(()=>{
-        //   this.addItem(1000);
-        //   this.text = 'update2000';
-        //   console.time('update2000');
-        //   this.$update();
-        //   console.timeEnd('update2000');
-        // }, 2000);
-
-        // setTimeout(()=>{
-        //   this.addItem(5);
-        //   this.text = 'update5000';
-        //   console.time('update5000');
-        //   this.$update();
-        //   console.timeEnd('update5000');
-        // }, 5000);
-
-        // setTimeout(()=>{
-        //   this.ok = false;
-        //   this.text = 'update8000';
-        //   this.users = null;
-        //   console.time('update8000');
-        //   this.$update();
-        //   console.timeEnd('update8000');
-        // }, 8000);
+        
 
     }
 

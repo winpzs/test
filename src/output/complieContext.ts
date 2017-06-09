@@ -63,7 +63,12 @@ __createTextNode(" ", componet, element, subject);
 __createTextNode(" ", componet, element, subject);
 });
 __createTextNode(" ", componet, element, subject);
-__createElement("textarea", "<textarea>", componet, element, subject, function (componet, element, subject) {
-__createTextNode("&amp;lt;span&amp;gt;aaa&amp;lt;/span&amp;gt;", componet, element, subject);
+__createElement("textarea", "<textarea>", componet, element, subject);
+__createTextNode(" ", componet, element, subject);
+__createElement("script", "<script>", componet, element, subject, function (componet, element, subject) {
+__setAttribute(element, "type", "text/html", componet, subject);
+__createTextNode(" sdf", componet, element, subject);
+__createElement("br", "<br>", componet, element, subject);
+__createTextNode(" ", componet, element, subject);
 });
 }

@@ -32,6 +32,10 @@ export default class CmpxLib {
         return toString.apply(value) === '[object ' + typename + ']';
     }
 
+    static toStr(p:any):string{
+        return CmpxLib.isNull(p) ? '' : p.toString();
+    }
+
     static isUndefined(obj:any) {
         ///<summary>是否定义</summary>
 
@@ -112,8 +116,8 @@ export default class CmpxLib {
     static isElement(obj:any) { var t = obj && (obj.ownerDocument || obj).documentElement; return t ? true : false; }
 
     static trim(str:string, newline:boolean) {
-        return str && (newline ? str.replace(/^(?:\s|\u3000|\ue4c6|\n|\r)*|(?:\s|\u3000|\ue4c6|\n|\r)*$/g, '') :
-                str.replace(/^(?:\s|\u3000|\ue4c6)*|(?:\s|\u3000|\ue4c6)*$/g, ''));
+        return str ? (newline ? str.replace(/^(?:\s|\u3000|\ue4c6|\n|\r)*|(?:\s|\u3000|\ue4c6|\n|\r)*$/g, '') :
+                str.replace(/^(?:\s|\u3000|\ue4c6)*|(?:\s|\u3000|\ue4c6)*$/g, '')) : '';
     }
 
     static replaceAll(s:string, str:string, repl:string, flags:string = "g") {

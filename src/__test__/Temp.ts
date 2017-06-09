@@ -10,7 +10,7 @@ import fs = require('fs');
 var tmpl = `
 <div>
   divText
-  <span id="span1" text="{{'asdfafd'}}"> spanText{{>this.user}}{{!"this"}} </span>
+  <span id="span1" text="{{'asdfafd'}}" style="{{'color:red'}}" > spanText{{>this.user}}{{!"this"}} </span>
   {{tmpl id="tmpl1" let="item = param.item, index = param.index"}}
     tmpl text
   {{/tmpl}}
@@ -23,6 +23,9 @@ var tmpl = `
   {{/tmpl}}
 </div>
 <textarea><span>aaa</span></textarea>
+<script type="text/html">
+sdf<br />
+</script>
 `;
 
 describe('Compile', () => {

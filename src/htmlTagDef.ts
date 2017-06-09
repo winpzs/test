@@ -141,8 +141,8 @@ export class HtmlTagDef {
    */
   static handleTagContent(html: string): string {
      return _removeSpace(html.replace(_noteTagRegex, ''))
-                .replace(_rawContentRegex, function (find: string, name: string, content: string) {
-                  return ['<', name, '>', CmpxLib.encodeHtml(content), '</', name, '>'].join('');
+                .replace(_rawContentRegex, function (find: string, name: string, attrs:string, content: string) {
+                  return ['<', name, attrs||'', '>', CmpxLib.encodeHtml(content||''), '</', name, '>'].join('');
                 });
   }
 
@@ -155,10 +155,6 @@ export class HtmlTagDef {
    */
   contentType: HtmlTagContentType;
   /**
-   * 内容忽略第一个Lf
-   */
-  ignoreFirstLf: boolean;
-  /**
    * 单行标签
    */
   single: boolean;
@@ -168,17 +164,15 @@ export class HtmlTagDef {
   createElement: (name: string, tag:string, parent?: HTMLElement) => HTMLElement;
 
   constructor(
-    { single = false, contentType = HtmlTagContentType.PARSABLE_DATA, preFix = null, ignoreFirstLf = false, createElement = null }: {
+    { single = false, contentType = HtmlTagContentType.PARSABLE_DATA, preFix = null, createElement = null }: {
       single?: boolean;
       contentType?: HtmlTagContentType;
       preFix?: string;
-      ignoreFirstLf?: boolean;
       createElement?: (name: string, tag:string, parent?: HTMLElement) => HTMLElement;
     } = {}) {
     this.single = single;
     this.preFix = preFix;
     this.contentType = contentType;
-    this.ignoreFirstLf = ignoreFirstLf;
     this.createElement = createElement || DEFAULT_CREATEELEMENT
   }
 
@@ -220,13 +214,12 @@ var _htmlTagDefConfig: IHtmlTagDefConfig = {
   'rp': DEFULE_TAG,
   'optgroup': DEFULE_TAG,
   'option': DEFULE_TAG,
-  'pre': new HtmlTagDef({ ignoreFirstLf: true }),
-  'listing': new HtmlTagDef({ ignoreFirstLf: true }),
+  'pre': DEFULE_TAG,
+  'listing': DEFULE_TAG,
   'style': new HtmlTagDef({ contentType: HtmlTagContentType.RAW_TEXT }),
   'script': new HtmlTagDef({ contentType: HtmlTagContentType.RAW_TEXT }),
   'title': new HtmlTagDef({ contentType: HtmlTagContentType.ESCAPABLE_RAW_TEXT }),
-  'textarea':
-  new HtmlTagDef({ contentType: HtmlTagContentType.ESCAPABLE_RAW_TEXT, ignoreFirstLf: true }),
+  'textarea': new HtmlTagDef({ contentType: HtmlTagContentType.ESCAPABLE_RAW_TEXT })
 };
 
 let _rawContentRegex: RegExp,
@@ -237,12 +230,12 @@ let _rawContentRegex: RegExp,
 function _removeSpace(html: string): string {
   html = html.replace(_removeCmdRegex, function (find:string, content: string) {
     return  ['{{', encodeURIComponent(content),'}}'].join('');
-  }).replace(_escContentRegex, function (find: string, name: string, content: string, cmdContent:string) {
-    return  ['<', name, '>', encodeURIComponent(content), '</', name, '>'].join('');
+  }).replace(_escContentRegex, function (find: string, name: string, attrs:string, content: string, cmdContent:string) {
+    return  ['<', name, attrs||'', '>', encodeURIComponent(content||''), '</', name, '>'].join('');
   })
   .replace(/(?:\n|\r)+/gmi, ' ').replace(/\s{2,}/gmi, ' ')
-  .replace(_escContentRegex, function (find: string, name: string, content: string, cmdContent:string) {
-    return  ['<', name, '>', decodeURIComponent(content), '</', name, '>'].join('');
+  .replace(_escContentRegex, function (find: string, name: string, attrs:string, content: string, cmdContent:string) {
+    return  ['<', name, attrs||'', '>', decodeURIComponent(content||''), '</', name, '>'].join('');
   }).replace(_removeCmdRegex, function (find:string, content: string) {
     return  ['{{', decodeURIComponent(content),'}}'].join('');
   });
@@ -267,9 +260,9 @@ function _makeSpecTags() {
   CmpxLib.each(escapeRawTags, (name: string) => o[name] = true);
 
   let rawNames = rawTags.concat(escapeRawTags).join('|');
-  _rawContentRegex = new RegExp('<\\s*(' + rawNames + ')\\s*>((?:.|\\n|\\r)*?)</\\1>', 'gmi');
+  _rawContentRegex = new RegExp('<\\s*(' + rawNames + ')(\\s+(?:[^>]*))*>((?:.|\\n|\\r)*?)<\\s*/\\s*\\1\\s*>', 'gmi');
   rawNames = [rawNames, 'pre'].join('|');
-  _escContentRegex = new RegExp('<\\s*(' + rawNames + ')\\s*>((?:.|\\n|\\r)*?)</\\1>', 'gmi');
+  _escContentRegex = new RegExp('<\\s*(' + rawNames + ')(\\s+(?:[^>]*))*>((?:.|\\n|\\r)*?)<\\s*/\\s*\\1\\s*>', 'gmi');
 }
 
 _makeSpecTags();
@@ -319,6 +312,8 @@ export interface IHtmlAttrDefConfig {
 var _htmlAttrDefConfig: IHtmlAttrDefConfig = {
   'value': DEFAULT_ATTR_PROP,
   'src': DEFAULT_ATTR_PROP,
+  'rel': DEFAULT_ATTR_PROP,
+  'style': DEFAULT_ATTR_PROP,
   'type': DEFAULT_ATTR_PROP,
   'selected': DEFAULT_ATTR_PROP,
   'disabled': DEFAULT_ATTR_PROP,

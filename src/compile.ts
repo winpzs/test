@@ -1,5 +1,5 @@
 import CmpxLib from './cmpxLib';
-import { HtmlTagDef, IHtmlAttrDef } from './htmlTagDef';
+import { HtmlTagDef, IHtmlAttrDef, HtmlTagContentType } from './htmlTagDef';
 import { Componet } from './componet';
 
 
@@ -31,6 +31,7 @@ export interface ITagInfo {
     children?: Array<ITagInfo>;
     parent?: ITagInfo;
     componet?:boolean;
+    htmlTagDef?:HtmlTagDef;
 }
 
 
@@ -77,6 +78,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
     },
     //把$($this.name$)$还原
     _cmdDecodeAttrRegex = /\$\(\$(.+?)\$\)\$/gm,
+    _cmdDecodeAttrRegexSg = /^\$\(\$(.+?)\$\)\$$/gm,
     _backTextTag = function (tmpl: string): string {
         //
         return tmpl.replace(_cmdDecodeAttrRegex, function (find, content) {
@@ -86,12 +88,10 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
     //查找分析tag和cmd
     _tagInfoRegex = /\<\s*(\/*)\s*([^<>\s]+)\s*([^<>]*?)(\/*)\s*\>|\{\{\s*(\/*)\s*([^\s\{\}]+)\s*(.*?)(\/*)\}\}/gim,
     _makeTagInfos = function (tmpl: string): Array<ITagInfo> {
-        var lastIndex = 0, list: Array<ITagInfo> = [],
-            singleTags = HtmlTagDef.singleTags;
+        var lastIndex = 0, list: Array<ITagInfo> = [];
 
         tmpl = _makeTextTag(tmpl);
         tmpl = HtmlTagDef.handleTagContent(tmpl);
-        //console.log(_backTextTag(tmpl));
         tmpl.replace(_tagInfoRegex, function (find: string, end1: string, tagName: string,
             tagContent: string, end2: string, txtEnd1: string, txtName: string, txtContent: string, txtEnd2: string, index: number) {
 
@@ -100,7 +100,8 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
             }
 
             var cmd = !!txtName,
-                single = !!end2 || !!txtEnd2 || (cmd ? _singleCmd[txtName] : singleTags[tagName]),
+                htmlTagDef = cmd ? null : HtmlTagDef.getHtmlTagDef(tagName),
+                single = !!end2 || !!txtEnd2 || (cmd ? _singleCmd[txtName] : htmlTagDef.single),
                 end = !!end1 || !!txtEnd1 || single;
 
             if (cmd || !(single && !!end1)) {
@@ -132,6 +133,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
                     end: end,
                     single: single,
                     index: index,
+                    htmlTagDef:htmlTagDef,
                     componet:cmd?false:!!_registerVM[tagName]
                 };
                 list.push(item);
@@ -185,7 +187,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
         }];
         return attrs;
     },
-    _bindTypeRegex = /^\s*([\<\>\:\@\&\!])\s*(.*)/,
+    _bindTypeRegex = /^\s*([\<\>\:\@\&])\s*(.*)/,
     _removeEmptySplitRegex = /^['"]{2,2}\+|\+['"]{2,2}/g,
     //获取内容绑定信息，如 name="aaa{{this.name}}"
     _getBind = function (value: string, split: string) :IBindInfo {
@@ -201,7 +203,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
                 type = '';
                 txt = content;
             }
-            var readTxt = '';
+            let readTxt = '';
             switch(type){
                 case ':'://一次只读
                     onceList.push(txt);
@@ -224,7 +226,11 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
             }
             return readTxt;
         }), split].join('');
-        readContent = readContent.replace(_removeEmptySplitRegex, '');
+            readContent = readContent.replace(_removeEmptySplitRegex, '');
+        // if (isSingeBind)
+        //     readContent = readContent.replace(_removeEmptySplitRegex, '');
+        //     //readContent = readContentSg;
+        // if (isSingeBind) console.log('isSingeBind', readContent);
 
         var once:string;
         if (write || read || isOnce || onceList.length>0){
@@ -554,7 +560,10 @@ export class Compile {
                     var newValue = readFn.call(componet);
                     if (value != newValue){
                         value = newValue;
-                        textNode.textContent = newValue;
+                        if ('textContent' in textNode)
+                            textNode.textContent = newValue;
+                        else
+                            textNode.nodeValue = newValue;
                     }
                 }
             },
@@ -589,9 +598,10 @@ export class Compile {
 
             } else {
                 let value: any = '', newValue:any,
+                    hasSecName:boolean = (name.indexOf('.') > 0),
+                    secName:string,
                     isWrite:boolean = !!content.write,
                     isRead:boolean = !!content.read,
-                    attrDef: IHtmlAttrDef = HtmlTagDef.getHtmlAttrDef(name),
                     writeFn = function (p: ISubscribeEvent) {
                         newValue = attrDef.getAttribute(element, name);
                         if (value != newValue) {
@@ -599,14 +609,22 @@ export class Compile {
                             content.write.call(componet, newValue);
                         }
                     };
-                attrDef.setAttribute(element, name, value);
+                if (hasSecName){
+                    let t = name.split('.');
+                    name = t[0];
+                    secName = t[1];
+                }
+                let attrDef:IHtmlAttrDef = HtmlTagDef.getHtmlAttrDef(name);
                 subject.subscribe({
                     update: function (p: ISubscribeEvent) {
                         if (isRead){
-                            newValue = content.read.call(componet);
+                            newValue = CmpxLib.toStr(content.read.call(componet));
                             if (value != newValue) {
                                 value = newValue;
-                                attrDef.setAttribute(element, name, newValue);
+                                if (hasSecName) {
+                                    attrDef.getAttribute(element, name)[secName] = value;
+                                } else
+                                    attrDef.setAttribute(element, name, value);
                             } else if (isWrite){
                                 writeFn(p);
                             }
@@ -918,20 +936,22 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
     _getInsertTemp = function(preInsert:boolean){
         return preInsert ? 'true' : 'false';
     },
-    _buildEscapeRawTag = function(tagInfos:Array<ITagInfo>):Array<ITagInfo>{
-        CmpxLib.each(tagInfos, function(item:ITagInfo){
-            item.content = CmpxLib.decodeHtml(item.content);
-        });
-        return tagInfos;
+    _checkTagChild = function(tagInfo:ITagInfo):void{
+        let htmlTagDef:HtmlTagDef = tagInfo.htmlTagDef;
+        if (htmlTagDef.contentType == HtmlTagContentType.ESCAPABLE_RAW_TEXT){
+            CmpxLib.each(tagInfo.children, function(item:ITagInfo){
+                item.content = CmpxLib.decodeHtml(item.content);
+            });
+        }
     },
     _buildCompileFnContent = function(tagInfos:Array<ITagInfo>, outList:Array<string>, tmplOutList:string[],  preInsert:boolean){
         if (!tagInfos) return;
-        let escapeRawTags = HtmlTagDef.escapeRawTags
+
         CmpxLib.each(tagInfos, function(tag:ITagInfo, index:number){
             let tagName = tag.tagName;
             if (!tag.cmd){
                 if (tag.target){
-                    if (_registerVM[tagName]){
+                    if (tag.componet){
                         if (tag.children && tag.children.length > 0){
                            outList.push('__createComponet("'+tagName+'", componet, element, subject, function (componet, element, subject) {');
                            //_buildAttrContent(tag.attrs, outList);
@@ -942,11 +962,7 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
                         }
                         preInsert=true;
                     } else {
-                        let isEscapeRawTags = HtmlTagDef.escapeRawTags[tagName];
-                        if (isEscapeRawTags){
-                            _buildEscapeRawTag(tag.children);
-                            console.log('escapeRawTags', tag.children);
-                        }
+                        _checkTagChild(tag);
                         if ((tag.attrs && tag.attrs.length > 0) || (tag.children && tag.children.length > 0)){
                             if (HtmlTagDef.isCreateElementByName){
                                 outList.push('__createElement("'+tagName+'", "<'+tagName+'>", componet, element, subject, function (componet, element, subject) {');
