@@ -224,7 +224,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
                 case '<'://只读
                 default:
                     read = true;
-                    readTxt = [split, txt, split].join('+');
+                    readTxt = [split, 'CmpxLib.toStr(' + txt + ')', split].join('+');
                     break;
             }
             return readTxt;
@@ -240,7 +240,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
             if (isOnce){
                 let oList = [];
                 CmpxLib.each(onceList, function(item:string, index:number){
-                    oList.push(['once',index,' = (' , item , ')'].join(''));
+                    oList.push(['once',index,' = CmpxLib.toStr(' , item , ')'].join(''));
                 });
                 once = 'var ' + oList.join(',') + ';';
             }
@@ -367,15 +367,15 @@ export interface ISubscribeParam{
 export class CompileSubject {
     private datas:Array<ISubscribeParam> = [];
 
-    constructor(subject?:CompileSubject){
+    constructor(subject?:CompileSubject, exclude?:{[type:string]:boolean}){
         if (subject){
             if (!(this.isRemove = subject.isRemove)){
                 this.linkParam = subject.subscribe({
-                    init:(p:ISubscribeEvent)=> this.init(p),
-                    update:(p:ISubscribeEvent)=> this.update(p),
-                    insertDoc:(p:ISubscribeEvent)=> this.insertDoc(p),
-                    ready:(p:ISubscribeEvent)=> this.ready(p),
-                    remove:(p:ISubscribeEvent)=> this.remove(p)
+                    init:(p:ISubscribeEvent)=> (!exclude || !exclude.init) && this.init(p),
+                    update:(p:ISubscribeEvent)=> (!exclude || !exclude.update) && this.update(p),
+                    insertDoc:(p:ISubscribeEvent)=> (!exclude || !exclude.insertDoc) && this.insertDoc(p),
+                    ready:(p:ISubscribeEvent)=> (!exclude || !exclude.ready) && this.ready(p),
+                    remove:(p:ISubscribeEvent)=> (!exclude || !exclude.remove) && this.remove(p)
                 });
                 this.subject = subject;
                 this.isInit = subject.isInit;
@@ -534,7 +534,7 @@ export class CompileRender {
         this.componetDef = componetDef;
         let tagInfos = this.tagInfos = _makeTagInfos(CmpxLib.trim(tmpl, true));
         var fn = this.tempFn = _buildCompileFn(tagInfos);
-        //console.log(fn.toString());
+        // console.log(fn.toString());
 
         this.contextFn = fn;
     }
@@ -544,13 +544,13 @@ export class CompileRender {
      * @param refElement 在element之后插入内容
      * @param parentComponet 父组件
      */
-    complie(refElement:HTMLElement, parentComponet?:Componet, subject?:CompileSubject, contextFn?:(component:Componet, element:HTMLElement,subject:CompileSubject)=>void):{newSubject:CompileSubject, refComponet: Componet}{
+    complie(refElement:HTMLElement, parentComponet?:Componet, subject?:CompileSubject, contextFn?:(component:Componet, element:HTMLElement,subject:CompileSubject)=>void, subjectExclude?:{[type:string]:boolean}):{newSubject:CompileSubject, refComponet: Componet}{
         var componetDef:any = this.componetDef;
 
         let componet:any,
             isNewComponet:boolean = false,
             parentElement:HTMLElement = _getParentElement(refElement),
-            newSubject:CompileSubject = new CompileSubject(subject || (parentComponet?parentComponet.$subObject:null));
+            newSubject:CompileSubject = new CompileSubject(subject || (parentComponet?parentComponet.$subObject:null), subjectExclude);
         if (componetDef){
             isNewComponet = true;
             componet = new componetDef();
@@ -577,11 +577,12 @@ export class CompileRender {
         newSubject.subscribe({
             remove:function(p:ISubscribeEvent) {
                 try{
-                    isNewComponet && componet.onDispose();
+                    newSubject && newSubject.unLinkSubject();
+                    isNewComponet && (componet.$isDisposed = true, componet.onDispose());
                 } catch(e){
                     CmpxLib.trace(e);
                 } finally {
-                    newSubject && newSubject.unLinkSubject();
+                    //newSubject && newSubject.unLinkSubject();
 
                     if (isNewComponet){
                         if (parentComponet && !parentComponet.$isDisposed){
@@ -667,7 +668,7 @@ export class Compile {
                 parentElement.appendChild(refElement);
             }
 
-            let {newSubject, refComponet} = vm.render.complie(refElement, componet, subject, contextFn);
+            let {newSubject, refComponet} = vm.render.complie(refElement, componet, subject, contextFn,{update:true});
 
     }
 
@@ -789,7 +790,7 @@ export class Compile {
         });
         return textNode;
     }
-    
+
     public static setAttribute(element:HTMLElement, name:string, content:any, componet:Componet, subject:CompileSubject):void {
         let isObj = !CmpxLib.isString(content);
         if (isObj){
@@ -834,7 +835,7 @@ export class Compile {
                 subject.subscribe({
                     update: function (p: ISubscribeEvent) {
                         if (isRead){
-                            newValue = CmpxLib.toStr(content.read.call(componet));
+                            newValue = content.read.call(componet);
                             if (value != newValue) {
                                 value = newValue;
                                 attrDef.setAttribute(element, name, value, subName);

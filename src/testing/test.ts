@@ -12,9 +12,23 @@ class ComponetItem extends Componet{
   param:string;
   num:string;
 
+  constructor(){
+    super();
+    setTimeout(()=>{
+      this.num += "" + new Date().valueOf();
+      this.$update();
+    }, 1000);
+  }
+  onInit(cb, p){
+    super.onInit(cb, p);
+    // super.onInit(function(){
+    //   cb();
+    // }, p);
+  }
 
   onDispose(){
-    //console.log('ComponetItem onDispose');
+    super.onDispose();
+    console.log('ComponetItem onDispose');
   }
 }
 
@@ -27,6 +41,7 @@ class ComponetItem extends Componet{
   <div>
     <button click="{{@this.click(1)}}">测试, 数量:{{this.numPrint}}</button>
     <button click="{{@this.clickItem()}}">测试item.id</button>
+    ({{this.aaaa}})
   </div>
   {{tmpl id="tmpl1" let="index=param.index"}}
     <span>tmpl text</span> {{index}}
@@ -56,7 +71,7 @@ class MyComponet extends Componet{
     constructor(){
         super();
         
-        this.makeItem(1000);
+        //this.makeItem(1000);
     }
 
     @viewvar('input1')

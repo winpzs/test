@@ -15,6 +15,7 @@ export class Componet {
     $update(p?: any) {
         if (this.$isDisposed) return;
         this.onUpdateBefore(() => {
+            if (this.$isDisposed) return;
             this.$subObject.update({
                 componet: this,
                 parentElement: this.$parentElement,
@@ -101,7 +102,6 @@ export class Componet {
      * 在componet释放前触发
      */
     onDispose() {
-        this.$isDisposed = true;
     }
 
     constructor() {
