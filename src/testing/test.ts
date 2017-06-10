@@ -2,13 +2,30 @@
 import { VM, Componet, Browser, viewvar } from "../index";
 
 @VM({
+  name:'item',
+  tmpl:`<span>
+    {{this.name}}:{{this.param}}[{{this.num}}]
+  </span>`
+})
+class ComponetItem extends Componet{
+  name:string = "test item";
+  param:string;
+  num:string;
+
+
+  onDispose(){
+    //console.log('ComponetItem onDispose');
+  }
+}
+
+@VM({
     name:'app',
-    tmpl:`<div><input $var="input1" type="text" value="{{this.num}}" /><input type="text" value={{this.num
+    tmpl:`<div><input $var="input1" type="text" value="{{&this.num}}" /><input type="text" value={{this.numPrint
        + '#4@#&'}} click="{{@console.log(input1.value)}}" />
   divText ({{this.text}}){{: this.text}}
   <span id="span1" style.color="{{'red'}}" click="{{@console.log(element.innerText);}}"> spanText {{:new Date().toString()}} | {{:new Date().getDay()}}  </Span>
   <div>
-    <button click="{{@this.click(1)}}">测试, 数量:{{this.num}}</button>
+    <button click="{{@this.click(1)}}">测试, 数量:{{this.numPrint}}</button>
     <button click="{{@this.clickItem()}}">测试item.id</button>
   </div>
   {{tmpl id="tmpl1" let="index=param.index"}}
@@ -17,7 +34,9 @@ import { VM, Componet, Browser, viewvar } from "../index";
   
   {{for userItem in this.users}}
     <div> {{:$index}} ({{userItem.id}}) for div text
-           inc:{{include tmpl="tmpl1" param="{index:$index}" }} </div>
+    (<item param="asdfafd" num="{{this.numPrint}}"></item>)
+           inc:{{include tmpl="tmpl1" param="{index:$index}" }}
+    </div>
   {{/for}}
   {{if this.ok}}
     ok:{{this.ok}}
@@ -37,7 +56,7 @@ class MyComponet extends Componet{
     constructor(){
         super();
         
-
+        this.makeItem(1000);
     }
 
     @viewvar('input1')
@@ -47,7 +66,7 @@ class MyComponet extends Componet{
     input1:HTMLInputElement;
 
     onInit(cb, p){
-      console.log('onInit');
+      //console.log('onInit');
       super.onInit(cb, p);
       // super.onInit(function(){
       //   cb();
@@ -55,7 +74,7 @@ class MyComponet extends Componet{
     }
 
     onUpdateBefore(cb, p){
-      console.log('onUpdateBefore');
+      //console.log('onUpdateBefore');
       super.onUpdateBefore(cb, p);
     }
 
@@ -65,7 +84,7 @@ class MyComponet extends Componet{
     }
 
     onInitViewvar(cb, p){
-      console.log('onInitViewvar', this.inputTest, this.inputTest.value);
+      //console.log('onInitViewvar', this.inputTest, this.inputTest.value);
       super.onInitViewvar(cb, p);
     }
 
@@ -83,14 +102,17 @@ class MyComponet extends Componet{
         list.push({id:'id '+i});
       this.users = list;
     }
-    num:number = 0;
+    num:number = 10;
+    numPrint:string = '';
     click(){
-      let n = 1 + Math.round(Math.random() * 500);
+      let n = 1 + Math.round(Math.random() * (~~this.num));
       this.makeItem(n);
-      this.num = n ;
+      let t = new Date().valueOf();
       console.time('update '+n);
       this.$update();
       console.timeEnd('update '+n);
+      this.numPrint = n + ' ' + (new Date().valueOf() - t) + 'ms ';
+      this.$update();
     }
     clickItem(){
       this.users[0].id = new Date().toString();

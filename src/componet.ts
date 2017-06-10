@@ -5,7 +5,7 @@ export class Componet {
     readonly $parent: Componet;
     readonly $children: Array<Componet> = [];
     readonly $subObject: CompileSubject;
-    readonly $elements: Array<HTMLElement | Text> = [];
+    //readonly $elements: Array<HTMLElement | Text> = [];
     readonly $parentElement: HTMLElement;
 
     /**
@@ -22,6 +22,20 @@ export class Componet {
             });
         }, p);
         this.onUpdate(function(){}, p);
+    }
+
+    private updateId:any;
+    /**
+     * 步异步更新View，View与Componet数据同步
+     * @param p 传入参数
+     */
+   $updateAsync(callback?:()=>void, p?:any){
+       this.updateId && clearTimeout(this.updateId);
+        this.updateId = setTimeout(() => {
+            this.updateId = null;
+            this.$update(p);
+            callback && callback.apply(this);
+        }, 5);
     }
 
     /**
