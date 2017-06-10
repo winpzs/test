@@ -320,13 +320,23 @@ export function VM(vm: IVMConfig) {
     };
 }
 
+interface IViewvarDef {
+    [name:string]:string;
+}
+var _viewvarName = '__viewvar__',
+    _getViewvarDef = function(componet:Componet):IViewvarDef{
+        return componet[_viewvarName];
+    };
 /**
  * 引用模板变量$var
  * @param name 变量名称，未指定为属性名称
  */
 export function viewvar(name?:string) {
-    return function (target, propertyKey: string) {
-        name || (name = propertyKey);
+    return function (componet:Componet, propKey: string) {
+        name || (name = propKey);
+        var vv:IViewvarDef[]  = (componet[_viewvarName] || (componet[_viewvarName] = {}));
+        vv[name || propKey] = propKey;
+        console.log('viewvar', arguments);
     }
 }
 
@@ -589,8 +599,18 @@ export class CompileRender {
                 componet: componet,
                 parentElement: parentElement
             });
-            let fragment = document.createDocumentFragment();
-            this.contextFn.call(componet, CmpxLib, Compile, componet, fragment, newSubject);
+            let fragment = document.createDocumentFragment(),
+                retFn = this.contextFn.call(componet, CmpxLib, Compile, componet, fragment, newSubject, function(vvList){
+                    let vvDef:IViewvarDef = _getViewvarDef(this);
+                    if (!vvDef) return;
+                    let propKey:string;
+                    CmpxLib.each(vvList, function(item:{name:string, p:any}){
+                        propKey = vvDef[item.name];
+                        propKey && (this[propKey] = item.p);
+                        // if (vvDef[name])
+                    }, this);
+                });
+            console.log('retFn', retFn.toString());
             newSubject.update({
                 componet:componet,
                 parentElement:parentElement
@@ -607,8 +627,10 @@ export class CompileRender {
                     parentElement:parentElement
                 });
             };
-            if (isNewComponet)
+            if (isNewComponet){
+                retFn.call(componet);
                 componet.onInitViewvar(readyFn, null);
+            }
             else
                 readyFn();
         };
@@ -925,7 +947,7 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
 
         _buildCompileFnContent(tagInfos, outList, varNameList, true);
 
-        outList.unshift('var '+varNameList.join(',')+';');
+        varNameList.length > 0 && outList.unshift('var '+varNameList.join(',')+';');
         outList.unshift(`var __tmplRender = Compile.tmplRender,
     __createComponet = Compile.createComponet,
     __createElement = Compile.createElement,
@@ -935,7 +957,21 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
     __ifRender = Compile.ifRender,
     __includeRender = Compile.includeRender;`);
 
-        return new Function('CmpxLib','Compile', 'componet', 'element', 'subject', outList.join('\n'));
+        outList.push(_buildCompileFnReturn(varNameList));
+
+        return new Function('CmpxLib','Compile', 'componet', 'element', 'subject', 'initViewvar', outList.join('\n'));
+    },
+    _buildCompileFnReturn = function(varNameList:string[]):string{
+
+        if (varNameList.length > 0){
+            var vvList = [];
+            CmpxLib.each(varNameList, function(item){
+                vvList.push(['{name:"', item, '", p:', item, '}'].join(''));
+            });
+            return 'return function(){initViewvar.call(this, ['+vvList.join(',')+']);};';
+        } else {
+            return 'return function(){initViewvar.call(this);};'
+        }
     },
     _escapeStringRegex = /([\"\\])/gm,
     _escapeBuildString = function(s:string):string{

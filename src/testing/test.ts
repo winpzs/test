@@ -40,8 +40,8 @@ class MyComponet extends Componet{
 
     }
 
-    @viewvar('textvar')
-    input1:any;
+    @viewvar('input1')
+    inputTest:HTMLInputElement;
 
     onInit(cb, p){
       console.log('onInit');
@@ -57,12 +57,12 @@ class MyComponet extends Componet{
     }
 
     onUpdate(cb, p){
-      console.log('onUpdate');
+      console.log('onUpdate', this.inputTest.value);
       super.onUpdate(cb, p);
     }
 
     onInitViewvar(cb, p){
-      console.log('onInitViewvar');
+      console.log('onInitViewvar', this.inputTest, this.inputTest.value);
       super.onInitViewvar(cb, p);
     }
 
