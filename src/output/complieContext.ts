@@ -8,6 +8,8 @@ var __tmplRender = Compile.tmplRender,
     __forRender = Compile.forRender,
     __ifRender = Compile.ifRender,
     __includeRender = Compile.includeRender;
+
+var name, name1,name2;
 __tmplRender("tmpl1", componet, element, subject, function (componet, element, subject, param) {
 var item = param.item, index = param.index;
 __createTextNode(" tmpl text ", componet, element, subject);
@@ -24,6 +26,7 @@ __createTextNode((function(){
 }).call(componet), componet, element, subject);
 });
 __createElement("div", "<div>", componet, element, subject, function (componet, element, subject) {
+  name = element;
 __createTextNode(" divText ", componet, element, subject);
 __createElement("span", "<span>", componet, element, subject, function (componet, element, subject) {
 __setAttribute(element, "id", "span1", componet, subject);

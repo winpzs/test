@@ -1,10 +1,10 @@
 
-import { VM, Componet, Browser } from "../index";
+import { VM, Componet, Browser, viewvar } from "../index";
 
 @VM({
     name:'app',
-    tmpl:`<div><input type="text" value="{{this.num}}" /><input type="text" value={{this.num
-       + '#4@#&'}} />
+    tmpl:`<div><input $var="input1" type="text" value="{{this.num}}" /><input type="text" value={{this.num
+       + '#4@#&'}} click="{{@console.log(input1.value)}}" />
   divText ({{this.text}}){{: this.text}}
   <span id="span1" style.color="{{'red'}}" click="{{@console.log(element.innerText);}}"> spanText {{:new Date().toString()}} | {{:new Date().getDay()}}  </Span>
   <div>
@@ -40,22 +40,35 @@ class MyComponet extends Componet{
 
     }
 
-    onInit(cb){
+    @viewvar('textvar')
+    input1:any;
+
+    onInit(cb, p){
       console.log('onInit');
-      cb();
+      super.onInit(cb, p);
       // super.onInit(function(){
       //   cb();
-      // });
+      // }, p);
     }
 
-    onUpdate(cb, p?:any){
+    onUpdateBefore(cb, p){
+      console.log('onUpdateBefore');
+      super.onUpdateBefore(cb, p);
+    }
+
+    onUpdate(cb, p){
       console.log('onUpdate');
-      cb();
+      super.onUpdate(cb, p);
     }
 
-    onReady(cb){
+    onInitViewvar(cb, p){
+      console.log('onInitViewvar');
+      super.onInitViewvar(cb, p);
+    }
+
+    onReady(cb, p){
       console.log('onReady');
-      cb();
+      super.onReady(cb, p);
     }
 
     text:string = "text";

@@ -156,7 +156,6 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
     //获取attrInfo
     _attrInfoRegex = /\s*([^= ]+)\s*=\s*(?:(["'])((?:.|\n|\r)*?)\2|([^"' ><]*))|\s*([^= /]+)\s*/gm,
     _getAttrInfos = function (content: string): Array<IAttrInfo> {
-        console.log(content);
         var attrs: Array<IAttrInfo> = [];
         content.replace(_attrInfoRegex, function (find: string, name: string, split: string,
             value: string, value1:string, name1:string, index: number) {
@@ -303,7 +302,7 @@ var _registerVM: { [selector: string]: {render:CompileRender, componetDef:Functi
     },
     _getVmByComponetDef = function(componetDef:any):{render:CompileRender, componetDef:Function}{
         var config = _getVmConfig(componetDef);
-        return _registerVM[config.name];
+        return config ? _registerVM[config.name] : null;
     };
 
 /**
@@ -319,6 +318,16 @@ export function VM(vm: IVMConfig) {
         constructor.prototype.$name = vm.name;
         constructor.prototype[_vmName] = vm;
     };
+}
+
+/**
+ * 引用模板变量$var
+ * @param name 变量名称，未指定为属性名称
+ */
+export function viewvar(name?:string) {
+    return function (target, propertyKey: string) {
+        name || (name = propertyKey);
+    }
 }
 
 interface ISubscribeEvent{
@@ -496,6 +505,7 @@ export class CompileRender {
 
     private contextFn:Function;
     private componetDef:any;
+    param:Object;
 
     //调试临时用
     tagInfos:ITagInfo[];
@@ -571,12 +581,6 @@ export class CompileRender {
                             componet.$parent = componet.$parentElement = null;
                     }
                 }
-            },
-            update:function(p:ISubscribeEvent){
-                isNewComponet && componet.onUpdate(function(){}, p.param);
-            },
-            ready:function(p:ISubscribeEvent){
-                isNewComponet && componet.onReady(function(){}, p.param);
             }
         });
 
@@ -591,15 +595,22 @@ export class CompileRender {
                 componet:componet,
                 parentElement:parentElement
             });
-            _insertAfter(fragment, refElement, parentElement);
-            newSubject.insertDoc({
-                componet:componet,
-                parentElement:parentElement
-            });
-            newSubject.ready({
-                componet:componet,
-                parentElement:parentElement
-            });
+            let readyFn = function(){
+                _insertAfter(fragment, refElement, parentElement);
+                newSubject.insertDoc({
+                    componet:componet,
+                    parentElement:parentElement
+                });
+                isNewComponet && componet.onReady(function(){}, null);
+                newSubject.ready({
+                    componet:componet,
+                    parentElement:parentElement
+                });
+            };
+            if (isNewComponet)
+                componet.onInitViewvar(readyFn, null);
+            else
+                readyFn();
         };
         if (isNewComponet){
             componet.onInit(function(err){
@@ -901,16 +912,21 @@ export class Compile {
     }
 
     static renderComponet(componetDef:any,refElement:HTMLElement, parentComponet?:Componet):{newSubject:CompileSubject, refComponet: Componet}{
-        var render = _getVmByComponetDef(componetDef).render;
+        let vm = _getVmByComponetDef(componetDef),
+            render = vm && vm.render;
+        if (!vm) throw new Error('not find @VM default!');
         return render.complie(refElement, parentComponet);
     }
 
 }
 
 var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
-        var outList = [];
+        var outList = [], varNameList = [];
 
-        outList.push(`var __tmplRender = Compile.tmplRender,
+        _buildCompileFnContent(tagInfos, outList, varNameList, true);
+
+        outList.unshift('var '+varNameList.join(',')+';');
+        outList.unshift(`var __tmplRender = Compile.tmplRender,
     __createComponet = Compile.createComponet,
     __createElement = Compile.createElement,
     __setAttribute = Compile.setAttribute,
@@ -918,8 +934,6 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
     __forRender = Compile.forRender,
     __ifRender = Compile.ifRender,
     __includeRender = Compile.includeRender;`);
-
-        _buildCompileFnContent(tagInfos, outList, true);
 
         return new Function('CmpxLib','Compile', 'componet', 'element', 'subject', outList.join('\n'));
     },
@@ -940,11 +954,22 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
     _buildAttrContent = function(attrs:Array<IAttrInfo>, outList:Array<string>){
         if (!attrs)return;
         CmpxLib.each(attrs, function(attr:IAttrInfo, index:number){
+            if (attr.name == '$var')return;
             if (attr.bind)
                 outList.push('__setAttribute(element, "' + attr.name + '", '+attr.bindInfo.content+', componet, subject);');
             else
                 outList.push('__setAttribute(element, "' + attr.name + '", "'+_escapeBuildString(attr.value)+'", componet, subject);');
         });
+    },
+    _getViewvarName = function(attrs:Array<IAttrInfo>):string{
+        let name:string;
+        CmpxLib.each(attrs, function(attr:IAttrInfo, index:number){
+            if (attr.name == '$var'){
+                name = attr.value;
+                return false;
+            }
+        });
+        return name;
     },
     _getInsertTemp = function(preInsert:boolean){
         return preInsert ? 'true' : 'false';
@@ -957,7 +982,7 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
             });
         }
     },
-    _buildCompileFnContent = function(tagInfos:Array<ITagInfo>, outList:Array<string>, preInsert:boolean, inclue?:string[]){
+    _buildCompileFnContent = function(tagInfos:Array<ITagInfo>, outList:Array<string>, varNameList:string[], preInsert:boolean, inclue?:string[]){
         if (!tagInfos) return;
 
         CmpxLib.each(tagInfos, function(tag:ITagInfo, index:number){
@@ -966,12 +991,16 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
             if (inclue && (!tagName || inclue.indexOf(tagName)< 0))return;
             if (!tag.cmd){
                 if (tag.target){
+                    let hasChild:boolean = tag.children && tag.children.length > 0,
+                        hasAttr:boolean = tag.attrs && tag.attrs.length > 0,
+                        varName:string = hasAttr ? _getViewvarName(tag.attrs) : null;
+                    varName && varNameList.push(varName);
                     if (tag.componet){
-                        if (tag.children && tag.children.length > 0){
+                        if (hasChild){
                            outList.push('__createComponet("'+tagName+'", componet, element, subject, function (componet, element, subject) {');
                            //_buildAttrContent(tag.attrs, outList);
                            //createComponet下只能放tmpl
-                           _buildCompileFnContent(tag.children, outList, preInsert, ['tmpl']);
+                           _buildCompileFnContent(tag.children, outList, varNameList, preInsert, ['tmpl']);
                            outList.push('});');
                         } else {
                             outList.push('__createComponet("'+tagName+'", componet, element, subject);');
@@ -979,16 +1008,18 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
                         preInsert=true;
                     } else {
                         _checkTagChild(tag);
-                        if ((tag.attrs && tag.attrs.length > 0) || (tag.children && tag.children.length > 0)){
+                        if (hasAttr || hasChild){
                             if (HtmlDef.isCreateElementByName){
                                 outList.push('__createElement("'+tagName+'", "<'+tagName+'>", componet, element, subject, function (componet, element, subject) {');
+                                varName && outList.push(varName + ' = element;');
                                 _buildAttrContent(tag.attrs, outList);
-                                _buildCompileFnContent(tag.children, outList, preInsert);
+                                _buildCompileFnContent(tag.children, outList, varNameList, preInsert);
                             } else {
                                 let {bindAttrs, tagStr} = _makeElementTag(tagName, tag.attrs);
                                 outList.push('__createElement("'+tagName+'", \''+tagStr+'\', componet, element, subject, function (componet, element, subject) {');
+                                varName && outList.push(varName + ' = element;');
                                 _buildAttrContent(bindAttrs, outList);
-                                _buildCompileFnContent(tag.children, outList, preInsert);
+                                _buildCompileFnContent(tag.children, outList, varNameList, preInsert);
                             }
                            outList.push('});');
                         } else {
@@ -1015,7 +1046,7 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
                         if(forTmpl)
                             outList.push('__includeRender("'+ _escapeBuildString(forTmpl) + '", componet, element, '+_getInsertTemp(preInsert)+', subject, '+itemName+');');
                         else
-                            _buildCompileFnContent(tag.children, outList, preInsert);
+                            _buildCompileFnContent(tag.children, outList, varNameList, preInsert);
                         outList.push('}, componet, element, '+_getInsertTemp(preInsert)+', subject);');
                         preInsert = true;
                         break;
@@ -1026,9 +1057,9 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
                         outList.push('__ifRender(function (componet, element, subject) {');
                         outList.push('return ' + tag.content);
                         outList.push('}, function (componet, element, subject) {');
-                        _buildCompileFnContent(tag.children, outList, preInsert);
+                        _buildCompileFnContent(tag.children, outList, varNameList, preInsert);
                         outList.push('}, function (componet, element, subject) {');
-                        elseTag && _buildCompileFnContent(elseTag.children, outList, preInsert);
+                        elseTag && _buildCompileFnContent(elseTag.children, outList, varNameList, preInsert);
                         outList.push('}, componet, element, '+_getInsertTemp(preInsert)+', subject);');
                         preInsert = true;
                         break;
@@ -1045,7 +1076,7 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
                             tmplLet = tmplAttr['let'];
                         outList.push('__tmplRender("'+ (tmplId ? _escapeBuildString(tmplId.value):'')+'", componet, element, subject, function (componet, element, subject, param) {');
                         tmplLet && outList.push('var ' + tmplLet.value + ';');
-                        _buildCompileFnContent(tag.children, outList, preInsert);
+                        _buildCompileFnContent(tag.children, outList, varNameList, preInsert);
                         outList.push('});');
                         break;
                 }
