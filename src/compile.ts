@@ -170,7 +170,6 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
             });
             return find;
         });
-        //console.log(attrs);
         return attrs;
     },
     //获取cmd form attrInfo
@@ -321,10 +320,11 @@ export function VM(vm: IVMConfig) {
 }
 
 interface IViewvarDef {
-    [name:string]:string;
+    name:string;
+    propKey:string;
 }
 var _viewvarName = '__viewvar__',
-    _getViewvarDef = function(componet:Componet):IViewvarDef{
+    _getViewvarDef = function(componet:Componet):IViewvarDef[]{
         return componet[_viewvarName];
     };
 /**
@@ -334,9 +334,11 @@ var _viewvarName = '__viewvar__',
 export function viewvar(name?:string) {
     return function (componet:Componet, propKey: string) {
         name || (name = propKey);
-        var vv:IViewvarDef[]  = (componet[_viewvarName] || (componet[_viewvarName] = {}));
-        vv[name || propKey] = propKey;
-        console.log('viewvar', arguments);
+        var vv:IViewvarDef[]  = (componet[_viewvarName] || (componet[_viewvarName] = []));
+        vv.push({
+            name:name || propKey,
+            propKey:propKey
+        });
     }
 }
 
@@ -531,7 +533,7 @@ export class CompileRender {
         this.componetDef = componetDef;
         let tagInfos = this.tagInfos = _makeTagInfos(CmpxLib.trim(tmpl, true));
         var fn = this.tempFn = _buildCompileFn(tagInfos);
-        console.log(fn.toString());
+        //console.log(fn.toString());
 
         this.contextFn = fn;
     }
@@ -578,7 +580,7 @@ export class CompileRender {
                 } catch(e){
                     CmpxLib.trace(e);
                 } finally {
-                    newSubject.unLinkSubject();
+                    newSubject && newSubject.unLinkSubject();
 
                     if (isNewComponet){
                         if (parentComponet && !parentComponet.$isDisposed){
@@ -600,17 +602,20 @@ export class CompileRender {
                 parentElement: parentElement
             });
             let fragment = document.createDocumentFragment(),
-                retFn = this.contextFn.call(componet, CmpxLib, Compile, componet, fragment, newSubject, function(vvList){
-                    let vvDef:IViewvarDef = _getViewvarDef(this);
+                retFn = this.contextFn.call(componet, CmpxLib, Compile, componet, fragment, newSubject, function(vvList:any[]){
+                    if (!vvList || vvList.length == 0) return;
+                    let vvDef:IViewvarDef[] = _getViewvarDef(this);
                     if (!vvDef) return;
-                    let propKey:string;
-                    CmpxLib.each(vvList, function(item:{name:string, p:any}){
-                        propKey = vvDef[item.name];
-                        propKey && (this[propKey] = item.p);
-                        // if (vvDef[name])
+                    CmpxLib.each(vvDef, function(def:IViewvarDef){
+                        let propKey = def.propKey, name=def.name;
+                        CmpxLib.each(vvList, function(item:{name:string, p:any}){
+                            if (item.name == name){
+                                this[propKey] = item.p;
+                                return false;
+                            }
+                        }, this);
                     }, this);
                 });
-            console.log('retFn', retFn.toString());
             newSubject.update({
                 componet:componet,
                 parentElement:parentElement
@@ -821,7 +826,7 @@ export class Compile {
                         newSubject = new CompileSubject(subject);
                         newSubject.subscribe({
                             remove:function(p:ISubscribeEvent) {
-                                newSubject.unLinkSubject();
+                                newSubject && newSubject.unLinkSubject();
                             }
                         });
                         fragment = document.createDocumentFragment();
@@ -882,7 +887,7 @@ export class Compile {
                         newSubject = new CompileSubject(subject);
                         newSubject.subscribe({
                             remove:function(p:ISubscribeEvent) {
-                                newSubject.unLinkSubject();
+                                newSubject && newSubject.unLinkSubject();
                             }
                         });
 

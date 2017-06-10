@@ -42,6 +42,9 @@ class MyComponet extends Componet{
 
     @viewvar('input1')
     inputTest:HTMLInputElement;
+    
+    @viewvar()
+    input1:HTMLInputElement;
 
     onInit(cb, p){
       console.log('onInit');
@@ -57,7 +60,7 @@ class MyComponet extends Componet{
     }
 
     onUpdate(cb, p){
-      console.log('onUpdate', this.inputTest.value);
+      console.log('onUpdate');
       super.onUpdate(cb, p);
     }
 
