@@ -795,11 +795,11 @@ export class Compile {
         let isObj = !CmpxLib.isString(content);
         if (isObj){
             let isEvent = !!content.event,
-                update;
+                update, eventDef;
             if (isEvent){
                 let isBind = false,
-                    eventDef = HtmlDef.getHtmlEventDef(name),
-                    eventFn:any = function(e){ return content.event.call(componet, event); };
+                    eventFn = function(e){ return content.event.call(componet, event); };
+                eventDef = HtmlDef.getHtmlEventDef(name);
                 subject.subscribe({
                     update: function (p: ISubscribeEvent) {
                         if (isBind) return;
@@ -819,11 +819,12 @@ export class Compile {
                     subName:string,
                     isWrite:boolean = !!content.write,
                     isRead:boolean = !!content.read,
-                    writeFn = function (p: ISubscribeEvent) {
+                    writeFn = function () {
                         newValue = attrDef.getAttribute(element, name);
                         if (value != newValue) {
                             value = newValue;
                             content.write.call(componet, newValue);
+                            componet.$updateAsync();
                         }
                     };
                 if (hasSubName){
@@ -832,6 +833,11 @@ export class Compile {
                     subName = t[1];
                 }
                 let attrDef:IHtmlAttrDef = HtmlDef.getHtmlAttrDef(name);
+                if (isWrite){
+                    eventDef = HtmlDef.getHtmlEventDef(name);
+                    eventDef.addEventListener(element, 'change', writeFn, false);
+                    eventDef.addEventListener(element, 'blur', writeFn, false);
+                }
                 subject.subscribe({
                     update: function (p: ISubscribeEvent) {
                         if (isRead){
@@ -839,11 +845,17 @@ export class Compile {
                             if (value != newValue) {
                                 value = newValue;
                                 attrDef.setAttribute(element, name, value, subName);
-                            } else if (isWrite){
-                                writeFn(p);
-                            }
-                        } else if (isWrite){
-                            writeFn(p);
+                            }// else if (isWrite){
+                            //     writeFn(p);
+                            // }
+                        }// else if (isWrite){
+                        //     writeFn(p);
+                        // }
+                    },
+                    remove:function(p:ISubscribeEvent){
+                        if (isWrite) {
+                            eventDef.removeEventListener(element, 'change', writeFn, false);
+                            eventDef.removeEventListener(element, 'blur', writeFn, false);
                         }
                     }
                 });
