@@ -1,5 +1,5 @@
 import CmpxLib from './cmpxLib';
-import { HtmlDef, HtmlTagDef, IHtmlAttrDef, HtmlTagContentType, ICreateElementAttr } from './htmlDef';
+import { HtmlDef, HtmlTagDef, IHtmlAttrDef, ICreateElementAttr } from './htmlDef';
 import { Componet } from './componet';
 import CmpxEvent from './cmpxEvent';
 
@@ -786,11 +786,11 @@ export class Compile {
     }
 
     public static createElement(name:string, attrs:ICreateElementAttr[], componet:Componet, parentElement:HTMLElement, subject:CompileSubject,
-        contextFn:(componet:Componet, element:HTMLElement, subject:CompileSubject)=>void):void {
+        contextFn:(componet:Componet, element:HTMLElement, subject:CompileSubject)=>void, content?:string):void {
             
             if (subject.isRemove)return;
 
-            let element:HTMLElement = HtmlDef.getHtmlTagDef(name).createElement(name, attrs, parentElement);
+            let element:HTMLElement = HtmlDef.getHtmlTagDef(name).createElement(name, attrs, parentElement, content);
             parentElement.appendChild(element);
             subject.subscribe({
                 remove:function(p:ISubscribeEvent) {
@@ -1203,13 +1203,12 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>, param?:Object):Function
     _getInsertTemp = function(preInsert:boolean){
         return preInsert ? 'true' : 'false';
     },
-    _checkTagChild = function(tagInfo:ITagInfo):void{
-        let htmlTagDef:HtmlTagDef = tagInfo.htmlTagDef;
-        if (htmlTagDef.contentType == HtmlTagContentType.ESCAPABLE_RAW_TEXT){
-            CmpxLib.each(tagInfo.children, function(item:ITagInfo){
-                item.content = CmpxLib.decodeHtml(item.content);
-            });
-        }
+    _getTagContent = function(tagInfo:ITagInfo):string{
+        let content:string;
+        CmpxLib.each(tagInfo.children, function(item:ITagInfo){
+            content = CmpxLib.decodeHtml(item.content);
+        });
+        return content;
     },
     _buildCompileFnForVar = function(itemName:string, outList:string[]){
 
@@ -1251,7 +1250,11 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>, param?:Object):Function
                         }
                         preInsert=true;
                     } else {
-                        _checkTagChild(tag);
+                        let htmlTagDef:HtmlTagDef = tag.htmlTagDef,
+                            rawTag = htmlTagDef.raw,
+                            tagContent = rawTag && _getTagContent(tag);
+                        //如果rawTag没有子级
+                        hasChild && (hasChild = !rawTag);
                         if (hasAttr || hasChild || varName){
 
                             let {bindAttrs, stAtts} = _makeElementTag(tagName, tag.attrs);
@@ -1261,11 +1264,11 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>, param?:Object):Function
                                 varName.list && outList.push(varName.list + '.push(element);');
                             }
                             _buildAttrContent(bindAttrs, outList);
-                            _buildCompileFnContent(tag.children, outList, varNameList, preInsert);
+                            hasChild && _buildCompileFnContent(tag.children, outList, varNameList, preInsert);
  
                             outList.push('});');
                         } else {
-                            outList.push('__createElement("'+tagName+'", "<'+tagName+'>", componet, element, subject);');
+                            outList.push('__createElement("'+tagName+'", "<'+tagName+'>", componet, element, subject, null, "'+ _escapeBuildString(tagContent)+'");');
                         }
                         preInsert = false;
                     }

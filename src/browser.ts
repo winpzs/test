@@ -1,31 +1,35 @@
 import Platform from './platform';
 import { Componet } from './componet';
 import { Compile, CompileSubject } from './compile';
-import { HtmlDef, HtmlTagDef, HtmlTagContentType, ICreateElementAttr, DEFULE_TAG, DEFAULT_ATTR, DEFAULT_ATTR_PROP, DEFAULT_EVENT_DEF } from './htmlDef';
+import { HtmlDef, HtmlTagDef, ICreateElementAttr, DEFULE_TAG, DEFAULT_ATTR, DEFAULT_ATTR_PROP, DEFAULT_EVENT_DEF, SINGLE_TAG } from './htmlDef';
 import CmpxLib from './cmpxLib';
 
 let _getParentElement = function(element:Node):Node{
         return element.parentElement || element.parentNode;
     },
-    _defaultCreateElement = function(name: string, attrs: ICreateElementAttr[], parent?: HTMLElement, innerHtml?:string): HTMLElement {
-        let element:HTMLElement = document.createElement(name);
+    _setAttribute = function(element:HTMLElement, attrs: ICreateElementAttr[]){
         CmpxLib.each(attrs, function(item:ICreateElementAttr){
             HtmlDef.getHtmlAttrDef(item.name).setAttribute(element, item.name, item.value, item.subName);
         });
+    },
+    _createElementRaw = function(name: string, attrs: ICreateElementAttr[], parent?: HTMLElement, content?:string): HTMLElement {
+        let element:HTMLElement = document.createElement(name);
+        element.innerText = content || "";
+        _setAttribute(element, attrs);
         return element;
     };
 
 let _rawTag = new HtmlTagDef({
-        contentType: HtmlTagContentType.RAW_TEXT,
-        createElement:_defaultCreateElement
-     }),
-    _escRawTag = new HtmlTagDef({
-        contentType: HtmlTagContentType.ESCAPABLE_RAW_TEXT,
-        createElement:_defaultCreateElement
-    });
+        //不解释内容，在createElement创建器传入content内容
+        raw: true,
+        //单行tag
+        single:false,
+        //创建器
+        createElement:_createElementRaw
+     });
 
 /**
- * htmlDef配置后
+ * htmlDef配置
  */
 let _htmlConfig = function(){
 
@@ -35,10 +39,11 @@ let _htmlConfig = function(){
         'svg': DEFULE_TAG,
         //默认不支持math, 请处理HtmlTagDef的createElement参数
         'math': DEFULE_TAG,
+        'br': SINGLE_TAG,
         'style': _rawTag,
         'script': _rawTag,
-        'title': _escRawTag,
-        'textarea': _escRawTag
+        'title': _rawTag,
+        'textarea': _rawTag
     });
 
     //扩展attr, 如果不支持请在这里扩展
@@ -52,6 +57,12 @@ let _htmlConfig = function(){
     HtmlDef.extendHtmlEventDef({
         "click":DEFAULT_EVENT_DEF
     });
+
+    // //更改默认值，参考如下：
+    // DEFAULT_EVENT_DEF.addEventListener = (element: HTMLElement, eventName: string, context: (event: any) => any, useCapture: boolean) {
+    //     element.addEventListener(eventName, context, useCapture);
+    //     //attachEvent
+    // }
 };
 
 export class Browser extends Platform {

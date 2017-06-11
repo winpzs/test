@@ -1,15 +1,6 @@
 import CmpxLib from "./cmpxLib";
 
 /**
- * HtmlTag内容类型
- */
-export enum HtmlTagContentType {
-  RAW_TEXT,
-  ESCAPABLE_RAW_TEXT,
-  PARSABLE_DATA
-}
-
-/**
  * HtmlTag配置
  */
 export interface IHtmlTagDefConfig {
@@ -39,9 +30,9 @@ export interface ICreateElementAttr {
  * @param name tagName, eg:div
  * @param attrs 属性数据, 只有静态属性，绑定属性不传入为
  * @param parent 父element
- * @param innerHtml 内部html, contentType为ESCAPABLE_RAW_TEXT或RAW_TEXT时会传入
+ * @param content 内容, contentType为RAW_TEXT或RAW_TEXT时会传入
  */
-export function DEFAULT_CREATEELEMENT(name: string, attrs: ICreateElementAttr[], parent?: HTMLElement, innerHtml?:string): HTMLElement {
+export function DEFAULT_CREATEELEMENT(name: string, attrs: ICreateElementAttr[], parent?: HTMLElement, content?:string): HTMLElement {
   let element:HTMLElement = document.createElement(name);
   CmpxLib.each(attrs, function(item:ICreateElementAttr){
     HtmlDef.getHtmlAttrDef(item.name).setAttribute(element, item.name, item.value, item.subName);
@@ -58,27 +49,23 @@ let _noteTagRegex = /\<\!--(?:.|\n|\r)*?--\>/gim;
 export class HtmlTagDef {
 
   /**
-   * 内容类型
-   */
-  contentType: HtmlTagContentType;
-  /**
    * 单行标签
    */
   single: boolean;
+  raw:boolean;
   /**
    * element创建器
    */
-  createElement: (name: string, attrs: ICreateElementAttr[], parent?: HTMLElement, innerHtml?:string) => HTMLElement;
+  createElement: (name: string, attrs: ICreateElementAttr[], parent?: HTMLElement, content?:string) => HTMLElement;
 
   constructor(
-    { single = false, contentType = HtmlTagContentType.PARSABLE_DATA, createElement = null }: {
+    { single = false, raw = false, createElement = null }: {
       single?: boolean;
-      contentType?: HtmlTagContentType;
-      preFix?: string;
-      createElement?: (name: string, attrs: ICreateElementAttr[], parent?: HTMLElement) => HTMLElement;
+      raw?: boolean;
+      createElement?: (name: string, attrs: ICreateElementAttr[], parent?: HTMLElement, content?:string) => HTMLElement;
     } = {}) {
     this.single = single;
-    this.contentType = contentType;
+    this.raw = raw;
     this.createElement = createElement || DEFAULT_CREATEELEMENT
   }
 
@@ -97,7 +84,6 @@ var _htmlTagDefConfig: IHtmlTagDefConfig = {
   'input': SINGLE_TAG,
   'param': SINGLE_TAG,
   'hr': SINGLE_TAG,
-  'br': SINGLE_TAG,
   'source': SINGLE_TAG,
   'track': SINGLE_TAG,
   'wbr': SINGLE_TAG,
@@ -291,10 +277,6 @@ export class HtmlDef {
   //  * 内容标签，不解释内容
   //  */
   // static rawTags: { [name: string]: boolean };
-  // /**
-  //  * 内容html编码标签，不解释内容
-  //  */
-  // static escapeRawTags: { [name: string]: boolean };
 
   /**
    * 处理tag内容，删除多余空格，删除注释，编码某些类型内容
@@ -311,13 +293,9 @@ export class HtmlDef {
 
 
 function _makeSpecTags() {
-  let //singleTags = [],
-    rawTags = [],
-    escapeRawTags = [];
+  let rawTags = [];
   CmpxLib.eachProp(_htmlTagDefConfig, (item: HtmlTagDef, name: string) => {
-    //item.single && singleTags.push(name);
-    item.contentType == HtmlTagContentType.RAW_TEXT && rawTags.push(name);
-    item.contentType == HtmlTagContentType.ESCAPABLE_RAW_TEXT && escapeRawTags.push(name);
+    item.raw && rawTags.push(name);
   });
   // let o = HtmlDef.singleTags = {};
   // CmpxLib.each(singleTags, (name: string) => o[name] = true);
@@ -326,7 +304,7 @@ function _makeSpecTags() {
   // o = HtmlDef.escapeRawTags = {};
   // CmpxLib.each(escapeRawTags, (name: string) => o[name] = true);
 
-  let rawNames = rawTags.concat(escapeRawTags).join('|');
+  let rawNames = rawTags.join('|');
   _rawContentRegex = new RegExp('<\\s*(' + rawNames + ')(\\s+(?:[^>]*))*>((?:.|\\n|\\r)*?)<\\s*/\\s*\\1\\s*>', 'gmi');
   rawNames = [rawNames, 'pre'].join('|');
   _escContentRegex = new RegExp('<\\s*(' + rawNames + ')(\\s+(?:[^>]*))*>((?:.|\\n|\\r)*?)<\\s*/\\s*\\1\\s*>', 'gmi');
