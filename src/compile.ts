@@ -516,26 +516,27 @@ let _tmplName = '__tmpl__',
 
 export class CompileRender {
 
-    private contextFn:Function;
+    /**
+     * 编译的结果，Function
+     */
+    readonly contextFn:Function;
     private componetDef:any;
     private param:Object;
-
-    //调试临时用
-    tagInfos:ITagInfo[];
-    tempFn:Function;
-    //end 调试临时用
 
     /**
      * 
      * @param tmpl html模板文本
      * @param componetDef 组件定义类，如果没有传为临时模板
      */
-    constructor(tmpl: string, componetDef?:Componet|Function, param?:Object) {
+    constructor(context: any, componetDef?:Componet|Function, param?:Object) {
         this.componetDef = componetDef;
         this.param = param;
-        let tagInfos = this.tagInfos = _makeTagInfos(CmpxLib.trim(tmpl, true));
-        var fn = this.tempFn = _buildCompileFn(tagInfos, param);
-        console.log(fn.toString());
+        let fn:any;
+        if (CmpxLib.isString(context)){
+            let tagInfos = _makeTagInfos(CmpxLib.trim(context, true));
+            fn = _buildCompileFn(tagInfos, param);
+        } else
+            fn = context;
 
         this.contextFn = fn;
     }
