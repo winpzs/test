@@ -518,7 +518,7 @@ export class CompileRender {
 
     private contextFn:Function;
     private componetDef:any;
-    param:Object;
+    private param:Object;
 
     //调试临时用
     tagInfos:ITagInfo[];
@@ -530,11 +530,12 @@ export class CompileRender {
      * @param tmpl html模板文本
      * @param componetDef 组件定义类，如果没有传为临时模板
      */
-    constructor(tmpl: string, componetDef?:Componet|Function) {
+    constructor(tmpl: string, componetDef?:Componet|Function, param?:Object) {
         this.componetDef = componetDef;
+        this.param = param;
         let tagInfos = this.tagInfos = _makeTagInfos(CmpxLib.trim(tmpl, true));
-        var fn = this.tempFn = _buildCompileFn(tagInfos);
-        // console.log(fn.toString());
+        var fn = this.tempFn = _buildCompileFn(tagInfos, param);
+        console.log(fn.toString());
 
         this.contextFn = fn;
     }
@@ -616,7 +617,7 @@ export class CompileRender {
                     })
                 }
             });
-            let retFn = this.contextFn.call(componet, CmpxLib, Compile, componet, fragment, newSubject, function(vvList:any[]){
+            let retFn = this.contextFn.call(componet, CmpxLib, Compile, componet, fragment, newSubject, this.param, function(vvList:any[]){
                     if (!vvList || vvList.length == 0) return;
                     let vvDef:IViewvarDef[] = _getViewvarDef(this);
                     if (!vvDef) return;
@@ -1067,12 +1068,13 @@ export class Compile {
 
 }
 
-var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
+var _buildCompileFn = function(tagInfos:Array<ITagInfo>, param?:Object):Function{
         var outList = [], varNameList = [];
 
         _buildCompileFnContent(tagInfos, outList, varNameList, true);
 
         varNameList.length > 0 && outList.unshift('var '+varNameList.join(',')+';');
+        param && outList.unshift(_getCompileFnParam(param));
         outList.unshift(`var __tmplRender = Compile.tmplRender,
     __createComponet = Compile.createComponet,
     __setAttributeCP = Compile.setAttributeCP,
@@ -1085,7 +1087,14 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
 
         outList.push(_buildCompileFnReturn(varNameList));
 
-        return new Function('CmpxLib','Compile', 'componet', 'element', 'subject', 'initViewvar', outList.join('\n'));
+        return new Function('CmpxLib','Compile', 'componet', 'element', 'subject', '__p__', 'initViewvar', outList.join('\n'));
+    },
+    _getCompileFnParam = function(param:Object):string{
+        var pList = [];
+        CmpxLib.eachProp(param, function(item, name){
+            pList.push([name, ' = ', '__p__.', name].join(''));
+        });
+        return 'var ' + pList.join(', ') + ';';
     },
     _buildCompileFnReturn = function(varNameList:string[]):string{
 

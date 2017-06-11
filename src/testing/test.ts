@@ -52,7 +52,7 @@ class ComponetItem extends Componet{
   {{for userItem in this.users}}
     <div> {{:$index}} ({{userItem.id}}) for div text
            inc:{{include tmpl="tmpl1" param="{index:$index}" }}
-           <!--inc1:{{include render="this.testRender" }}-->
+           inc1:{{include render="this.testRender" }}
     </div>
   {{/for}}
   {{if this.ok}}
@@ -76,7 +76,7 @@ class MyComponet extends Componet{
     constructor(){
         super();
         
-        this.testRender = this.$render(' [<item param="asdfafd" num="{{this.numPrint}}"></item>]');
+        this.testRender = this.$render(' [<item param="asdfafd" num="{{this.numPrint}}"></item> {{dddd}}]', {dddd:111});
         //this.makeItem(1000);
     }
 
