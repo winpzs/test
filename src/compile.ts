@@ -1,5 +1,5 @@
 import CmpxLib from './cmpxLib';
-import { HtmlDef, HtmlTagDef, IHtmlAttrDef, HtmlTagContentType } from './htmlDef';
+import { HtmlDef, HtmlTagDef, IHtmlAttrDef, HtmlTagContentType, ICreateElementAttr } from './htmlDef';
 import { Componet } from './componet';
 import CmpxEvent from './cmpxEvent';
 
@@ -769,12 +769,12 @@ export class Compile {
             componet[name] = content;
     }
 
-    public static createElement(name:string, tag:string, componet:Componet, parentElement:HTMLElement, subject:CompileSubject,
+    public static createElement(name:string, attrs:ICreateElementAttr[], componet:Componet, parentElement:HTMLElement, subject:CompileSubject,
         contextFn:(componet:Componet, element:HTMLElement, subject:CompileSubject)=>void):void {
             
             if (subject.isRemove)return;
 
-            let element:HTMLElement = HtmlDef.getHtmlTagDef(name).createElement(name, tag, parentElement);
+            let element:HTMLElement = HtmlDef.getHtmlTagDef(name).createElement(name, attrs, parentElement);
             parentElement.appendChild(element);
             subject.subscribe({
                 remove:function(p:ISubscribeEvent) {
@@ -831,7 +831,7 @@ export class Compile {
         return textNode;
     }
 
-    public static setAttribute(element:HTMLElement, name:string, content:any, componet:Componet, subject:CompileSubject):void {
+    public static setAttribute(element:HTMLElement, name:string, subName:string, content:any, componet:Componet, subject:CompileSubject):void {
         let isObj = !CmpxLib.isString(content);
         if (isObj){
             let isEvent = !!content.event,
@@ -855,8 +855,6 @@ export class Compile {
 
             } else {
                 let value: any = '', newValue:any,
-                    hasSubName:boolean = (name.indexOf('.') > 0),
-                    subName:string,
                     isWrite:boolean = !!content.write,
                     isRead:boolean = !!content.read,
                     writeFn = function () {
@@ -867,11 +865,7 @@ export class Compile {
                             componet.$updateAsync();
                         }
                     };
-                if (hasSubName){
-                    let t = name.split('.');
-                    name = t[0];
-                    subName = t[1];
-                }
+                
                 let attrDef:IHtmlAttrDef = HtmlDef.getHtmlAttrDef(name);
                 if (isWrite){
                     eventDef = HtmlDef.getHtmlEventDef(name);
@@ -1138,24 +1132,31 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>, param?:Object):Function
     _escapeBuildString = function(s:string):string{
         return s ? s.replace(/([\"\\])/gm, '\\$1').replace(/\n/gm, '\\n').replace(/\r/gm, '\\r') : '';
     },
-    _makeElementTag = function(tagName, attrs:Array<IAttrInfo>):{bindAttrs:Array<IAttrInfo>, tagStr:string}{
-        var bindAttrs = [], sAttrs = [];
+    _makeSubName = function(name):string[]{
+        if(name.indexOf('.') > 0){
+            return name.split('.');
+        } else
+            return [name, ''];
+    },
+    _makeElementTag = function(tagName, attrs:Array<IAttrInfo>):{bindAttrs:Array<IAttrInfo>, stAtts:Array<ICreateElementAttr>}{
+        var bindAttrs = [], stAtts = [], names:string[];
         CmpxLib.each(attrs, function(item:IAttrInfo){
+            if (item.name == '$var' || item.name == '$array')return;
             if (item.bind)
                 bindAttrs.push(item);
-            else
-                sAttrs.push([item.name, '="', _escapeBuildString(item.value), '"'].join(''));
+            else{
+                names = _makeSubName(item.name);
+                stAtts.push({name:names[0], value:_escapeBuildString(item.value), subName:names[1]});
+            }
         });
-        return {bindAttrs:bindAttrs, tagStr:['<', tagName, sAttrs.length==0 ? '' : ' ', sAttrs.join(' '), '>'].join('')};
+        return {bindAttrs:bindAttrs, stAtts:stAtts};
     },
     _buildAttrContent = function(attrs:Array<IAttrInfo>, outList:Array<string>){
         if (!attrs)return;
+        let names:string[];
         CmpxLib.each(attrs, function(attr:IAttrInfo, index:number){
-            if (attr.name == '$var' || attr.name == '$array')return;
-            if (attr.bind)
-                outList.push('__setAttribute(element, "' + attr.name + '", '+attr.bindInfo.content+', componet, subject);');
-            else
-                outList.push('__setAttribute(element, "' + attr.name + '", "'+_escapeBuildString(attr.value)+'", componet, subject);');
+            names = _makeSubName(attr.name);
+            outList.push('__setAttribute(element, "' + names[0] + '", "' + names[1] + '", '+attr.bindInfo.content+', componet, subject);');
         });
     },
     _buildAttrContentCP = function(attrs:Array<IAttrInfo>, outList:Array<string>){
@@ -1236,22 +1237,17 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>, param?:Object):Function
                     } else {
                         _checkTagChild(tag);
                         if (hasAttr || hasChild || varName){
-                            if (HtmlDef.isCreateElementByName){
-                                outList.push('__createElement("'+tagName+'", "<'+tagName+'>", componet, element, subject, function (componet, element, subject) {');
-                                if (varName){
-                                    varName.item && outList.push(varName.item + ' = element;');
-                                    varName.list && outList.push(varName.list + '.push(element);');
-                                }
-                                _buildAttrContent(tag.attrs, outList);
-                                _buildCompileFnContent(tag.children, outList, varNameList, preInsert);
-                            } else {
-                                let {bindAttrs, tagStr} = _makeElementTag(tagName, tag.attrs);
-                                outList.push('__createElement("'+tagName+'", \''+tagStr+'\', componet, element, subject, function (componet, element, subject) {');
-                                varName && outList.push(varName + ' = element;');
-                                _buildAttrContent(bindAttrs, outList);
-                                _buildCompileFnContent(tag.children, outList, varNameList, preInsert);
+
+                            let {bindAttrs, stAtts} = _makeElementTag(tagName, tag.attrs);
+                            outList.push('__createElement("'+tagName+'", '+JSON.stringify(stAtts)+', componet, element, subject, function (componet, element, subject) {');
+                            if (varName){
+                                varName.item && outList.push(varName.item + ' = element;');
+                                varName.list && outList.push(varName.list + '.push(element);');
                             }
-                           outList.push('});');
+                            _buildAttrContent(bindAttrs, outList);
+                            _buildCompileFnContent(tag.children, outList, varNameList, preInsert);
+ 
+                            outList.push('});');
                         } else {
                             outList.push('__createElement("'+tagName+'", "<'+tagName+'>", componet, element, subject);');
                         }

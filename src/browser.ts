@@ -1,7 +1,7 @@
 import Platform from './platform';
 import { Componet } from './componet';
 import { Compile, CompileSubject } from './compile';
-import { HtmlTagDef } from './htmlDef';
+import { HtmlDef } from './htmlDef';
 
 var _getParentElement = function(element:Node):Node{
     return element.parentElement || element.parentNode;

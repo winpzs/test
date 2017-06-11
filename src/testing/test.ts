@@ -1,5 +1,4 @@
-
-import { VM, Componet, Browser, viewvar } from "../index";
+import { VM, Componet, Browser, viewvar, HtmlDef } from "../index";
 
 @VM({
   name:'item',

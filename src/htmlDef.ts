@@ -16,13 +16,23 @@ export interface IHtmlTagDefConfig {
   [key: string]: HtmlTagDef
 }
 
+export interface ICreateElementAttr {
+  name:string;
+  value:string;
+  subName?:string;
+}
+
 /**
  * 默认element创建器
  * @param name 
  * @param parent 
  */
-function DEFAULT_CREATEELEMENT(name: string, tag: string, parent?: HTMLElement): HTMLElement {
-  return document.createElement(HtmlDef.isCreateElementByName ? name : tag);
+function DEFAULT_CREATEELEMENT(name: string, attrs: ICreateElementAttr[], parent?: HTMLElement, innerHtml?:string): HTMLElement {
+  let element:HTMLElement = document.createElement(name);
+  CmpxLib.each(attrs, function(item:ICreateElementAttr){
+    HtmlDef.getHtmlAttrDef(item.name).setAttribute(element, item.name, item.value, item.subName);
+  });
+  return element;
 }
 
 //注释标签
@@ -48,14 +58,14 @@ export class HtmlTagDef {
   /**
    * element创建器
    */
-  createElement: (name: string, tag: string, parent?: HTMLElement) => HTMLElement;
+  createElement: (name: string, attrs: ICreateElementAttr[], parent?: HTMLElement, innerHtml?:string) => HTMLElement;
 
   constructor(
     { single = false, contentType = HtmlTagContentType.PARSABLE_DATA, preFix = null, createElement = null }: {
       single?: boolean;
       contentType?: HtmlTagContentType;
       preFix?: string;
-      createElement?: (name: string, tag: string, parent?: HTMLElement) => HTMLElement;
+      createElement?: (name: string, attrs: ICreateElementAttr[], parent?: HTMLElement) => HTMLElement;
     } = {}) {
     this.single = single;
     this.preFix = preFix;
@@ -144,6 +154,7 @@ export interface IHtmlAttrDef {
  */
 var DEFAULT_ATTR: IHtmlAttrDef = {
   setAttribute(element: HTMLElement, name: string, value: string, subName?:string) {
+    subName && console.log('subName', subName);
     if (subName)
       element[name][subName] = value;
     else
@@ -226,12 +237,6 @@ var _htmlEventDefConfig: IHtmlEventDefConfig = {};
 
 
 export class HtmlDef {
-
-  /**
-   * 创建element是否用name, 如createElement('input'),
-   *  否为：createElement('<input type="text">')IE8及以下用
-   */
-  static isCreateElementByName: boolean = true;
 
   /**
    * 获取标签定义
