@@ -28,7 +28,7 @@ class ComponetItem extends Componet{
 
   onDispose(){
     super.onDispose();
-    console.log('ComponetItem onDispose');
+    //console.log('ComponetItem onDispose');
   }
 }
 
@@ -52,7 +52,7 @@ class ComponetItem extends Componet{
   {{for userItem in this.users}}
     <div> {{:$index}} ({{userItem.id}}) for div text
            inc:{{include tmpl="tmpl1" param="{index:$index}" }}
-           inc1:{{include render="this.testRender" }}
+           <!--inc1:{{include render="this.testRender" }}-->
     </div>
   {{/for}}
   {{if this.ok}}
@@ -94,9 +94,9 @@ class MyComponet extends Componet{
     onInit(cb, p){
       //console.log('onInit');
       super.onInit(cb, p);
-      // super.onInit(function(){
-      //   cb();
-      // }, p);
+      // setTimeout(()=>{
+      //   super.onInit(cb, p);
+      // }, 1000);
     }
 
     onUpdateBefore(cb, p){

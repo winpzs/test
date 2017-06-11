@@ -652,6 +652,11 @@ export class CompileRender {
                     componet:componet,
                     parentElement:parentElement
                 });
+                //reay后再次补发update
+                newSubject.update({
+                    componet:componet,
+                    parentElement:parentElement
+                });
             };
         if (isNewComponet){
             componet.onInit(function(err){
