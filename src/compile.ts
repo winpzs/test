@@ -555,7 +555,7 @@ export class CompileRender {
         } else
             fn = context;
 
-        console.log(fn.toString());
+        //console.log(fn.toString());
 
         this.contextFn = fn;
     }

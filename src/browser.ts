@@ -1,7 +1,7 @@
 import Platform from './platform';
 import { Componet } from './componet';
 import { Compile, CompileSubject } from './compile';
-import { HtmlDef, HtmlTagDef, HtmlTagContentType, ICreateElementAttr } from './htmlDef';
+import { HtmlDef, HtmlTagDef, HtmlTagContentType, ICreateElementAttr, DEFULE_TAG, DEFAULT_ATTR, DEFAULT_ATTR_PROP, DEFAULT_EVENT_DEF } from './htmlDef';
 import CmpxLib from './cmpxLib';
 
 let _getParentElement = function(element:Node):Node{
@@ -15,8 +15,7 @@ let _getParentElement = function(element:Node):Node{
         return element;
     };
 
-let _defaultTag = new HtmlTagDef({}),
-    _rawTag = new HtmlTagDef({
+let _rawTag = new HtmlTagDef({
         contentType: HtmlTagContentType.RAW_TEXT,
         createElement:_defaultCreateElement
      }),
@@ -30,17 +29,29 @@ let _defaultTag = new HtmlTagDef({}),
  */
 let _htmlConfig = function(){
 
-    //扩展tag, 如果不支持的tag请在这里扩展
+    //扩展tag, 如果不支持请在这里扩展
     HtmlDef.extendHtmlTagDef({
-        //默认不支持svg, 请处理createElement
-        'svg': _defaultTag,
-        'math': _defaultTag,
+        //默认不支持svg, 请处理HtmlTagDef的createElement参数
+        'svg': DEFULE_TAG,
+        //默认不支持math, 请处理HtmlTagDef的createElement参数
+        'math': DEFULE_TAG,
         'style': _rawTag,
         'script': _rawTag,
         'title': _escRawTag,
         'textarea': _escRawTag
     });
 
+    //扩展attr, 如果不支持请在这里扩展
+    HtmlDef.extendHtmlAttrDef({
+        'name': DEFAULT_ATTR,
+        'value': DEFAULT_ATTR_PROP,
+        'type': DEFAULT_ATTR_PROP
+    });
+
+    //扩展事件处理, 如果不支持请在这里扩展
+    HtmlDef.extendHtmlEventDef({
+        "click":DEFAULT_EVENT_DEF
+    });
 };
 
 export class Browser extends Platform {

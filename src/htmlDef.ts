@@ -41,7 +41,7 @@ export interface ICreateElementAttr {
  * @param parent 父element
  * @param innerHtml 内部html, contentType为ESCAPABLE_RAW_TEXT或RAW_TEXT时会传入
  */
-function DEFAULT_CREATEELEMENT(name: string, attrs: ICreateElementAttr[], parent?: HTMLElement, innerHtml?:string): HTMLElement {
+export function DEFAULT_CREATEELEMENT(name: string, attrs: ICreateElementAttr[], parent?: HTMLElement, innerHtml?:string): HTMLElement {
   let element:HTMLElement = document.createElement(name);
   CmpxLib.each(attrs, function(item:ICreateElementAttr){
     HtmlDef.getHtmlAttrDef(item.name).setAttribute(element, item.name, item.value, item.subName);
@@ -84,7 +84,7 @@ export class HtmlTagDef {
 
 }
 
-var SINGLE_TAG = new HtmlTagDef({ single: true }),
+export const SINGLE_TAG = new HtmlTagDef({ single: true }),
   DEFULE_TAG = new HtmlTagDef();
 
 var _htmlTagDefConfig: IHtmlTagDefConfig = {
@@ -155,9 +155,8 @@ export interface IHtmlAttrDef {
 /**
  * 默认HtmlAttr定义
  */
-var DEFAULT_ATTR: IHtmlAttrDef = {
+export const DEFAULT_ATTR: IHtmlAttrDef = {
   setAttribute(element: HTMLElement, name: string, value: string, subName?:string) {
-    subName && console.log('subName', subName);
     if (subName)
       element[name][subName] = value;
     else
@@ -175,7 +174,7 @@ var DEFAULT_ATTR: IHtmlAttrDef = {
 /**
  * 默认HtmlAttr prop定义
  */
-var DEFAULT_ATTR_PROP: IHtmlAttrDef = {
+export const DEFAULT_ATTR_PROP: IHtmlAttrDef = {
   setAttribute(element: HTMLElement, name: string, value: string, subName?:string) {
     if (subName)
       element[name][subName] = value;
@@ -199,11 +198,9 @@ export interface IHtmlAttrDefConfig {
 }
 
 var _htmlAttrDefConfig: IHtmlAttrDefConfig = {
-  'value': DEFAULT_ATTR_PROP,
   'src': DEFAULT_ATTR_PROP,
   'rel': DEFAULT_ATTR_PROP,
   'style': DEFAULT_ATTR_PROP,
-  'type': DEFAULT_ATTR_PROP,
   'selected': DEFAULT_ATTR_PROP,
   'disabled': DEFAULT_ATTR_PROP,
   'checked': DEFAULT_ATTR_PROP
@@ -217,7 +214,7 @@ export interface IHtmlEventDef {
 /**
  * 默认事件定义
  */
-var DEFAULT_EVENT_DEF: IHtmlEventDef = {
+export const DEFAULT_EVENT_DEF: IHtmlEventDef = {
   addEventListener(element: HTMLElement, eventName: string, context: (event: any) => any, useCapture: boolean) {
     element.addEventListener(eventName, context, useCapture);
     //attachEvent
@@ -258,10 +255,6 @@ export class HtmlDef {
     _makeSpecTags();
   }
 
-  static setDefaulHtmlTagDef(p: HtmlTagDef): void {
-    DEFULE_TAG = p;
-  }
-
   /**
    * 获取属性定义
    * @param name 
@@ -278,10 +271,6 @@ export class HtmlDef {
     CmpxLib.extend(_htmlAttrDefConfig, p);
   }
 
-  static setDefaultHtmlArrDef(p: IHtmlAttrDef): void {
-    DEFAULT_ATTR = p;
-  }
-
   static getHtmlEventDef(name: string): IHtmlEventDef {
     return _htmlEventDefConfig[name] || DEFAULT_EVENT_DEF;
   }
@@ -292,10 +281,6 @@ export class HtmlDef {
    */
   static extendHtmlEventDef(p: IHtmlEventDefConfig): void {
     CmpxLib.extend(_htmlEventDefConfig, p);
-  }
-
-  static setDefaulHtmlEventDef(p: IHtmlEventDef): void {
-    DEFAULT_EVENT_DEF = p;
   }
 
   // /**
