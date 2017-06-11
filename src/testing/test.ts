@@ -50,7 +50,7 @@ class ComponetItem extends Componet{
   {{/tmpl}}
   
   {{for userItem in this.users}}
-    <div> {{:$index}} ({{userItem.id}}) for div text
+    <div> {{:$index}}({{$odd}},{{userItem_odd}}) ({{userItem.id}}) for div text
            inc:{{include tmpl="tmpl1" param="{index:$index}" }}
            inc1:{{include render="this.testRender" }}
     </div>

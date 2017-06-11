@@ -538,6 +538,8 @@ export class CompileRender {
         } else
             fn = context;
 
+        console.log(fn.toString());
+
         this.contextFn = fn;
     }
 
@@ -885,7 +887,7 @@ export class Compile {
 
     public static forRender(
             dataFn:(componet:Componet, element:HTMLElement, subject:CompileSubject)=>any,
-            eachFn:(componet:Componet, element:HTMLElement, subject:CompileSubject)=>any,
+            eachFn:(item:any, count:number, index:number, componet:Componet, element:HTMLElement, subject:CompileSubject)=>any,
             componet:Componet, parentElement:HTMLElement, insertTemp:boolean, subject:CompileSubject
         ):void {
             
@@ -916,8 +918,9 @@ export class Compile {
                             }
                         });
                         fragment = document.createDocumentFragment();
+                        let count = datas ? datas.length : 0;
                         CmpxLib.each(datas, function(item, index){
-                            eachFn.call(componet, item, index, componet, fragment, newSubject);
+                            eachFn.call(componet, item, count, index, componet, fragment, newSubject);
                         });
                         newSubject.update({
                             componet:componet,
@@ -1164,6 +1167,14 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>, param?:Object):Function
             });
         }
     },
+    _buildCompileFnForVar = function(itemName:string, outList:string[]){
+
+        var str = ['var $last = ($count - $index == 1), ', itemName, '_last = $last, ',
+                '$first = ($index ==  0), ', itemName, '_first = $first, ',
+                '$odd = ($index % 2 ==  0), ', itemName, '_odd = $odd, ',
+                '$even = !$odd, ', itemName, '_even = $even;' ].join('');
+        outList.push(str);
+    },
     _buildCompileFnContent = function(tagInfos:Array<ITagInfo>, outList:Array<string>, varNameList:string[], preInsert:boolean, inclue?:string[]){
         if (!tagInfos) return;
 
@@ -1224,7 +1235,8 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>, param?:Object):Function
                             itemName = extend.item
                         outList.push('__forRender(function (componet, element, subject) {');
                         outList.push('return ' + extend.datas);
-                        outList.push('}, function ('+itemName+', $index, componet, element, subject) {');
+                        outList.push('}, function ('+itemName+', $count, $index, componet, element, subject) {');
+                        _buildCompileFnForVar(itemName, outList);
                         var forTmpl = extend.tmpl;
                         if(forTmpl)
                             outList.push('__includeRender("'+ _escapeBuildString(forTmpl) + '", componet, element, '+_getInsertTemp(preInsert)+', subject, '+itemName+');');
