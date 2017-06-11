@@ -115,7 +115,7 @@ export default class CmpxLib {
 
     static isElement(obj:any) { var t = obj && (obj.ownerDocument || obj).documentElement; return t ? true : false; }
 
-    static trim(str:string, newline:boolean) {
+    static trim(str:string, newline?:boolean) {
         return str ? (newline ? str.replace(/^(?:\s|\u3000|\ue4c6|\n|\r)*|(?:\s|\u3000|\ue4c6|\n|\r)*$/g, '') :
                 str.replace(/^(?:\s|\u3000|\ue4c6)*|(?:\s|\u3000|\ue4c6)*$/g, '')) : '';
     }

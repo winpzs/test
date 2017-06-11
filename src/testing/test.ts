@@ -46,7 +46,7 @@ class ComponetItem extends Componet{
   </div>
   {{tmpl id="tmpl1" let="index=param.index"}}
     <span>tmpl text</span> {{index}}
-    (<item param="asdfafd" num="{{this.numPrint}}"></item>)
+    (<item param="asdfafd" $array="cpList" num="{{this.numPrint}}"></item>)
   {{/tmpl}}
   
   {{for userItem in this.users}}
@@ -110,7 +110,7 @@ class MyComponet extends Componet{
     }
 
     onInitViewvar(cb, p){
-      //console.log('onInitViewvar', this.inputTest, this.inputTest.value);
+      //console.log('onInitViewvar', this.testCp);
       super.onInitViewvar(cb, p);
     }
 
@@ -130,15 +130,20 @@ class MyComponet extends Componet{
     }
     num:number = 10;
     numPrint:string = '';
+
+    @viewvar()
+    cpList:ComponetItem[];
     click(){
       let n = 1 + Math.round(Math.random() * (~~this.num));
       this.makeItem(n);
       let t = new Date().valueOf();
+      console.log('cpList b', this.cpList);
       console.time('update '+n);
       this.$update();
       console.timeEnd('update '+n);
       this.numPrint = n + ' ' + (new Date().valueOf() - t) + 'ms ';
       this.$update();
+      console.log('cpList e', this.cpList);
     }
     clickItem(){
       this.users[0].id = new Date().toString();
