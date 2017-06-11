@@ -61,12 +61,15 @@ class ComponetItem extends Componet{
     !ok:{{this.ok}}
   {{/if}}
 </div>
-    <textarea>
+
+    <textarea class="red">
     <span>aaa
     </span>
     </textarea>
   <pre><span style.color="{{'red'}}">sd   fsfsf</span></pre>
-`
+  <script type="text/html">alert('aaa');</script>
+`,
+  style:`.red {color:red}`
 })
 class MyComponet extends Componet{
 
@@ -152,7 +155,8 @@ class MyComponet extends Componet{
     }
 }
 
-
+console.time('start');
 new Browser().boot(MyComponet);
+console.timeEnd('start');
 
 //new IE8Browser().boot(MyComponet);

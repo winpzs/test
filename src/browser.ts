@@ -12,9 +12,10 @@ let _getParentElement = function(element:Node):Node{
             HtmlDef.getHtmlAttrDef(item.name).setAttribute(element, item.name, item.value, item.subName);
         });
     },
-    _createElementRaw = function(name: string, attrs: ICreateElementAttr[], parent?: HTMLElement, content?:string): HTMLElement {
+    _htmlTtype = /script|style/i,
+    _createElementRaw = function(name: string,  attrs: ICreateElementAttr[], parent?: HTMLElement, content?:string): HTMLElement {
         let element:HTMLElement = document.createElement(name);
-        element.innerText = content || "";
+        element[_htmlTtype.test(name) ? 'innerHTML' : 'innerText'] = content || "";
         _setAttribute(element, attrs);
         return element;
     };
@@ -96,12 +97,10 @@ export class Browser extends Platform {
             _doc.removeEventListener(_readyName, _ready, false);
             window.removeEventListener('load', _ready, false);
 
-            console.time('start');
             //注意tmplElement是Comment, 在IE里只能取到parentNode
             let parentElement = _getParentElement(bootElement),
                 {newSubject, refComponet} = Compile.renderComponet(componetDef, bootElement);
             parentElement.removeChild(bootElement);
-            console.timeEnd('start');
             //console.log(refComponet);
 
             let _unload = function(){

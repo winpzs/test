@@ -14,7 +14,7 @@ interface IBindInfo{
 /**
  * 标签信息
  */
-export interface ITagInfo {
+interface ITagInfo {
     tagName: string;
     //是否标签，如：<div>
     target: boolean;
@@ -39,7 +39,7 @@ export interface ITagInfo {
 /**
  * 属性信息
  */
-export interface IAttrInfo {
+interface IAttrInfo {
     name: string;
     value: string;
     bind: boolean;
@@ -288,11 +288,13 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
 
 
 export interface IVMConfig{
+    //标签名称
     name: string;
-    tmpl?: string;
-    tmplUrl?: string;
-    styles?:string[];
-    styleUrl?:string;
+    //模板
+    tmpl: string;
+    //tmplUrl?: string;
+    style?:string;
+    //styleUrl?:string;
 }
 
 var _registerVM: { [selector: string]: {render:CompileRender, componetDef:Function} } = {},
@@ -314,12 +316,18 @@ var _registerVM: { [selector: string]: {render:CompileRender, componetDef:Functi
 export function VM(vm: IVMConfig) {
     return function (constructor: Function) {
         _registerVM[vm.name] = {
-            render:_readyRd ? new CompileRender(vm.tmpl, constructor) : null,
+            render: null,
             componetDef:constructor
         };
-        _readyRd || _renderPR.push(function(){
+        var rdF = function(){
             _registerVM[vm.name].render = new CompileRender(vm.tmpl, constructor);
-        });
+            if (vm.style){
+                let head = document.head,
+                    eStyle = HtmlDef.getHtmlTagDef('style').createElement('style', [{name:'type',  value:'text/css'}], head, vm.style);
+                head.appendChild(eStyle);
+            }
+        };
+        _readyRd ? rdF() : _renderPR.push(rdF);
         constructor.prototype.$name = vm.name;
         constructor.prototype[_vmName] = vm;
     };
@@ -552,10 +560,11 @@ export class CompileRender {
         if (CmpxLib.isString(context)){
             let tagInfos = _makeTagInfos(CmpxLib.trim(context, true));
             fn = _buildCompileFn(tagInfos, param);
+            //console.log(tagInfos);
         } else
             fn = context;
 
-        //console.log(fn.toString());
+        // console.log(fn.toString());
 
         this.contextFn = fn;
     }
@@ -704,6 +713,7 @@ export class Compile {
      */
     public static startUp() {
         if (_readyRd) return;
+        _readyRd = true;
         CmpxLib.each(_renderPR, function(item:any){
             item();
         });
@@ -1266,9 +1276,9 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>, param?:Object):Function
                             _buildAttrContent(bindAttrs, outList);
                             hasChild && _buildCompileFnContent(tag.children, outList, varNameList, preInsert);
  
-                            outList.push('});');
+                            outList.push('}, "'+ _escapeBuildString(tagContent)+'");');
                         } else {
-                            outList.push('__createElement("'+tagName+'", "<'+tagName+'>", componet, element, subject, null, "'+ _escapeBuildString(tagContent)+'");');
+                            outList.push('__createElement("'+tagName+'", [], componet, element, subject, null, "'+ _escapeBuildString(tagContent)+'");');
                         }
                         preInsert = false;
                     }
