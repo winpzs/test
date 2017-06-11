@@ -41,16 +41,18 @@ class ComponetItem extends Componet{
   <div>
     <button click="{{@this.click(1)}}">测试, 数量:{{this.numPrint}}</button>
     <button click="{{@this.clickItem()}}">测试item.id</button>
+    <button click="{{@this.clickRender()}}">测试render</button>
     ({{this.aaaa}})
   </div>
   {{tmpl id="tmpl1" let="index=param.index"}}
     <span>tmpl text</span> {{index}}
+    (<item param="asdfafd" num="{{this.numPrint}}"></item>)
   {{/tmpl}}
   
   {{for userItem in this.users}}
     <div> {{:$index}} ({{userItem.id}}) for div text
-    (<item param="asdfafd" num="{{this.numPrint}}"></item>)
            inc:{{include tmpl="tmpl1" param="{index:$index}" }}
+           inc1:{{include render="this.testRender" }}
     </div>
   {{/for}}
   {{if this.ok}}
@@ -68,10 +70,19 @@ class ComponetItem extends Componet{
 `
 })
 class MyComponet extends Componet{
+
+    testRender:any;
+
     constructor(){
         super();
         
+        this.testRender = this.$render(' [<item param="asdfafd" num="{{this.numPrint}}"></item>]');
         //this.makeItem(1000);
+    }
+
+    clickRender(){
+      this.testRender = this.$render(' [<item param="asdfafd" num="{{this.numPrint}}"></item>]'+new Date().valueOf());
+      this.$update();
     }
 
     @viewvar('input1')

@@ -547,10 +547,14 @@ export class CompileRender {
     complie(refElement:HTMLElement, parentComponet?:Componet, subject?:CompileSubject, contextFn?:(component:Componet, element:HTMLElement,subject:CompileSubject)=>void, subjectExclude?:{[type:string]:boolean}):{newSubject:CompileSubject, refComponet: Componet}{
         var componetDef:any = this.componetDef;
 
+        subject || (subject = (parentComponet?parentComponet.$subObject:null));
+        subjectExclude || (subjectExclude = {});
+        subjectExclude.remove = true;
+
         let componet:any,
             isNewComponet:boolean = false,
             parentElement:HTMLElement = _getParentElement(refElement),
-            newSubject:CompileSubject = new CompileSubject(subject || (parentComponet?parentComponet.$subObject:null), subjectExclude);
+            newSubject:CompileSubject = new CompileSubject(subject, subjectExclude);
         if (componetDef){
             isNewComponet = true;
             componet = new componetDef();
@@ -604,6 +608,14 @@ export class CompileRender {
                 parentElement: parentElement
             });
             fragment = document.createDocumentFragment();
+            subject && subject.subscribe({
+                remove:function(p:ISubscribeEvent){
+                    newSubject.remove({
+                        componet:componet,
+                        parentElement:fragment
+                    })
+                }
+            });
             let retFn = this.contextFn.call(componet, CmpxLib, Compile, componet, fragment, newSubject, function(vvList:any[]){
                     if (!vvList || vvList.length == 0) return;
                     let vvDef:IViewvarDef[] = _getViewvarDef(this);
@@ -998,11 +1010,47 @@ export class Compile {
         };
     }
 
-    public static includeRender(id:string, componet:Componet, parentElement:HTMLElement, insertTemp:boolean, subject:CompileSubject, param:any):void{
-        if (subject.isRemove)return;
+    public static includeRender(context:any, componet:Componet, parentElement:HTMLElement, insertTemp:boolean, subject:CompileSubject, param:any):void{
+        if (!context || subject.isRemove)return;
 
-        var tmpl = _getComponetTmpl(componet, id);
-        tmpl && tmpl.call(componet, componet,  parentElement, subject, param || {});
+        if (CmpxLib.isString(context)){
+            let tmpl = _getComponetTmpl(componet, context);
+            tmpl && tmpl.call(componet, componet,  parentElement, subject, param || {});
+        } else {
+            let render:CompileRender,
+                newSubject:CompileSubject,
+                refElement:any = parentElement.lastChild;
+            if (!refElement){
+                refElement = document.createComment(name);
+                parentElement.appendChild(refElement);
+            }
+            subject.subscribe({
+                update:function(p:ISubscribeEvent){
+                    let newRender:CompileRender = context.call(componet);
+
+                    if (newRender != render){
+                        render = newRender;
+
+                        newSubject && newSubject.remove({
+                            componet:componet,
+                            parentElement:parentElement
+                        });
+
+                        newSubject = new CompileSubject(subject);
+                        newSubject.subscribe({
+                            remove:function(p:ISubscribeEvent) {
+                                newSubject && newSubject.unLinkSubject();
+                            }
+                        });
+
+                        newRender.complie(refElement, componet, newSubject);
+                    }
+                },
+                remove:function(p:ISubscribeEvent){
+                    render = null;
+                }
+            });
+        }
     }
 
     static renderComponet(componetDef:any,refElement:HTMLElement, parentComponet?:Componet, subject?:CompileSubject):{newSubject:CompileSubject, refComponet: Componet}{
@@ -1184,14 +1232,17 @@ var _buildCompileFn = function(tagInfos:Array<ITagInfo>):Function{
                         preInsert = true;
                         break;
                     case 'include':
-                        var incAttr = CmpxLib.arrayToObject<IAttrInfo>(tag.attrs, 'name'),
+                        let incAttr = CmpxLib.arrayToObject<IAttrInfo>(tag.attrs, 'name'),
                             incTmpl = incAttr['tmpl'],
-                            incParam = incAttr['param'] ? incAttr['param'].value : 'null';
-                        outList.push('__includeRender("'+ (incTmpl ? _escapeBuildString(incTmpl.value):'')+'", componet, element, '+_getInsertTemp(preInsert)+', subject, '+incParam+');');
+                            incParam = incAttr['param'] ? incAttr['param'].value : 'null',
+                            incRender:any = incAttr['render'];
+                            incRender && (incRender =  'function(){ return '+incRender.value+'}');
+                        let context = incRender ? incRender : ('"'+ (incTmpl ? _escapeBuildString(incTmpl.value):'')+'"');
+                        outList.push('__includeRender('+context+', componet, element, '+_getInsertTemp(preInsert)+', subject, '+incParam+');');
                         preInsert = true;
                         break;
                     case 'tmpl':
-                        var tmplAttr = CmpxLib.arrayToObject<IAttrInfo>(tag.attrs, 'name'),
+                        let tmplAttr = CmpxLib.arrayToObject<IAttrInfo>(tag.attrs, 'name'),
                             tmplId = tmplAttr['id'],
                             tmplLet = tmplAttr['let'];
                         outList.push('__tmplRender("'+ (tmplId ? _escapeBuildString(tmplId.value):'')+'", componet, element, subject, function (componet, element, subject, param) {');
