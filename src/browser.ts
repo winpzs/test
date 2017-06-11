@@ -1,16 +1,56 @@
 import Platform from './platform';
 import { Componet } from './componet';
 import { Compile, CompileSubject } from './compile';
-import { HtmlDef } from './htmlDef';
+import { HtmlDef, HtmlTagDef, HtmlTagContentType, ICreateElementAttr } from './htmlDef';
+import CmpxLib from './cmpxLib';
 
-var _getParentElement = function(element:Node):Node{
-    return element.parentElement || element.parentNode;
+let _getParentElement = function(element:Node):Node{
+        return element.parentElement || element.parentNode;
+    },
+    _defaultCreateElement = function(name: string, attrs: ICreateElementAttr[], parent?: HTMLElement, innerHtml?:string): HTMLElement {
+        let element:HTMLElement = document.createElement(name);
+        CmpxLib.each(attrs, function(item:ICreateElementAttr){
+            HtmlDef.getHtmlAttrDef(item.name).setAttribute(element, item.name, item.value, item.subName);
+        });
+        return element;
+    };
+
+let _defaultTag = new HtmlTagDef({}),
+    _rawTag = new HtmlTagDef({
+        contentType: HtmlTagContentType.RAW_TEXT,
+        createElement:_defaultCreateElement
+     }),
+    _escRawTag = new HtmlTagDef({
+        contentType: HtmlTagContentType.ESCAPABLE_RAW_TEXT,
+        createElement:_defaultCreateElement
+    });
+
+/**
+ * htmlDef配置后
+ */
+let _htmlConfig = function(){
+
+    //扩展tag, 如果不支持的tag请在这里扩展
+    HtmlDef.extendHtmlTagDef({
+        //默认不支持svg, 请处理createElement
+        'svg': _defaultTag,
+        'math': _defaultTag,
+        'style': _rawTag,
+        'script': _rawTag,
+        'title': _escRawTag,
+        'textarea': _escRawTag
+    });
+
 };
 
 export class Browser extends Platform {
 
     constructor() {
         super();
+        //htmlDef配置
+        _htmlConfig();
+        //编译器启动，用于htmlDef配置后
+        Compile.startUp();
     }
 
     boot(componetDef: any): Browser {

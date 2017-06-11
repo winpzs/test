@@ -303,7 +303,9 @@ var _registerVM: { [selector: string]: {render:CompileRender, componetDef:Functi
     _getVmByComponetDef = function(componetDef:any):{render:CompileRender, componetDef:Function}{
         var config = _getVmConfig(componetDef);
         return config ? _registerVM[config.name] : null;
-    };
+    },
+    _readyRd = false,
+    _renderPR = [];
 
 /**
  * 注入组件配置信息
@@ -312,9 +314,12 @@ var _registerVM: { [selector: string]: {render:CompileRender, componetDef:Functi
 export function VM(vm: IVMConfig) {
     return function (constructor: Function) {
         _registerVM[vm.name] = {
-            render:new CompileRender(vm.tmpl, constructor),
+            render:_readyRd ? new CompileRender(vm.tmpl, constructor) : null,
             componetDef:constructor
         };
+        _readyRd || _renderPR.push(function(){
+            _registerVM[vm.name].render = new CompileRender(vm.tmpl, constructor);
+        });
         constructor.prototype.$name = vm.name;
         constructor.prototype[_vmName] = vm;
     };
@@ -693,6 +698,17 @@ export class CompileRender {
 }
 
 export class Compile {
+
+    /**
+     * 编译器启动，用于htmlDef配置后
+     */
+    public static startUp() {
+        if (_readyRd) return;
+        CmpxLib.each(_renderPR, function(item:any){
+            item();
+        });
+        _renderPR = null;
+    }
 
     public static createComponet(
             name:string, componet:Componet, parentElement:HTMLElement, subject:CompileSubject,

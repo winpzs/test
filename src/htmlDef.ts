@@ -16,16 +16,30 @@ export interface IHtmlTagDefConfig {
   [key: string]: HtmlTagDef
 }
 
+/**
+ * 创建element的属性
+ */
 export interface ICreateElementAttr {
+  /**
+   * 属性名称
+   */
   name:string;
+  /**
+   * 属性值
+   */
   value:string;
+  /**
+   * 子名称，如：style.color="red", 子名称为color
+   */
   subName?:string;
 }
 
 /**
  * 默认element创建器
- * @param name 
- * @param parent 
+ * @param name tagName, eg:div
+ * @param attrs 属性数据, 只有静态属性，绑定属性不传入为
+ * @param parent 父element
+ * @param innerHtml 内部html, contentType为ESCAPABLE_RAW_TEXT或RAW_TEXT时会传入
  */
 function DEFAULT_CREATEELEMENT(name: string, attrs: ICreateElementAttr[], parent?: HTMLElement, innerHtml?:string): HTMLElement {
   let element:HTMLElement = document.createElement(name);
@@ -44,10 +58,6 @@ let _noteTagRegex = /\<\!--(?:.|\n|\r)*?--\>/gim;
 export class HtmlTagDef {
 
   /**
-   * 前缀
-   */
-  preFix: string;
-  /**
    * 内容类型
    */
   contentType: HtmlTagContentType;
@@ -61,14 +71,13 @@ export class HtmlTagDef {
   createElement: (name: string, attrs: ICreateElementAttr[], parent?: HTMLElement, innerHtml?:string) => HTMLElement;
 
   constructor(
-    { single = false, contentType = HtmlTagContentType.PARSABLE_DATA, preFix = null, createElement = null }: {
+    { single = false, contentType = HtmlTagContentType.PARSABLE_DATA, createElement = null }: {
       single?: boolean;
       contentType?: HtmlTagContentType;
       preFix?: string;
       createElement?: (name: string, attrs: ICreateElementAttr[], parent?: HTMLElement) => HTMLElement;
     } = {}) {
     this.single = single;
-    this.preFix = preFix;
     this.contentType = contentType;
     this.createElement = createElement || DEFAULT_CREATEELEMENT
   }
@@ -100,8 +109,6 @@ var _htmlTagDefConfig: IHtmlTagDefConfig = {
   'td': DEFULE_TAG,
   'th': DEFULE_TAG,
   'col': SINGLE_TAG,
-  'svg': new HtmlTagDef({ preFix: 'svg' }),
-  'math': new HtmlTagDef({ preFix: 'math' }),
   'li': DEFULE_TAG,
   'dt': DEFULE_TAG,
   'dd': DEFULE_TAG,
@@ -112,11 +119,7 @@ var _htmlTagDefConfig: IHtmlTagDefConfig = {
   'optgroup': DEFULE_TAG,
   'option': DEFULE_TAG,
   'pre': DEFULE_TAG,
-  'listing': DEFULE_TAG,
-  'style': new HtmlTagDef({ contentType: HtmlTagContentType.RAW_TEXT }),
-  'script': new HtmlTagDef({ contentType: HtmlTagContentType.RAW_TEXT }),
-  'title': new HtmlTagDef({ contentType: HtmlTagContentType.ESCAPABLE_RAW_TEXT }),
-  'textarea': new HtmlTagDef({ contentType: HtmlTagContentType.ESCAPABLE_RAW_TEXT })
+  'listing': DEFULE_TAG
 };
 
 let _rawContentRegex: RegExp,
