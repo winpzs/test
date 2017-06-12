@@ -499,22 +499,40 @@ let _tmplName = '__tmpl__',
             return tmpls[id];
     },
     _insertAfter = function(newElement:Node, refElement:Node, parent:Node){
-        var nextSibling = refElement.nextSibling;
+        //parent = _getParentElement(refElement);
+        let nextSibling = refElement.nextSibling;
         if (nextSibling){
             parent.insertBefore(newElement, nextSibling);
         } else
             parent.appendChild(newElement);
+        // parent = _getParentElement(refElement);
+        // if (!parent) return;
+        // if (!('innerHTML' in parent)){
+        //     parent.appendChild(newElement);
+        // } else {
+        //     let nextSibling = refElement.nextSibling;
+        //     if (nextSibling){
+        //         parent.insertBefore(newElement, nextSibling);
+        //     } else
+        //         parent.appendChild(newElement);
+        // }
     },
-    _getRefElement = function(content:string, parentElement:HTMLElement, insertTemp:boolean):{tmplElement:Node, isInsertTemp:boolean}{
+    _createTempElement = function():Node{
+        return document.createTextNode('');
+        // let element:HTMLElement = document.createElement('script');
+        // element['type'] = 'text/html';
+        // return element;
+    },
+    _getRefElement = function(parentElement:HTMLElement, insertTemp:boolean):{tmplElement:Node, isInsertTemp:boolean}{
         var tmplElement:Node;
         if (insertTemp){
-            tmplElement = document.createComment(content);
+            tmplElement = document.createComment('aaaa');//  _createTempElement();
             parentElement.appendChild(tmplElement);
         } else {
             tmplElement = parentElement.lastChild;
             if (!tmplElement){
                 insertTemp = true;
-                tmplElement = document.createComment(content);
+                tmplElement = _createTempElement();
                 parentElement.appendChild(tmplElement);
             }
         }
@@ -540,8 +558,10 @@ let _tmplName = '__tmpl__',
     },
     _removeChildNodes = function (childNodes: Node[]) {
         if (childNodes && childNodes.length > 0) {
-            let pNode = childNodes[0].parentElement;
-            CmpxLib.each(childNodes, function (item: Node) {
+            let pNode = _getParentElement(childNodes[0]);
+            pNode && CmpxLib.each(childNodes, function (item: Node) {
+                //console.log(item, pNode, _getParentElement(item));
+                //(_getParentElement(item)) && _getParentElement(item).removeChild(item);
                 pNode.removeChild(item);
             });
         }
@@ -944,7 +964,7 @@ export class Compile {
             
             if (subject.isRemove || !dataFn || !eachFn)return;
 
-            let { tmplElement, isInsertTemp } = _getRefElement('for', parentElement, insertTemp);
+            let { tmplElement, isInsertTemp } = _getRefElement(parentElement, insertTemp);
 
             let value:any, newSubject:CompileSubject;
             let fragment:DocumentFragment, childNodes:Node[], removeFn = function(){
@@ -981,11 +1001,11 @@ export class Compile {
                     }
                 },
                 remove:function(p:ISubscribeEvent){
-                    if (isInsertTemp && p.parentElement == parentElement){
-                        tmplElement.parentElement.removeChild(tmplElement);
+                    if (isInsertTemp){
+                        _getParentElement(tmplElement).removeChild(tmplElement);
                     }
                     //removeFn();
-                    newSubject = fragment = childNodes = null;
+                    newSubject = fragment = childNodes = tmplElement = null;
                 }
             });
     }
@@ -999,7 +1019,7 @@ export class Compile {
 
             if (subject.isRemove)return;
 
-            var { tmplElement, isInsertTemp } = _getRefElement('if', parentElement, insertTemp);
+            var { tmplElement, isInsertTemp } = _getRefElement(parentElement, insertTemp);
 
             var value, newSubject:CompileSubject;
             var fragment:DocumentFragment, childNodes:Node[], removeFn = function(){
@@ -1032,7 +1052,7 @@ export class Compile {
                             parentElement:parentElement
                         });
                         childNodes = CmpxLib.toArray(fragment.childNodes);
-                        _insertAfter(fragment, tmplElement, parentElement);
+                        _insertAfter(fragment, tmplElement, _getParentElement(tmplElement));
                         newSubject.insertDoc({
                             componet:componet,
                             parentElement:parentElement
@@ -1041,10 +1061,10 @@ export class Compile {
                 },
                 remove:function(p:ISubscribeEvent){
                     //removeFn();
-                    if (isInsertTemp && p.parentElement == parentElement){
-                        tmplElement.parentElement.removeChild(tmplElement);
+                    if (isInsertTemp){
+                        _getParentElement(tmplElement).removeChild(tmplElement);
                     }
-                    newSubject = fragment = childNodes = null;
+                    newSubject = fragment = childNodes = tmplElement = null;
                 }
             });
 

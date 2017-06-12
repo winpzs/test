@@ -60,9 +60,7 @@ class ComponetItem extends Componet{
   {{tmpl id="tmpl1" let="index=param.index"}}
     <span>tmpl text</span> {{index}}
     (<item param="asdfafd" $array="cpList" num="{{this.numPrint}}"></item>)
-  {{/tmpl}}
-  
-  {{for userItem in this.users}}
+  {{/tmpl}}{{for userItem in this.users}}
     <div> {{:$index}}({{$odd}},{{userItem_odd}}) ({{userItem.id}}) for div text
            inc:{{include tmpl="tmpl1" param="{index:$index}" }}
            inc1:{{include render="this.testRender" }}
@@ -74,6 +72,10 @@ class ComponetItem extends Componet{
     </textarea>
   <pre><span style.color="{{'red'}}">sd   fsfsf</span></pre>
   <script type="text/html">alert('aaa');</script>
+  <select>{{for item in this.users}}
+  <option>{{item.id}}</option>
+  {{/for}}
+  </select>
 `,
   style:`.red {color:red}`
 })
