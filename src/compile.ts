@@ -292,9 +292,9 @@ export interface IVMConfig{
     name: string;
     //模板
     tmpl: string;
-    //tmplUrl?: string;
+    tmplUrl?: string;
     style?:string;
-    //styleUrl?:string;
+    styleUrl?:string;
 }
 
 var _registerVM: { [selector: string]: {render:CompileRender, componetDef:Function} } = {},
@@ -321,10 +321,18 @@ export function VM(vm: IVMConfig) {
         };
         var rdF = function(){
             _registerVM[vm.name].render = new CompileRender(vm.tmpl, constructor);
+            let head = document.head;
             if (vm.style){
-                let head = document.head,
-                    eStyle = HtmlDef.getHtmlTagDef('style').createElement('style', [{name:'type',  value:'text/css'}], head, vm.style);
-                head.appendChild(eStyle);
+                head.appendChild(HtmlDef.getHtmlTagDef('style').createElement('style', [{
+                    name:'type',  value:'text/css'
+                }], head, vm.style));
+            }
+            if (vm.styleUrl){
+                head.appendChild(HtmlDef.getHtmlTagDef('link').createElement('link', [{
+                    name:'rel',  value:'stylesheet'
+                },{
+                    name:'href',  value:vm.styleUrl
+                }], head, vm.style));
             }
         };
         _readyRd ? rdF() : _renderPR.push(rdF);

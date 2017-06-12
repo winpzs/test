@@ -33,7 +33,8 @@ class ComponetItem extends Componet{
 
 @VM({
     name:'app',
-    tmpl:`<div><input $var="input1" type="text" value="{{&this.num}}" />{{this.num}}<input type="text" value={{this.numPrint
+    tmpl:`<div class="app">
+<div><input $var="input1" type="text" value="{{&this.num}}" />{{this.num}}<input type="text" value={{this.numPrint
        + '#4@#&'}} click="{{@console.log(input1.value)}}" />
   divText ({{this.text}}){{: this.text}}
   <span id="span1" style.color="{{'red'}}" click="{{@console.log(element.innerText);}}"> spanText {{:new Date().toString()}} | {{:new Date().getDay()}}  </Span>
@@ -54,7 +55,7 @@ class ComponetItem extends Componet{
   <div>
     <button click="{{@this.click(1)}}">测试, 数量:{{this.numPrint}}</button>
     <button click="{{@this.clickItem()}}">测试item.id</button>
-    <button click="{{@this.clickRender()}}">测试render</button>
+    <button click="{{@this.clickRender()}}" class="blue">测试render</button>
     ({{this.aaaa}})
   </div>
   {{tmpl id="tmpl1" let="index=param.index"}}
@@ -76,8 +77,9 @@ class ComponetItem extends Componet{
   <option>{{item.id}}</option>
   {{/for}}
   </select>
-`,
-  style:`.red {color:red}`
+</div>`,
+  style:`.red {color:red}`,
+  styleUrl:'app.css'
 })
 class MyComponet extends Componet{
 
