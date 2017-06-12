@@ -190,7 +190,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
         }];
         return attrs;
     },
-    _bindTypeRegex = /^\s*([\<\>\:\@\&])\s*(.*)/,
+    _bindTypeRegex = /^\s*([\<\>\:\@\#])\s*(.*)/,
     _removeEmptySplitRegex = /^['"]{2,2}\+|\+['"]{2,2}/g,
     //获取内容绑定信息，如 name="aaa{{this.name}}"
     _getBind = function (value: string, split: string) :IBindInfo {
@@ -219,7 +219,7 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
                 case '>'://只写
                     write = txt;
                     break;
-                case '&'://读写
+                case '#'://读写
                     write = txt;
                 case '<'://只读
                 default:
@@ -290,10 +290,13 @@ var _newTextContent = function (tmpl: string, start: number, end: number): ITagI
 export interface IVMConfig{
     //标签名称
     name: string;
-    //模板
-    tmpl: string;
-    tmplUrl?: string;
+    //模板，可以编译后的function, 如果有配置tmplUrl, 优先使用tmplUrl
+    tmpl?: string | Function;
+    //模板url，可以编译后的function
+    tmplUrl?: string | Function;
+    //样式文本, 可以和sytleUrl同时使用
     style?:string;
+    //样式url, 可以和sytle同时使用
     styleUrl?:string;
 }
 
@@ -334,12 +337,35 @@ export function VM(vm: IVMConfig) {
                     name:'href',  value:vm.styleUrl
                 }], head, vm.style));
             }
+            //优先tmplUrl
+            let tmplUrl:any = vm.tmplUrl;
+            if (CmpxLib.isString(tmplUrl) && _loadTmplFn){
+                _tmplCount++;
+                _loadTmplFn(tmplUrl, function(tmpl:string | Function){
+                    _registerVM[vm.name].render = new CompileRender(tmpl||'', constructor);
+                    _tmplCount--;
+                    _tmplChk();
+                });
+            } else
+                _registerVM[vm.name].render = new CompileRender(tmplUrl||vm.tmpl||'', constructor);
         };
         _readyRd ? rdF() : _renderPR.push(rdF);
         constructor.prototype.$name = vm.name;
         constructor.prototype[_vmName] = vm;
     };
 }
+
+let _tmplCount = 0, _tmplFnList = [], _tmplLoaded = function(callback){
+    if (_tmplCount == 0)
+        callback && callback();
+    else
+       callback && _tmplFnList.push(callback);
+}, _tmplChk = function(){
+    (_tmplCount == 0) && CmpxLib.each(_tmplFnList, function(item:any){
+        console.log('aaa');
+        item();
+    });
+};
 
 interface IViewvarDef {
     name:string;
@@ -668,79 +694,84 @@ export class CompileRender {
                 }
             },
             updateAfter:function(p:ISubscribeEvent){
-                isNewComponet &&  retFn.call(componet);
+                isNewComponet &&  retFn && retFn.call(componet);
 
             }
         });
-
-        let fragment:DocumentFragment, childNodes:Node[], retFn, initFn = ()=>{
-            newSubject.init({
-                componet: componet,
-                parentElement: parentElement
-            });
-            fragment = document.createDocumentFragment();
-            subject && subject.subscribe({
-                remove:function(p:ISubscribeEvent){
-                    childNodes = _removeChildNodes(childNodes);
-                    fragment = refElement = componet = null;
-                }
-            });
-            retFn = this.contextFn.call(componet, CmpxLib, Compile, componet, fragment, newSubject, this.param, function(vvList:any[]){
-                    if (!vvList || vvList.length == 0) return;
-                    let vvDef:IViewvarDef[] = _getViewvarDef(this);
-                    if (!vvDef) return;
-                    CmpxLib.each(vvDef, function(def:IViewvarDef){
-                        let propKey = def.propKey, name=def.name;
-                        CmpxLib.each(vvList, function(item:{name:string, p:any, isL:boolean}){
-                            if (item.name == name){
-                                if (item.isL){
-                                    if (!this[propKey] || item.p.length > 0)
-                                        this[propKey] = item.p.splice(0);
-                                } else
-                                    this[propKey] = item.p;
-                                return false;
-                            }
-                        }, this);
-                    }, this);
+        let childNodes:Node[], retFn;
+        _tmplLoaded(() => {
+            let fragment:DocumentFragment, initFn = ()=>{
+                newSubject.init({
+                    componet: componet,
+                    parentElement: parentElement
                 });
-            newSubject.update({
-                componet:componet,
-                parentElement:parentElement
-            });
+                fragment = document.createDocumentFragment();
+                subject && subject.subscribe({
+                    remove:function(p:ISubscribeEvent){
+                        childNodes = _removeChildNodes(childNodes);
+                        fragment = refElement = componet = null;
+                    }
+                });
+                retFn = this.contextFn.call(componet, CmpxLib, Compile, componet, fragment, newSubject, this.param, function(vvList:any[]){
+                        if (!vvList || vvList.length == 0) return;
+                        let vvDef:IViewvarDef[] = _getViewvarDef(this);
+                        if (!vvDef) return;
+                        CmpxLib.each(vvDef, function(def:IViewvarDef){
+                            let propKey = def.propKey, name=def.name;
+                            CmpxLib.each(vvList, function(item:{name:string, p:any, isL:boolean}){
+                                if (item.name == name){
+                                    if (item.isL){
+                                        if (!this[propKey] || item.p.length > 0)
+                                            this[propKey] = item.p.splice(0);
+                                    } else
+                                        this[propKey] = item.p;
+                                    return false;
+                                }
+                            }, this);
+                        }, this);
+                    });
+                newSubject.update({
+                    componet:componet,
+                    parentElement:parentElement
+                });
+                if (isNewComponet){
+                    componet.onInitViewvar(readyFn, null);
+                }
+                else
+                    readyFn();
+            },
+            readyFn = function(){
+                childNodes = CmpxLib.toArray(fragment.childNodes);
+                _insertAfter(fragment, refElement, parentElement);
+                newSubject.insertDoc({
+                    componet:componet,
+                    parentElement:parentElement
+                });
+                isNewComponet && componet.onReady(function(){}, null);
+                newSubject.ready({
+                    componet:componet,
+                    parentElement:parentElement
+                });
+                //reay后再次补发update
+                newSubject.update({
+                    componet:componet,
+                    parentElement:parentElement
+                });
+            };
             if (isNewComponet){
-                componet.onInitViewvar(readyFn, null);
+                componet.onInit(function(err){
+                    initFn();
+                }, null);
             }
             else
-                readyFn();
-        },
-        readyFn = function(){
-            childNodes = CmpxLib.toArray(fragment.childNodes);
-            _insertAfter(fragment, refElement, parentElement);
-            newSubject.insertDoc({
-                componet:componet,
-                parentElement:parentElement
-            });
-            isNewComponet && componet.onReady(function(){}, null);
-            newSubject.ready({
-                componet:componet,
-                parentElement:parentElement
-            });
-            //reay后再次补发update
-            newSubject.update({
-                componet:componet,
-                parentElement:parentElement
-            });
-        };
-        if (isNewComponet){
-            componet.onInit(function(err){
                 initFn();
-            }, null);
-        }
-        else
-            initFn();
+        });
+
         return {newSubject:newSubject, refComponet:componet};
     }
 }
+
+let _loadTmplFn:(url:string, cb:(tmpl:string|Function)=>void)=>void;
 
 export class Compile {
 
@@ -754,6 +785,10 @@ export class Compile {
             item();
         });
         _renderPR = null;
+    }
+
+    public static loadTmplCfg(loadTmplFn:(url:string, cb:(tmpl:string|Function)=>void)=>void):void{
+        _loadTmplFn = loadTmplFn;
     }
 
     public static createComponet(

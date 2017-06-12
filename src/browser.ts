@@ -64,6 +64,28 @@ let _htmlConfig = function(){
     //     element.addEventListener(eventName, context, useCapture);
     //     //attachEvent
     // }
+
+    Compile.loadTmplCfg(function(url:string, cb:(tmpl:string|Function)=>void){
+        let xhr:XMLHttpRequest = new XMLHttpRequest(),
+            headers = {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept':'text/plain, */*; q=0.01',
+                'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'
+            },
+            protocol = /^([\w-]+:)\/\//.test(url) ? RegExp.$1 : window.location.protocol;
+        xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4) {
+                    if ((xhr.status >= 200 && xhr.status < 300) || xhr.status == 304 || (xhr.status == 0 && protocol == 'file:')) {
+                        cb(xhr.responseText);
+                    } else {
+                        cb('');
+                    }
+                }
+            };
+
+        xhr.open('GET', url, true);
+        xhr.send(null);
+    });
 };
 
 export class Browser extends Platform {
