@@ -38,6 +38,20 @@ class ComponetItem extends Componet{
   divText ({{this.text}}){{: this.text}}
   <span id="span1" style.color="{{'red'}}" click="{{@console.log(element.innerText);}}"> spanText {{:new Date().toString()}} | {{:new Date().getDay()}}  </Span>
   <div>
+    <button click="{{@this.ok = !this.ok;this.$update()}}">ok</button>
+    <button click="{{@this.ok1 = !this.ok1;this.$update()}}">ok1</button>
+    <button click="{{@this.ok2 = !this.ok2;this.$update()}}">ok2</button>
+    {{if this.ok}}
+      ok1:true
+    {{else this.ok1}}
+      ok:false, ok1:true
+    {{else this.ok2}}
+      ok:false, ok1:false, ok2:true
+    {{else}}
+      ok:false, ok1:false, ok2:true
+    {{/if}}      
+  </div>
+  <div>
     <button click="{{@this.click(1)}}">测试, 数量:{{this.numPrint}}</button>
     <button click="{{@this.clickItem()}}">测试item.id</button>
     <button click="{{@this.clickRender()}}">测试render</button>
@@ -54,14 +68,6 @@ class ComponetItem extends Componet{
            inc1:{{include render="this.testRender" }}
     </div>
   {{/for}}
-  {{if this.ok}}
-    ok:{{this.ok}}
-  {{else}}
-    <br />
-    !ok:{{this.ok}}
-  {{/if}}
-</div>
-
     <textarea class="red">
     <span>aaa
     </span>
@@ -74,6 +80,10 @@ class ComponetItem extends Componet{
 class MyComponet extends Componet{
 
     testRender:any;
+    ok:boolean = true;
+    ok1:boolean = true;
+    ok2:boolean = true;
+
 
     constructor(){
         super();
@@ -122,7 +132,6 @@ class MyComponet extends Componet{
     }
 
     text:string = "text";
-    ok:boolean = true;
     users = [{id:'id 0'}];
     makeItem(num:number){
       var list = [];
@@ -130,7 +139,7 @@ class MyComponet extends Componet{
         list.push({id:'id '+i});
       this.users = list;
     }
-    num:number = 10;
+    num:number = 20;
     numPrint:string = '';
 
     @viewvar()
@@ -139,13 +148,13 @@ class MyComponet extends Componet{
       let n = 1 + Math.round(Math.random() * (~~this.num));
       this.makeItem(n);
       let t = new Date().valueOf();
-      console.log('cpList b', this.cpList);
+      // console.log('cpList b', this.cpList);
       console.time('update '+n);
       this.$update();
       console.timeEnd('update '+n);
       this.numPrint = n + ' ' + (new Date().valueOf() - t) + 'ms ';
       this.$update();
-      console.log('cpList e', this.cpList);
+      // console.log('cpList e', this.cpList);
     }
     clickItem(){
       this.users[0].id = new Date().toString();
