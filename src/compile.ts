@@ -478,6 +478,7 @@ export class CompileSubject {
     remove(p:ISubscribeEvent){
         if (this.isRemove) return;
         this.isRemove = true;
+        this.unLinkSubject();
         var datas = this.datas;
         this.datas = [];
         CmpxLib.each(datas, function(item:ISubscribeParam){
@@ -499,7 +500,6 @@ let _tmplName = '__tmpl__',
             return tmpls[id];
     },
     _insertAfter = function(newElement:Node, refElement:Node, parent:Node){
-        //parent = _getParentElement(refElement);
         let nextSibling = refElement.nextSibling;
         if (nextSibling){
             parent.insertBefore(newElement, nextSibling);
@@ -523,10 +523,10 @@ let _tmplName = '__tmpl__',
         // element['type'] = 'text/html';
         // return element;
     },
-    _getRefElement = function(parentElement:HTMLElement, insertTemp:boolean):{tmplElement:Node, isInsertTemp:boolean}{
+    _getRefElement = function(parentElement:HTMLElement, insertTemp:boolean):{refElement:Node, isInsertTemp:boolean}{
         var tmplElement:Node;
         if (insertTemp){
-            tmplElement = document.createComment('aaaa');//  _createTempElement();
+            tmplElement = _createTempElement(); //document.createComment('aaaa');
             parentElement.appendChild(tmplElement);
         } else {
             tmplElement = parentElement.lastChild;
@@ -537,7 +537,7 @@ let _tmplName = '__tmpl__',
             }
         }
         //注意tmplElement是Comment, 在IE里只能取到parentNode
-       return {tmplElement:tmplElement, isInsertTemp:insertTemp};
+       return {refElement:tmplElement, isInsertTemp:insertTemp};
     },
     _equalArrayIn = function(array1:Array<any>, array2:Array<any>){
         var ok = true;
@@ -558,13 +558,14 @@ let _tmplName = '__tmpl__',
     },
     _removeChildNodes = function (childNodes: Node[]) {
         if (childNodes && childNodes.length > 0) {
-            let pNode = _getParentElement(childNodes[0]);
-            pNode && CmpxLib.each(childNodes, function (item: Node) {
+            let pNode:Node;
+            CmpxLib.each(childNodes, function (item: Node) {
                 //console.log(item, pNode, _getParentElement(item));
                 //(_getParentElement(item)) && _getParentElement(item).removeChild(item);
-                pNode.removeChild(item);
+               (pNode = _getParentElement(item)) && pNode.removeChild(item);
             });
         }
+        return null;
     };
 
 export class CompileRender {
@@ -639,15 +640,12 @@ export class CompileRender {
         newSubject.subscribe({
             remove:function(p:ISubscribeEvent) {
                 try{
-                    newSubject && newSubject.unLinkSubject();
                     isNewComponet && (componet.$isDisposed = true, componet.onDispose());
                     if (p.componet == componet)
-                        _removeChildNodes(childNodes);
-                    childNodes = null;
+                        childNodes = _removeChildNodes(childNodes);
                 } catch(e){
                     CmpxLib.trace(e);
                 } finally {
-                    //newSubject && newSubject.unLinkSubject();
 
                     if (isNewComponet){
                         if (parentComponet && !parentComponet.$isDisposed){
@@ -673,14 +671,12 @@ export class CompileRender {
                 parentElement: parentElement
             });
             fragment = document.createDocumentFragment();
-            // subject && subject.subscribe({
-            //     remove:function(p:ISubscribeEvent){
-            //         newSubject.remove({
-            //             componet:componet,
-            //             parentElement:parentElement
-            //         });
-            //     }
-            // });
+            subject && subject.subscribe({
+                remove:function(p:ISubscribeEvent){
+                    childNodes = _removeChildNodes(childNodes);
+                    fragment = refElement = componet = null;
+                }
+            });
             retFn = this.contextFn.call(componet, CmpxLib, Compile, componet, fragment, newSubject, this.param, function(vvList:any[]){
                     if (!vvList || vvList.length == 0) return;
                     let vvDef:IViewvarDef[] = _getViewvarDef(this);
@@ -964,25 +960,26 @@ export class Compile {
             
             if (subject.isRemove || !dataFn || !eachFn)return;
 
-            let { tmplElement, isInsertTemp } = _getRefElement(parentElement, insertTemp);
+            let { refElement, isInsertTemp } = _getRefElement(parentElement, insertTemp);
 
             let value:any, newSubject:CompileSubject;
             let fragment:DocumentFragment, childNodes:Node[], removeFn = function(){
-                _removeChildNodes(childNodes);
-                childNodes = null;
+                childNodes = _removeChildNodes(childNodes);
             };
             subject.subscribe({
                 update:function(p:ISubscribeEvent){
                     let datas = dataFn.call(componet, componet, parentElement, subject);
                     if (!_equalArray(datas , value)){
                         value = datas;
+
                         removeFn();
-                        newSubject = new CompileSubject(subject);
-                        newSubject.subscribe({
-                            remove:function(p:ISubscribeEvent) {
-                                newSubject && newSubject.unLinkSubject();
-                            }
+                        newSubject && newSubject.remove({
+                            componet:componet,
+                            parentElement:parentElement
                         });
+
+                        newSubject = new CompileSubject(subject);
+
                         fragment = document.createDocumentFragment();
                         let count = datas ? datas.length : 0;
                         CmpxLib.each(datas, function(item, index){
@@ -993,7 +990,7 @@ export class Compile {
                             parentElement:parentElement
                         });
                         childNodes = CmpxLib.toArray(fragment.childNodes);
-                        _insertAfter(fragment, tmplElement, parentElement);
+                        _insertAfter(fragment, refElement, parentElement);
                         newSubject.insertDoc({
                             componet:componet,
                             parentElement:parentElement
@@ -1001,11 +998,8 @@ export class Compile {
                     }
                 },
                 remove:function(p:ISubscribeEvent){
-                    if (isInsertTemp){
-                        _getParentElement(tmplElement).removeChild(tmplElement);
-                    }
-                    //removeFn();
-                    newSubject = fragment = childNodes = tmplElement = null;
+                    removeFn();
+                    newSubject = fragment = childNodes = refElement = null;
                 }
             });
     }
@@ -1019,12 +1013,11 @@ export class Compile {
 
             if (subject.isRemove)return;
 
-            var { tmplElement, isInsertTemp } = _getRefElement(parentElement, insertTemp);
+            var { refElement, isInsertTemp } = _getRefElement(parentElement, insertTemp);
 
             var value, newSubject:CompileSubject;
             var fragment:DocumentFragment, childNodes:Node[], removeFn = function(){
-                _removeChildNodes(childNodes);
-                childNodes = null;
+                childNodes = _removeChildNodes(childNodes);
             };
             subject.subscribe({
                 update:function(p:ISubscribeEvent){
@@ -1034,13 +1027,12 @@ export class Compile {
                         value = newValue;
 
                         removeFn();
+                        newSubject && newSubject.remove({
+                            componet:componet,
+                            parentElement:parentElement
+                        });
 
                         newSubject = new CompileSubject(subject);
-                        newSubject.subscribe({
-                            remove:function(p:ISubscribeEvent) {
-                                newSubject && newSubject.unLinkSubject();
-                            }
-                        });
 
                         fragment = document.createDocumentFragment();
                         if (newValue)
@@ -1052,7 +1044,7 @@ export class Compile {
                             parentElement:parentElement
                         });
                         childNodes = CmpxLib.toArray(fragment.childNodes);
-                        _insertAfter(fragment, tmplElement, _getParentElement(tmplElement));
+                        _insertAfter(fragment, refElement, _getParentElement(refElement));
                         newSubject.insertDoc({
                             componet:componet,
                             parentElement:parentElement
@@ -1060,11 +1052,8 @@ export class Compile {
                     }
                 },
                 remove:function(p:ISubscribeEvent){
-                    //removeFn();
-                    if (isInsertTemp){
-                        _getParentElement(tmplElement).removeChild(tmplElement);
-                    }
-                    newSubject = fragment = childNodes = tmplElement = null;
+                    removeFn();
+                    newSubject = fragment = childNodes = refElement = null;
                 }
             });
 
@@ -1109,21 +1098,10 @@ export class Compile {
                             parentElement:parentElement
                         });
 
-                        // preSubject = new CompileSubject(subject);
-                        // preSubject.subscribe({
-                        //     remove:function(p:ISubscribeEvent) {
-                        //         preSubject && newSubject.unLinkSubject();
-                        //     }
-                        // });
-
                         let {newSubject, refComponet} = newRender.complie(refElement, componet, subject);
                         preSubject = newSubject;
                         preComponet = refComponet;
-                        preSubject.subscribe({
-                            remove:function(p:ISubscribeEvent) {
-                                preSubject && newSubject.unLinkSubject();
-                            }
-                        });
+                        
                     }
                 },
                 remove:function(p:ISubscribeEvent){

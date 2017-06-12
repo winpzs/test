@@ -48,7 +48,7 @@ class ComponetItem extends Componet{
     {{else this.ok2}}
       ok:false, ok1:false, ok2:true
     {{else}}
-      ok:false, ok1:false, ok2:true
+      ok:false, ok1:false, ok2:false
     {{/if}}      
   </div>
   <div>
