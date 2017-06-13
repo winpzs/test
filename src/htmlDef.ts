@@ -14,15 +14,15 @@ export interface ICreateElementAttr {
   /**
    * 属性名称
    */
-  name:string;
+  name: string;
   /**
    * 属性值
    */
-  value:string;
+  value: string;
   /**
    * 子名称，如：style.color="red", 子名称为color
    */
-  subName?:string;
+  subName?: string;
 }
 
 /**
@@ -32,9 +32,9 @@ export interface ICreateElementAttr {
  * @param parent 父element
  * @param content 内容, contentType为RAW_TEXT或RAW_TEXT时会传入
  */
-export function DEFAULT_CREATEELEMENT(name: string, attrs: ICreateElementAttr[], parent?: HTMLElement, content?:string): HTMLElement {
-  let element:HTMLElement = document.createElement(name);
-  CmpxLib.each(attrs, function(item:ICreateElementAttr){
+export function DEFAULT_CREATEELEMENT(name: string, attrs: ICreateElementAttr[], parent?: HTMLElement, content?: string): HTMLElement {
+  let element: HTMLElement = document.createElement(name);
+  CmpxLib.each(attrs, function (item: ICreateElementAttr) {
     HtmlDef.getHtmlAttrDef(item.name).setAttribute(element, item.name, item.value, item.subName);
   });
   return element;
@@ -52,17 +52,17 @@ export class HtmlTagDef {
    * 单行标签
    */
   single: boolean;
-  raw:boolean;
+  raw: boolean;
   /**
    * element创建器
    */
-  createElement: (name: string, attrs: ICreateElementAttr[], parent?: HTMLElement, content?:string) => HTMLElement;
+  createElement: (name: string, attrs: ICreateElementAttr[], parent?: HTMLElement, content?: string) => HTMLElement;
 
   constructor(
     { single = false, raw = false, createElement = null }: {
       single?: boolean;
       raw?: boolean;
-      createElement?: (name: string, attrs: ICreateElementAttr[], parent?: HTMLElement, content?:string) => HTMLElement;
+      createElement?: (name: string, attrs: ICreateElementAttr[], parent?: HTMLElement, content?: string) => HTMLElement;
     } = {}) {
     this.single = single;
     this.raw = raw;
@@ -133,8 +133,8 @@ function _removeSpace(html: string): string {
  * HtmlAttr定义
  */
 export interface IHtmlAttrDef {
-  setAttribute: (element: HTMLElement, name: string, value: string, subName?:string) => void;
-  getAttribute: (element: HTMLElement, name: string, subName?:string) => string;
+  setAttribute: (element: HTMLElement, name: string, value: string, subName?: string) => void;
+  getAttribute: (element: HTMLElement, name: string, subName?: string) => string;
   writeable: boolean;
 }
 
@@ -142,13 +142,13 @@ export interface IHtmlAttrDef {
  * 默认HtmlAttr定义
  */
 export const DEFAULT_ATTR: IHtmlAttrDef = {
-  setAttribute(element: HTMLElement, name: string, value: string, subName?:string) {
+  setAttribute(element: HTMLElement, name: string, value: string, subName?: string) {
     if (subName)
       element[name][subName] = value;
     else
       element.setAttribute(name, value);
   },
-  getAttribute(element: HTMLElement, name: string, subName?:string) {
+  getAttribute(element: HTMLElement, name: string, subName?: string) {
     if (subName)
       return element[name][subName];
     else
@@ -161,13 +161,13 @@ export const DEFAULT_ATTR: IHtmlAttrDef = {
  * 默认HtmlAttr prop定义
  */
 export const DEFAULT_ATTR_PROP: IHtmlAttrDef = {
-  setAttribute(element: HTMLElement, name: string, value: string, subName?:string) {
+  setAttribute(element: HTMLElement, name: string, value: string, subName?: string) {
     if (subName)
       element[name][subName] = value;
     else
       element[name] = value;
   },
-  getAttribute(element: HTMLElement, name: string, subName?:string) {
+  getAttribute(element: HTMLElement, name: string, subName?: string) {
     if (subName)
       return element[name][subName];
     else

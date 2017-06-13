@@ -921,14 +921,14 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
          * @param refElement 在element之后插入内容
          * @param parentComponet 父组件
          */
-        CompileRender.prototype.complie = function (refElement, parentComponet, subject, contextFn, subjectExclude) {
+        CompileRender.prototype.complie = function (refNode, parentComponet, subject, contextFn, subjectExclude) {
             var _this = this;
             var componetDef = this.componetDef;
             subject || (subject = (parentComponet ? parentComponet.$subObject : null));
             subjectExclude || (subjectExclude = {});
             subjectExclude.remove = true;
             subjectExclude.insertDoc = true;
-            var componet, isNewComponet = false, parentElement = _getParentElement(refElement), newSubject = new CompileSubject(subject, subjectExclude);
+            var componet, isNewComponet = false, parentElement = _getParentElement(refNode), newSubject = new CompileSubject(subject, subjectExclude);
             if (componetDef) {
                 isNewComponet = true;
                 componet = new componetDef();
@@ -983,7 +983,7 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                 subject && subject.subscribe({
                     remove: function (p) {
                         childNodes = _removeChildNodes(childNodes);
-                        fragment = refElement = componet = null;
+                        fragment = refNode = componet = null;
                     }
                 });
                 retFn = _this.contextFn.call(componet, cmpxLib_3["default"], Compile, componet, fragment, newSubject, _this.param, function (vvList) {
@@ -1017,7 +1017,7 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                     readyFn();
             }, readyFn = function () {
                 childNodes = cmpxLib_3["default"].toArray(fragment.childNodes);
-                _insertAfter(fragment, refElement, parentElement);
+                _insertAfter(fragment, refNode, parentElement);
                 newSubject.insertDoc({
                     componet: componet
                 });
@@ -1064,12 +1064,8 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
         Compile.createComponet = function (name, componet, parentElement, subject, contextFn) {
             if (subject.isRemove)
                 return;
-            var cmp = _registerVM[name], vm = _registerVM[name], refElement = parentElement.lastChild;
-            if (!refElement) {
-                refElement = document.createComment(name);
-                parentElement.appendChild(refElement);
-            }
-            var _a = vm.render.complie(refElement, componet, subject, contextFn, { update: true }), newSubject = _a.newSubject, refComponet = _a.refComponet;
+            var vm = _registerVM[name], componetDef = vm.componetDef, _a = _getRefNode(parentElement, false), refNode = _a.refNode, isInsertTemp = _a.isInsertTemp;
+            Compile.renderComponet(componetDef, refNode, function () { }, componet, subject, contextFn);
         };
         Compile.setAttributeCP = function (element, name, content, componet, subject) {
             var isObj = !cmpxLib_3["default"].isString(content), parent = componet.$parent;
@@ -1142,10 +1138,7 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                         var newValue = readFn.call(componet);
                         if (value != newValue) {
                             value = newValue;
-                            if ('textContent' in textNode)
-                                textNode.textContent = newValue;
-                            else
-                                textNode.nodeValue = newValue;
+                            textNode[('textContent' in textNode) ? 'textContent' : 'nodeValue'] = newValue;
                         }
                     }
                 }
@@ -1195,12 +1188,8 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                                 if (value_2 != newValue_2) {
                                     value_2 = newValue_2;
                                     attrDef_1.setAttribute(element, name, value_2, subName);
-                                } // else if (isWrite){
-                                //     writeFn(p);
-                                // }
-                            } // else if (isWrite){
-                            //     writeFn(p);
-                            // }
+                                }
+                            }
                         },
                         remove: function (p) {
                             if (isWrite_2) {
@@ -1309,11 +1298,7 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                 tmpl && tmpl.call(componet, componet, parentElement, subject, param || {});
             }
             else {
-                var render_1, preSubject_1, preComponet_1, refElement_1 = parentElement.lastChild;
-                if (!refElement_1) {
-                    refElement_1 = document.createComment(name);
-                    parentElement.appendChild(refElement_1);
-                }
+                var render_1, preSubject_1, preComponet_1, _a = _getRefNode(parentElement, insertTemp), refNode_1 = _a.refNode, isInsertTemp = _a.isInsertTemp;
                 subject.subscribe({
                     update: function (p) {
                         var newRender = context.call(componet);
@@ -1322,7 +1307,7 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                             preSubject_1 && preSubject_1.remove({
                                 componet: preComponet_1
                             });
-                            var _a = newRender.complie(refElement_1, componet, subject), newSubject = _a.newSubject, refComponet = _a.refComponet;
+                            var _a = newRender.complie(refNode_1, componet, subject), newSubject = _a.newSubject, refComponet = _a.refComponet;
                             preSubject_1 = newSubject;
                             preComponet_1 = refComponet;
                         }
@@ -1333,13 +1318,13 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                 });
             }
         };
-        Compile.renderComponet = function (componetDef, refElement, complieEnd, parentComponet, subject) {
+        Compile.renderComponet = function (componetDef, refNode, complieEnd, parentComponet, subject, contextFn) {
             _tmplLoaded(function () {
                 var vm = _getVmByComponetDef(componetDef), render = vm && vm.render;
                 if (!vm)
                     throw new Error('not find @VM default!');
-                var _a = render.complie(refElement, parentComponet, subject), newSubject = _a.newSubject, refComponet = _a.refComponet;
-                complieEnd(newSubject, refComponet);
+                var _a = render.complie(refNode, parentComponet, subject, contextFn, { update: true }), newSubject = _a.newSubject, refComponet = _a.refComponet;
+                complieEnd && complieEnd.call(refComponet, newSubject, refComponet);
             });
         };
         return Compile;
