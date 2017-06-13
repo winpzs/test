@@ -632,7 +632,7 @@ export class CompileRender {
 
         subject || (subject = (parentComponet ? parentComponet.$subObject : null));
         subjectExclude || (subjectExclude = {});
-        subjectExclude.remove = true;
+        //subjectExclude.remove = true;
         subjectExclude.insertDoc = true;
 
         let componet: any,
@@ -697,7 +697,7 @@ export class CompileRender {
             fragment = document.createDocumentFragment();
             subject && subject.subscribe({
                 remove: function (p: ISubscribeEvent) {
-                    childNodes = _removeChildNodes(childNodes);
+                    // childNodes = _removeChildNodes(childNodes);
                     fragment = refNode = componet = null;
                 }
             });

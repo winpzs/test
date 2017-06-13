@@ -926,7 +926,7 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
             var componetDef = this.componetDef;
             subject || (subject = (parentComponet ? parentComponet.$subObject : null));
             subjectExclude || (subjectExclude = {});
-            subjectExclude.remove = true;
+            //subjectExclude.remove = true;
             subjectExclude.insertDoc = true;
             var componet, isNewComponet = false, parentElement = _getParentElement(refNode), newSubject = new CompileSubject(subject, subjectExclude);
             if (componetDef) {
@@ -982,7 +982,7 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                 fragment = document.createDocumentFragment();
                 subject && subject.subscribe({
                     remove: function (p) {
-                        childNodes = _removeChildNodes(childNodes);
+                        // childNodes = _removeChildNodes(childNodes);
                         fragment = refNode = componet = null;
                     }
                 });
