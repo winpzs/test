@@ -628,6 +628,7 @@ export class CompileRender {
         subject || (subject = (parentComponet?parentComponet.$subObject:null));
         subjectExclude || (subjectExclude = {});
         subjectExclude.remove = true;
+        subjectExclude.insertDoc = true;
 
         let componet:any,
             isNewComponet:boolean = false,
@@ -972,7 +973,7 @@ export class Compile {
                             componet:componet
                         });
 
-                        newSubject = new CompileSubject(subject);
+                        newSubject = new CompileSubject(subject, {insertDoc:true});
 
                         fragment = document.createDocumentFragment();
                         let count = datas ? datas.length : 0;
@@ -1023,7 +1024,7 @@ export class Compile {
                             componet:componet
                         });
 
-                        newSubject = new CompileSubject(subject);
+                        newSubject = new CompileSubject(subject, {insertDoc:true});
 
                         fragment = document.createDocumentFragment();
                         if (newValue)

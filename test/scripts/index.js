@@ -927,6 +927,7 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
             subject || (subject = (parentComponet ? parentComponet.$subObject : null));
             subjectExclude || (subjectExclude = {});
             subjectExclude.remove = true;
+            subjectExclude.insertDoc = true;
             var componet, isNewComponet = false, parentElement = _getParentElement(refElement), newSubject = new CompileSubject(subject, subjectExclude);
             if (componetDef) {
                 isNewComponet = true;
@@ -1230,7 +1231,7 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                         newSubject && newSubject.remove({
                             componet: componet
                         });
-                        newSubject = new CompileSubject(subject);
+                        newSubject = new CompileSubject(subject, { insertDoc: true });
                         fragment = document.createDocumentFragment();
                         var count_1 = datas ? datas.length : 0;
                         cmpxLib_3["default"].each(datas, function (item, index) {
@@ -1269,7 +1270,7 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                         newSubject && newSubject.remove({
                             componet: componet
                         });
-                        newSubject = new CompileSubject(subject);
+                        newSubject = new CompileSubject(subject, { insertDoc: true });
                         fragment = document.createDocumentFragment();
                         if (newValue)
                             trueFn.call(componet, componet, fragment, newSubject);
