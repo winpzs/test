@@ -18,7 +18,6 @@ export class Componet {
             if (this.$isDisposed) return;
             this.$subObject.update({
                 componet: this,
-                parentElement: this.$parentElement,
                 param: p
             });
         }, p);

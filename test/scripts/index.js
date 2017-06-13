@@ -851,38 +851,27 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
         }
         else
             parent.appendChild(newElement);
-        // parent = _getParentElement(refElement);
-        // if (!parent) return;
-        // if (!('innerHTML' in parent)){
-        //     parent.appendChild(newElement);
-        // } else {
-        //     let nextSibling = refElement.nextSibling;
-        //     if (nextSibling){
-        //         parent.insertBefore(newElement, nextSibling);
-        //     } else
-        //         parent.appendChild(newElement);
-        // }
-    }, _createTempElement = function () {
+    }, _createTempNode = function () {
         return document.createTextNode('');
-        // let element:HTMLElement = document.createElement('script');
+        // let element:Node = document.createElement('script');
         // element['type'] = 'text/html';
         // return element;
-    }, _getRefElement = function (parentElement, insertTemp) {
-        var tmplElement;
+    }, _getRefNode = function (parentNode, insertTemp) {
+        var tNode;
         if (insertTemp) {
-            tmplElement = _createTempElement(); //document.createComment('aaaa');
-            parentElement.appendChild(tmplElement);
+            tNode = _createTempNode();
+            parentNode.appendChild(tNode);
         }
         else {
-            tmplElement = parentElement.lastChild;
-            if (!tmplElement) {
+            tNode = parentNode.lastChild;
+            if (!tNode) {
                 insertTemp = true;
-                tmplElement = _createTempElement();
-                parentElement.appendChild(tmplElement);
+                tNode = _createTempNode();
+                parentNode.appendChild(tNode);
             }
         }
         //注意tmplElement是Comment, 在IE里只能取到parentNode
-        return { refElement: tmplElement, isInsertTemp: insertTemp };
+        return { refNode: tNode, isInsertTemp: insertTemp };
     }, _equalArrayIn = function (array1, array2) {
         var ok = true;
         cmpxLib_3["default"].each(array1, function (item, index) {
@@ -896,14 +885,12 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
         if ((!array1 || !array2))
             return array1 == array2;
         return array1.length == array2.length && _equalArrayIn(array1, array2);
-    }, _getParentElement = function (element) {
-        return element.parentElement || element.parentNode;
+    }, _getParentElement = function (node) {
+        return node.parentElement || node.parentNode;
     }, _removeChildNodes = function (childNodes) {
         if (childNodes && childNodes.length > 0) {
             var pNode_1;
             cmpxLib_3["default"].each(childNodes, function (item) {
-                //console.log(item, pNode, _getParentElement(item));
-                //(_getParentElement(item)) && _getParentElement(item).removeChild(item);
                 (pNode_1 = _getParentElement(item)) && pNode_1.removeChild(item);
             });
         }
@@ -989,8 +976,7 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
             var childNodes, retFn;
             var fragment, initFn = function () {
                 newSubject.init({
-                    componet: componet,
-                    parentElement: parentElement
+                    componet: componet
                 });
                 fragment = document.createDocumentFragment();
                 subject && subject.subscribe({
@@ -1021,8 +1007,7 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                     }, this);
                 });
                 newSubject.update({
-                    componet: componet,
-                    parentElement: parentElement
+                    componet: componet
                 });
                 if (isNewComponet) {
                     componet.onInitViewvar(readyFn, null);
@@ -1033,18 +1018,15 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                 childNodes = cmpxLib_3["default"].toArray(fragment.childNodes);
                 _insertAfter(fragment, refElement, parentElement);
                 newSubject.insertDoc({
-                    componet: componet,
-                    parentElement: parentElement
+                    componet: componet
                 });
                 isNewComponet && componet.onReady(function () { }, null);
                 newSubject.ready({
-                    componet: componet,
-                    parentElement: parentElement
+                    componet: componet
                 });
                 //reay后再次补发update
                 newSubject.update({
-                    componet: componet,
-                    parentElement: parentElement
+                    componet: componet
                 });
             };
             if (isNewComponet) {
@@ -1146,17 +1128,6 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                 return;
             var element = htmlDef_1.HtmlDef.getHtmlTagDef(name).createElement(name, attrs, parentElement, content);
             parentElement.appendChild(element);
-            // subject.subscribe({
-            //     remove:function(p:ISubscribeEvent) {
-            //         //如果父节点删除，这里就不用处理了。
-            //         if (p.parentElement == parentElement){
-            //             _getParentElement(element).removeChild(element);
-            //         }
-            //     }//,
-            //     // insertDoc:function(p:ISubscribeEvent){
-            //     //    (_getParentElement(element) == componet.$parentElement) && componet.$elements.push(element);
-            //     // }
-            // });
             contextFn && contextFn(componet, element, subject);
         };
         Compile.createTextNode = function (content, componet, parentElement, subject) {
@@ -1164,19 +1135,7 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                 return;
             var isObj = !cmpxLib_3["default"].isString(content), value = '', once = isObj ? content.once : false, readFn = isObj ? content.read : null, textNode = document.createTextNode(isObj ? (once ? readFn.call(componet) : value) : content);
             parentElement.appendChild(textNode);
-            //if(parentElement == componet.$parentElement) componet.$elements.push(textNode);
             subject.subscribe({
-                // remove:function(p:ISubscribeEvent) {
-                //     //如果父节点删除，这里就不用处理了。
-                //     if (p.parentElement == parentElement){
-                //         _getParentElement(textNode).removeChild(textNode);
-                //         // if (componet && !componet.$isDisposed){
-                //         //     var els = componet.$elements,
-                //         //         idx = els.indexOf(textNode);
-                //         //     (idx >=  0) && els.splice(idx, 1);
-                //         // }
-                //     }
-                // },
                 update: function (p) {
                     if (!once && readFn) {
                         var newValue = readFn.call(componet);
@@ -1188,10 +1147,7 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                                 textNode.nodeValue = newValue;
                         }
                     }
-                } //,
-                // insertDoc:function(p:ISubscribeEvent){
-                //    (_getParentElement(textNode) == componet.$parentElement) && componet.$elements.push(textNode);
-                // }
+                }
             });
             return textNode;
         };
@@ -1260,7 +1216,7 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
         Compile.forRender = function (dataFn, eachFn, componet, parentElement, insertTemp, subject) {
             if (subject.isRemove || !dataFn || !eachFn)
                 return;
-            var _a = _getRefElement(parentElement, insertTemp), refElement = _a.refElement, isInsertTemp = _a.isInsertTemp;
+            var _a = _getRefNode(parentElement, insertTemp), refNode = _a.refNode, isInsertTemp = _a.isInsertTemp;
             var value, newSubject;
             var fragment, childNodes, removeFn = function () {
                 childNodes = _removeChildNodes(childNodes);
@@ -1272,8 +1228,7 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                         value = datas;
                         removeFn();
                         newSubject && newSubject.remove({
-                            componet: componet,
-                            parentElement: parentElement
+                            componet: componet
                         });
                         newSubject = new CompileSubject(subject);
                         fragment = document.createDocumentFragment();
@@ -1282,27 +1237,25 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                             eachFn.call(componet, item, count_1, index, componet, fragment, newSubject);
                         });
                         newSubject.update({
-                            componet: componet,
-                            parentElement: parentElement
+                            componet: componet
                         });
                         childNodes = cmpxLib_3["default"].toArray(fragment.childNodes);
-                        _insertAfter(fragment, refElement, parentElement);
+                        _insertAfter(fragment, refNode, parentElement);
                         newSubject.insertDoc({
-                            componet: componet,
-                            parentElement: parentElement
+                            componet: componet
                         });
                     }
                 },
                 remove: function (p) {
                     removeFn();
-                    newSubject = fragment = childNodes = refElement = null;
+                    newSubject = fragment = childNodes = refNode = null;
                 }
             });
         };
         Compile.ifRender = function (ifFun, trueFn, falseFn, componet, parentElement, insertTemp, subject) {
             if (subject.isRemove)
                 return;
-            var _a = _getRefElement(parentElement, insertTemp), refElement = _a.refElement, isInsertTemp = _a.isInsertTemp;
+            var _a = _getRefNode(parentElement, insertTemp), refNode = _a.refNode, isInsertTemp = _a.isInsertTemp;
             var value, newSubject;
             var fragment, childNodes, removeFn = function () {
                 childNodes = _removeChildNodes(childNodes);
@@ -1314,8 +1267,7 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                         value = newValue;
                         removeFn();
                         newSubject && newSubject.remove({
-                            componet: componet,
-                            parentElement: parentElement
+                            componet: componet
                         });
                         newSubject = new CompileSubject(subject);
                         fragment = document.createDocumentFragment();
@@ -1324,20 +1276,18 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                         else
                             falseFn.call(componet, componet, fragment, newSubject);
                         newSubject.update({
-                            componet: componet,
-                            parentElement: parentElement
+                            componet: componet
                         });
                         childNodes = cmpxLib_3["default"].toArray(fragment.childNodes);
-                        _insertAfter(fragment, refElement, _getParentElement(refElement));
+                        _insertAfter(fragment, refNode, _getParentElement(refNode));
                         newSubject.insertDoc({
-                            componet: componet,
-                            parentElement: parentElement
+                            componet: componet
                         });
                     }
                 },
                 remove: function (p) {
                     removeFn();
-                    newSubject = fragment = childNodes = refElement = null;
+                    newSubject = fragment = childNodes = refNode = null;
                 }
             });
         };
@@ -1369,8 +1319,7 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                         if (newRender != render_1) {
                             render_1 = newRender;
                             preSubject_1 && preSubject_1.remove({
-                                componet: preComponet_1,
-                                parentElement: parentElement
+                                componet: preComponet_1
                             });
                             var _a = newRender.complie(refElement_1, componet, subject), newSubject = _a.newSubject, refComponet = _a.refComponet;
                             preSubject_1 = newSubject;
@@ -1629,7 +1578,6 @@ define("componet", ["require", "exports", "compile"], function (require, exports
                     return;
                 _this.$subObject.update({
                     componet: _this,
-                    parentElement: _this.$parentElement,
                     param: p
                 });
             }, p);
@@ -1823,7 +1771,6 @@ define("browser", ["require", "exports", "platform", "compile", "htmlDef", "cmpx
                     var _unload = function () {
                         window.removeEventListener('unload', _unload);
                         newSubject.remove({
-                            parentElement: parentElement,
                             componet: refComponet
                         });
                     };
