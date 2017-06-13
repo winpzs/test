@@ -699,73 +699,71 @@ export class CompileRender {
             }
         });
         let childNodes:Node[], retFn;
-        _tmplLoaded(() => {
-            let fragment:DocumentFragment, initFn = ()=>{
-                newSubject.init({
-                    componet: componet,
-                    parentElement: parentElement
-                });
-                fragment = document.createDocumentFragment();
-                subject && subject.subscribe({
-                    remove:function(p:ISubscribeEvent){
-                        childNodes = _removeChildNodes(childNodes);
-                        fragment = refElement = componet = null;
-                    }
-                });
-                retFn = this.contextFn.call(componet, CmpxLib, Compile, componet, fragment, newSubject, this.param, function(vvList:any[]){
-                        if (!vvList || vvList.length == 0) return;
-                        let vvDef:IViewvarDef[] = _getViewvarDef(this);
-                        if (!vvDef) return;
-                        CmpxLib.each(vvDef, function(def:IViewvarDef){
-                            let propKey = def.propKey, name=def.name;
-                            CmpxLib.each(vvList, function(item:{name:string, p:any, isL:boolean}){
-                                if (item.name == name){
-                                    if (item.isL){
-                                        if (!this[propKey] || item.p.length > 0)
-                                            this[propKey] = item.p.splice(0);
-                                    } else
-                                        this[propKey] = item.p;
-                                    return false;
-                                }
-                            }, this);
-                        }, this);
-                    });
-                newSubject.update({
-                    componet:componet,
-                    parentElement:parentElement
-                });
-                if (isNewComponet){
-                    componet.onInitViewvar(readyFn, null);
+        let fragment:DocumentFragment, initFn = ()=>{
+            newSubject.init({
+                componet: componet,
+                parentElement: parentElement
+            });
+            fragment = document.createDocumentFragment();
+            subject && subject.subscribe({
+                remove:function(p:ISubscribeEvent){
+                    childNodes = _removeChildNodes(childNodes);
+                    fragment = refElement = componet = null;
                 }
-                else
-                    readyFn();
-            },
-            readyFn = function(){
-                childNodes = CmpxLib.toArray(fragment.childNodes);
-                _insertAfter(fragment, refElement, parentElement);
-                newSubject.insertDoc({
-                    componet:componet,
-                    parentElement:parentElement
+            });
+            retFn = this.contextFn.call(componet, CmpxLib, Compile, componet, fragment, newSubject, this.param, function(vvList:any[]){
+                    if (!vvList || vvList.length == 0) return;
+                    let vvDef:IViewvarDef[] = _getViewvarDef(this);
+                    if (!vvDef) return;
+                    CmpxLib.each(vvDef, function(def:IViewvarDef){
+                        let propKey = def.propKey, name=def.name;
+                        CmpxLib.each(vvList, function(item:{name:string, p:any, isL:boolean}){
+                            if (item.name == name){
+                                if (item.isL){
+                                    if (!this[propKey] || item.p.length > 0)
+                                        this[propKey] = item.p.splice(0);
+                                } else
+                                    this[propKey] = item.p;
+                                return false;
+                            }
+                        }, this);
+                    }, this);
                 });
-                isNewComponet && componet.onReady(function(){}, null);
-                newSubject.ready({
-                    componet:componet,
-                    parentElement:parentElement
-                });
-                //reay后再次补发update
-                newSubject.update({
-                    componet:componet,
-                    parentElement:parentElement
-                });
-            };
+            newSubject.update({
+                componet:componet,
+                parentElement:parentElement
+            });
             if (isNewComponet){
-                componet.onInit(function(err){
-                    initFn();
-                }, null);
+                componet.onInitViewvar(readyFn, null);
             }
             else
+                readyFn();
+        },
+        readyFn = function(){
+            childNodes = CmpxLib.toArray(fragment.childNodes);
+            _insertAfter(fragment, refElement, parentElement);
+            newSubject.insertDoc({
+                componet:componet,
+                parentElement:parentElement
+            });
+            isNewComponet && componet.onReady(function(){}, null);
+            newSubject.ready({
+                componet:componet,
+                parentElement:parentElement
+            });
+            //reay后再次补发update
+            newSubject.update({
+                componet:componet,
+                parentElement:parentElement
+            });
+        };
+        if (isNewComponet){
+            componet.onInit(function(err){
                 initFn();
-        });
+            }, null);
+        }
+        else
+            initFn();
 
         return {newSubject:newSubject, refComponet:componet};
     }
@@ -1154,11 +1152,14 @@ export class Compile {
         }
     }
 
-    static renderComponet(componetDef:any,refElement:HTMLElement, parentComponet?:Componet, subject?:CompileSubject):{newSubject:CompileSubject, refComponet: Componet}{
-        let vm = _getVmByComponetDef(componetDef),
-            render = vm && vm.render;
-        if (!vm) throw new Error('not find @VM default!');
-        return render.complie(refElement, parentComponet, subject);
+    static renderComponet(componetDef:any,refElement:HTMLElement, complieEnd:(newSubject:CompileSubject, refComponet: Componet)=>void, parentComponet?:Componet, subject?:CompileSubject):void{
+        _tmplLoaded(function(){
+            let vm = _getVmByComponetDef(componetDef),
+                render = vm && vm.render;
+            if (!vm) throw new Error('not find @VM default!');
+            let { newSubject, refComponet } = render.complie(refElement, parentComponet, subject);
+            complieEnd(newSubject, refComponet);
+        });
     }
 
 }

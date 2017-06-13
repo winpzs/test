@@ -21,7 +21,7 @@ gulp.task('browser', function(cb){
     var wb = browserSync.create('browser1');
 
     var wbOpt = {
-        server:'./dist',
+        server:'./test',
         ui: {
             port: port + 1,
             weinre: {
@@ -29,15 +29,12 @@ gulp.task('browser', function(cb){
             }
         },
         //观察文件变化，自动刷新，去掉不会刷新
-        files: ['./dist/**'],
+        files: ['./dist/browser/**', './test/**'],
         port: port,
         open: false,// "external",
         //startPath: '/demo/box.html'
         startPath: 'index.html'
     };
-    snippetOptions = snippetOptions && snippetOptions.enabled ? snippetOptions : null;
-    if (snippetOptions)
-        wbOpt.snippetOptions = snippetOptions;
     //console.log('wbOpt', wbOpt);
     wb.init(wbOpt,cb); //end site.init
 
@@ -50,7 +47,7 @@ gulp.task('tsc-browser', function () {
         .pipe(sourcemaps.init())
         .pipe(tsBrowserProject())
         .js.pipe(sourcemaps.write('./'))
-        .pipe(gulp.dest('./dist/browser'));
+        .pipe(gulp.dest('./test/scripts'));
 });
 
 gulp.task('watch-browser', function(){
@@ -67,7 +64,7 @@ var _toTimeStr2Len = function(n){
     return (s.length < 2) ? '0'+s : s;
 };
 gulp.task('default', ['tsc-browser'], function () {
-    gulp.start('watch-browser');
+    gulp.start(['watch-browser', 'browser']);
 });
 
 

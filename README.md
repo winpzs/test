@@ -8,4 +8,4 @@ npm satrt //怎么生成浏览器调试脚本，直接用浏览器打开如：fi
 ctrl+f5 直接nodejs调试，选择Mocha Tests
 ctrl+shift+b 编译到dist
 
-//todo: script, style, if relEelement问题
+//todo: 

@@ -120,19 +120,20 @@ export class Browser extends Platform {
             window.removeEventListener('load', _ready, false);
 
             //注意tmplElement是Comment, 在IE里只能取到parentNode
-            let parentElement = _getParentElement(bootElement),
-                {newSubject, refComponet} = Compile.renderComponet(componetDef, bootElement);
-            parentElement.removeChild(bootElement);
-            //console.log(refComponet);
+            let parentElement = _getParentElement(bootElement);
+            Compile.renderComponet(componetDef, bootElement, function(newSubject:CompileSubject, refComponet: Componet){
+                parentElement.removeChild(bootElement);
+                //console.log(refComponet);
 
-            let _unload = function(){
-                window.removeEventListener('unload', _unload);
-                newSubject.remove({
-                    parentElement:parentElement as HTMLElement,
-                    componet:refComponet
-                });
-            };
-            window.addEventListener('unload', _unload, false);
+                let _unload = function(){
+                    window.removeEventListener('unload', _unload);
+                    newSubject.remove({
+                        parentElement:parentElement as HTMLElement,
+                        componet:refComponet
+                    });
+                };
+                window.addEventListener('unload', _unload, false);
+            });
         };
 
         if (/loaded|complete|undefined/i.test(_doc.readyState))
