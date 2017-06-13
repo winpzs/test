@@ -64,7 +64,7 @@ gulp.task('build', function () {
             rollupTypescript({
                 tsconfig: './tsconfig.json'
             })
-        ],
+        ]
     }).then(function (bundle) {
         bundle.write({
             format: "umd",
