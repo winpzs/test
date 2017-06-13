@@ -689,7 +689,7 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                 if (cmpxLib_3["default"].isString(tmplUrl) && _loadTmplFn) {
                     _tmplCount++;
                     _loadTmplFn(tmplUrl, function (tmpl) {
-                        _registerVM[vm.name].render = new CompileRender(tmpl || '', constructor);
+                        _registerVM[vm.name].render = new CompileRender(tmpl || vm.tmpl || '', constructor);
                         _tmplCount--;
                         _tmplChk();
                     });

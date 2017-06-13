@@ -292,7 +292,7 @@ export interface IVMConfig{
     name: string;
     //模板，可以编译后的function, 如果有配置tmplUrl, 优先使用tmplUrl
     tmpl?: string | Function;
-    //模板url，可以编译后的function
+    //模板url，可以编译后的function，如果加载失败使用tmpl内容
     tmplUrl?: string | Function;
     //样式文本, 可以和sytleUrl同时使用
     style?:string;
@@ -342,7 +342,7 @@ export function VM(vm: IVMConfig) {
             if (CmpxLib.isString(tmplUrl) && _loadTmplFn){
                 _tmplCount++;
                 _loadTmplFn(tmplUrl, function(tmpl:string | Function){
-                    _registerVM[vm.name].render = new CompileRender(tmpl||'', constructor);
+                    _registerVM[vm.name].render = new CompileRender(tmpl||vm.tmpl||'', constructor);
                     _tmplCount--;
                     _tmplChk();
                 });
