@@ -982,8 +982,7 @@ define("compile", ["require", "exports", "cmpxLib", "htmlDef", "cmpxEvent"], fun
                 fragment = document.createDocumentFragment();
                 subject && subject.subscribe({
                     remove: function (p) {
-                        // childNodes = _removeChildNodes(childNodes);
-                        fragment = refNode = componet = null;
+                        fragment = refNode = componet = parentElement = parentComponet = null;
                     }
                 });
                 retFn = _this.contextFn.call(componet, cmpxLib_3["default"], Compile, componet, fragment, newSubject, _this.param, function (vvList) {

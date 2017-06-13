@@ -1,19 +1,9 @@
-var gulp = require('gulp');
-var ts = require('gulp-typescript');
-var sourcemaps = require('gulp-sourcemaps');
-var browserSync = require('browser-sync');
-
-gulp.task('default-bak', function () {
-    return gulp.src('src/**/*.ts')
-        .pipe(ts({
-            noImplicitAny: true,
-            experimentalDecorators:true,
-            "target": "es3",
-            module:'amd',
-            out: 'index.js'
-        }))
-        .pipe(gulp.dest('dist/scripts'));
-});
+var gulp = require('gulp'),
+    typescript = require('gulp-typescript'),
+    sourcemaps = require('gulp-sourcemaps'),
+    browserSync = require('browser-sync')
+    rollup = require('rollup'),
+    rollupTypescript = require('rollup-plugin-typescript2');
 
 gulp.task('browser', function(cb){
 
@@ -40,7 +30,7 @@ gulp.task('browser', function(cb){
 
 });
 
-var tsBrowserProject = ts.createProject('tsconfig-browser.json'),
+var tsBrowserProject = typescript.createProject('tsconfig-browser.json'),
     tsBrowserSrc = ['src/*.ts','src/testing/*.ts'];
 gulp.task('tsc-browser', function () {
     return gulp.src(tsBrowserSrc)
@@ -67,17 +57,20 @@ gulp.task('default', ['tsc-browser'], function () {
     gulp.start(['watch-browser', 'browser']);
 });
 
-
-gulp.task('temp', function () {
-    return gulp.src(['src/*.ts','src/testing/*.ts'])
-        .pipe(sourcemaps.init())
-        .pipe(ts({
-            noImplicitAny: true,
-            experimentalDecorators:true,
-            "target": "es3",
-            module:'amd',
-            out: 'index.js'
-        }))
-        .js.pipe(sourcemaps.write('./'))
-        .pipe(gulp.dest('dist/scripts'));
+gulp.task('build', function () {
+    return rollup.rollup({
+        entry: "./src/index.ts",
+        plugins: [
+            rollupTypescript({
+                tsconfig: './tsconfig.json'
+            })
+        ],
+    }).then(function (bundle) {
+        bundle.write({
+            format: "umd",
+            moduleName: "cmpx",
+            dest: "./dist/bundles/cmpx.umd.js",
+            sourceMap: true
+        });
+    })
 });

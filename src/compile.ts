@@ -697,8 +697,7 @@ export class CompileRender {
             fragment = document.createDocumentFragment();
             subject && subject.subscribe({
                 remove: function (p: ISubscribeEvent) {
-                    // childNodes = _removeChildNodes(childNodes);
-                    fragment = refNode = componet = null;
+                    fragment = refNode = componet = parentElement = parentComponet = null;
                 }
             });
             retFn = this.contextFn.call(componet, CmpxLib, Compile, componet, fragment, newSubject, this.param, function (vvList: any[]) {
