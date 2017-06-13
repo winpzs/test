@@ -395,7 +395,7 @@ export function viewvar(name?: string) {
     }
 }
 
-interface ISubscribeEvent {
+export interface ISubscribeEvent {
     componet: Componet;
     param?: any;
 }
